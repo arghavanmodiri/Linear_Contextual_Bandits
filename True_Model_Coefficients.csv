@@ -1,0 +1,14 @@
+variables,type,experiment,coeff
+bias,bias,0,40
+IsRepublic,context,0,-10
+charity2,experiment,1,20
+charity3,experiment,1,10
+matching,experiment,2,-10
+IsRepublic*charity2,interaction,0,0
+IsRepublic*charity3,interaction,0,0
+IsRepublic*matching,interaction,0,0
+charity2*charity3,interaction,0,0
+charity2*matching,interaction,0,0
+charity3*matching,interaction,0,0
+IsRepublic*charity2*matching,interaction,0,0
+IsRepublic*charity3*matching,interaction,0,0

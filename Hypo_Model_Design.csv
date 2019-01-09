@@ -1,0 +1,14 @@
+variables,type,IsInHypoModel
+bias,bias,1
+IsRepublic,context,1
+charity2,experiment,1
+charity3,experiment,1
+matching,experiment,1
+IsRepublic*charity2,interaction,0
+IsRepublic*charity3,interaction,0
+IsRepublic*matching,interaction,0
+charity2*charity3,interaction,0
+charity2*matching,interaction,0
+charity3*matching,interaction,0
+IsRepublic*charity2*matching,interaction,0
+IsRepublic*charity3*matching,interaction,0
