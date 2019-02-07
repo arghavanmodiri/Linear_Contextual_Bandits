@@ -1,3 +1,6 @@
+import numpy as np
+import numpy.random as nprnd
+
 def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
     """
     Read the csv file containing the true model coefficients for all variables
@@ -8,7 +11,47 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
     Returns:
         ndarray: containing the coefficients of the true model
     """
-    pass
+    #noise = np.array([["noise_mean", 0],["noise_std", 5]], dtype=object)
+    noise = {"noise_mean": 0, "noise_std": 1}
+    '''true_coeff = {"bias": 40,
+                    "ch2": 10,
+                    "ch3": 20, 
+                    "matching": 15,#10,
+                    "republic": -10,
+                    "matching*ch2": -5,
+                    "matching*ch3": 5,
+                    "republic*matching": -5}
+    context_vars = np.array(['republic'])
+    experiment_vars = np.array(['ch2','ch3', 'matching'])'''
+    true_coeff = {"bias": 0,
+                    "d1": 1,
+                    "d1*x1": -0.8}
+    context_vars = np.array(['x1'])
+    experiment_vars = np.array(['d1'])
+
+    true_model_params = {'noise':noise,
+                        'true_coeff': true_coeff,
+                        'context_vars': context_vars,
+                        'experiment_vars': experiment_vars}
+    return true_model_params
+
+
+def find_possible_actions(true_model_params_file='True_Model_Coefficients.csv'):
+    """
+    Read the csv file containing the true model coefficients for all variables
+
+    Args:
+        true_model_params_file (str): name of the file
+
+    Returns:
+        list: List of all possible actions
+    """
+    #possible_actions =  [[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1]]
+    possible_actions =  [[0],[1]]
+
+
+    return possible_actions
+
 
 def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
     """
@@ -19,30 +62,82 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
         true_model_params_file (str): name of the file
 
     Returns:
-        ndarray: containing the available parameters in hypothesized model
+        list: containing the available parameters in hypothesized model
     """
-    pass
+    #hypo_model_params = ['bias', 'ch2','ch3', 'matching', 'republic']
+    hypo_model_params = ['d1', 'd1*x1']
+    '''hypo_model_params =["bias",
+                        "ch2",
+                        "ch3", 
+                        "matching",
+                        "republic",
+                        "republic*matching"]
+    '''
+    return hypo_model_params
 
 
-def true_model(true_coeff, user_context, applied_arm, noise_mean,
-                noise_std):
+def true_model_output(true_coeff, experiment_vars, user_context, applied_arm,
+                        noise_stats):
     """
     Calculates the true donation for the specified user and arm
 
     Args:
-        true_coeff (ndarray): coefficients of the true model
-        user_context (ndarray): 1D array containing user contextual values
-        bandit_arm (ndarray): 1D array containing the applied arm
-        noise_mean (float): mean of the white noise in true model
-        noise_std (float): std of the white noise in true model
+        true_coeff (dict): coefficients of the true model
+        user_context (dict): 1D array containing user contextual values
+        bandit_arm (dict): 1D array containing the applied arm
+        noise_stats (dict): mean and std of the white noise in true model
 
     Returns:
-        float: the true donation
+        float: the true value of the dependant variable
     """
-    pass
+    applied_arm_dict = {experiment_vars[i]:applied_arm[i] for i
+                        in range(0, len(applied_arm))}
+    user_params = {**user_context, **applied_arm_dict} 
+    dependant_var = 0
+
+    for coeff_name, coeff_value in true_coeff.items():
+        temp = 0
+        if(coeff_name == 'bias'):
+            temp += coeff_value
+        elif('*' in coeff_name):
+            interact_vars = coeff_name.split('*')
+            temp = 1
+            for var in interact_vars:
+                temp = temp * user_params[var]
+            temp = coeff_value * temp
+        else:
+            temp = coeff_value * user_params[coeff_name]
+        dependant_var += temp
+
+    added_noise = nprnd.normal(loc=noise_stats['noise_mean'], scale=noise_stats['noise_std'], size=1)[0]
+    dependant_var = dependant_var + added_noise
+    return dependant_var
 
 
-def hypo_model(estimated_coeff, user_context, applied_arm):
+def calculate_hypo_regressors(hypo_model_params, experiment_vars, user_context,
+                                 applied_arm):
+    applied_arm_dict = {experiment_vars[i]:applied_arm[i] for i
+                        in range(0, len(applied_arm))}
+    user_params = {**user_context, **applied_arm_dict} 
+    X =[]
+    for param in hypo_model_params:
+        temp = 0
+        if(param == 'bias'):
+            temp = 1
+        elif('*' in param):
+            interact_vars = param.split('*')
+            temp = 1
+            for var in interact_vars:
+                temp = temp * user_params[var]
+        else:
+            temp = user_params[param]
+        X.append(temp)
+
+    return X
+
+
+def hypo_model_output(estimated_coeff, experiment_vars, user_context,
+                        applied_arm):
     """
     Calculates the estimated donation for the specified user and arm
 
@@ -55,10 +150,29 @@ def hypo_model(estimated_coeff, user_context, applied_arm):
     Returns:
         float: the hypothesized donation
     """
-    pass
+    applied_arm_dict = {experiment_vars[i]:applied_arm[i] for i
+                        in range(0, len(applied_arm))}
+    user_params = {**user_context, **applied_arm_dict} 
+    dependant_var_estimate = 0
+
+    for coeff_name, coeff_value in estimated_coeff.items():
+        temp = 0
+        if(coeff_name == 'bias'):
+            temp += coeff_value
+        elif('*' in coeff_name):
+            interact_vars = coeff_name.split('*')
+            temp = 1
+            for var in interact_vars:
+                temp = temp * user_params[var]
+            temp = coeff_value * temp
+        else:
+            temp = coeff_value * user_params[coeff_name]
+        dependant_var_estimate += temp
+
+    return dependant_var_estimate
 
 
-def generate_true_dataset(user_context, user_count, user_dist=[],
+def generate_true_dataset(context_vars, user_count, user_dist=[],
                             write_to_file=True):
     """
     Generate the users dataset randomly.
@@ -72,5 +186,6 @@ def generate_true_dataset(user_context, user_count, user_dist=[],
     Returns:
         float: the true donation
     """
-    pass
+    users_list = np.array([{context_vars[j]:nprnd.randint(2) for j in range(0,len(context_vars))} for i in range(0, user_count)])
 
+    return users_list

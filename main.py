@@ -1,3 +1,11 @@
+import numpy as np
+import true_hypo_models as models
+import policies.thompson_sampling_nig as thompson
+import policies.random_sampling as random
+import plots.plot_basics as bplots
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 def main(mode=None):
     """start the model"""
 
@@ -15,27 +23,146 @@ def main(mode=None):
     and any other configuration to be set
     '''
 
+
     #Step 2: Setting the models
     '''
     Calls true_hypo_models.read_true_model to parse True_Model_Coefficients.csv
     Calls true_hypo_models.read_hypo_model to parse Hypo_Model_Design.csv
     Based on the variables, find the list of all bandit arms
     '''
+ 
+    #models.generate_true_dataset(np.array(['var1', 'var2']), user_count)
+    true_model_params = models.read_true_model()
+    hypo_params = models.read_hypo_model()
+    bandit_arms = models.find_possible_actions()
+    noise_stats = true_model_params['noise']
+    true_coeff = true_model_params['true_coeff']
+    context_vars = true_model_params['context_vars']
+    experiment_vars = true_model_params['experiment_vars']
 
-    #Step 3: Calls the right policy
-    '''
-    Calls thompson sampling, random sampling, or any others which is specified
-    by the user in command line (default: Calls thompson sampling)
-        default priors: 0 unless it is specified by the user
-    '''
+    user_count = 1000
+    batch_size = 10
+    simulation_count = 500
+    extensive = True
+    rand_sampling_applied = True
+    show_fig=True
+
+    regrets = np.zeros(user_count)
+    regrets_rand = np.zeros(user_count)
+    optimal_action_ratio = np.zeros(user_count)
+    mse = np.zeros(user_count)
+    beta_thompson_coeffs = np.zeros((user_count, len(hypo_params)))
+    coeff_sign_error = np.zeros((user_count, len(hypo_params)))
+    policies = []
+    policies.append(['Thompson Sampling'])
+
+    for sim in range(0, simulation_count):
+        print("sim: ",sim)
+        a_pre = 0
+        b_pre = 0
+        mean_pre = np.zeros(len(hypo_params))
+        cov_pre = np.identity(len(hypo_params))
+
+
+        #Step 3: Calls the right policy
+        '''
+        Calls thompson sampling, random sampling, or any others which is
+        specified
+        by the user in command line (default: Calls thompson sampling)
+            default priors: 0 unless it is specified by the user
+        '''
+        users_context = models.generate_true_dataset(context_vars, user_count)
+
+        thompson_output = thompson.apply_thompson_sampling(users_context,
+                                                    experiment_vars,
+                                                    bandit_arms,
+                                                    hypo_params,
+                                                    true_coeff,
+                                                    batch_size,
+                                                    extensive,
+                                                    mean_pre,
+                                                    cov_pre,
+                                                    a_pre,
+                                                    b_pre,
+                                                    noise_stats)
+        #policies.append(['Thompson Sampling'])
+        regrets += thompson_output[2]
+        optimal_action_ratio += np.array(list((thompson_output[1][i] in thompson_output[0][i]) for i in range(0,user_count))).astype(int)
+        mse += np.power(np.array(thompson_output[3]) - np.array(thompson_output
+            [4]),2)
+        beta_thompson_coeffs += np.array(thompson_output[5])
+
+        #for coeff_name, coeff_value in true_coeff.items():
+        true_params_in_hypo = []
+        for  idx, hypo_param_name in enumerate(hypo_params):
+            if(hypo_param_name in true_coeff):
+                true_params_in_hypo.append(true_coeff[hypo_param_name])
+
+        coeff_sign_error += np.sign(np.array(true_params_in_hypo) * np.array(
+            thompson_output[5]))
+
+        if(rand_sampling_applied):
+            rand_outputs= random.apply_random_sampling(users_context,
+                                                        experiment_vars,
+                                                        bandit_arms,
+                                                        hypo_params,
+                                                        true_coeff,
+                                                        batch_size,
+                                                        extensive,
+                                                        noise_stats)
+
+            regrets_rand += rand_outputs[2]
+
+
+
+    regrets = regrets / simulation_count
+    regrets_rand = regrets_rand / simulation_count
+    optimal_action_ratio = optimal_action_ratio /simulation_count
+    mse = mse / simulation_count
+    beta_thompson_coeffs = beta_thompson_coeffs / simulation_count
+    if(rand_sampling_applied):
+        policies.append(['Random Sampling'])
+        regrets_rand = regrets_rand / simulation_count
+
 
     #Step 4: Plots
     '''
     Plots some basic figures. In "Extensive Mode", details will be saved so
     user can plots more figures if desired.
     '''
+    if(rand_sampling_applied):
+        regrets_all_policies = np.stack((regrets, regrets_rand))
+        #optimal_action_ratio_all_policies = np.stack((optimal_action_ratio,
+        #regrets_rand))
+        optimal_action_ratio_all_policies = np.stack((optimal_action_ratio,
+            optimal_action_ratio))
+        mse_all_policies = np.stack((mse,mse))
+    else:
+        regrets_all_policies = np.array([regrets])
+        optimal_action_ratio_all_policies = np.array([optimal_action_ratio])
+        mse_all_policies = np.array([mse])
 
 
+    bplots.plot_regret(user_count, policies, regrets_all_policies,
+                        simulation_count, batch_size)
+
+
+    bplots.plot_optimal_action_ratio(user_count, policies,
+            optimal_action_ratio_all_policies, simulation_count, batch_size)
+
+    bplots.plot_mse(user_count, policies, mse_all_policies, simulation_count,
+                    batch_size)
+    bplots.plot_coeff_ranking(user_count, 'Thompson Sampling',
+                beta_thompson_coeffs, hypo_params, simulation_count,
+                batch_size, save_fig=True)
+
+    bplots.plot_coeff_sign_error(user_count, 'Thompson Sampling', hypo_params,
+                coeff_sign_error, simulation_count, batch_size, save_fig=True)
+
+
+    if(show_fig):
+        #plt.show(block=False)
+        plt.show()
 
 if __name__ == "__main__":
     main()
