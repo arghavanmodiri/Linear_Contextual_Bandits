@@ -25,7 +25,7 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
     experiment_vars = np.array(['ch2','ch3', 'matching'])'''
     true_coeff = {"bias": 0,
                     "d1": 1,
-                    "d1*x1": -0.8}
+                    "d1*x1": -8}
     context_vars = np.array(['x1'])
     experiment_vars = np.array(['d1'])
 

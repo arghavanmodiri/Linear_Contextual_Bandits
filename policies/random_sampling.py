@@ -11,7 +11,6 @@ def apply_random_sampling(user_context, experiment_vars, bandit_arms,
     user_count = user_context.shape[0]
     # Size of action set
     action_count = len(bandit_arms)
-
     # Save outcomes per batch
     received_reward_all = []
     rand_regret_all = []
@@ -46,11 +45,8 @@ def apply_random_sampling(user_context, experiment_vars, bandit_arms,
         # Compute regret
         rand_regret = making_decision.calculate_regret(true_optimal_action[1], 
                                                         received_reward)
-        #print(user_context[user]," ",received_reward," ",true_optimal_action[0]," ",true_optimal_action[1])
-        #print(rand_regret)
         rand_regret_all.append(rand_regret)
 
         # Update actions list
-        applied_action_all.append(action_index)
-
+        applied_action_all.append([action_index])
     return [received_reward_all,applied_action_all,rand_regret_all]

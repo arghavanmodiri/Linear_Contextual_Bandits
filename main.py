@@ -50,6 +50,7 @@ def main(mode=None):
     regrets = np.zeros(user_count)
     regrets_rand = np.zeros(user_count)
     optimal_action_ratio = np.zeros(user_count)
+    optimal_action_ratio_rand = np.zeros(user_count)
     mse = np.zeros(user_count)
     beta_thompson_coeffs = np.zeros((user_count, len(hypo_params)))
     coeff_sign_error = np.zeros((user_count, len(hypo_params)))
@@ -110,9 +111,10 @@ def main(mode=None):
                                                         batch_size,
                                                         extensive,
                                                         noise_stats)
-
             regrets_rand += rand_outputs[2]
-
+            optimal_action_ratio_rand += np.array(list((rand_outputs[1][i] in
+                    thompson_output[0][i]) for i in 
+                    range(0,user_count))).astype(int)
 
 
     regrets = regrets / simulation_count
@@ -123,6 +125,8 @@ def main(mode=None):
     if(rand_sampling_applied):
         policies.append(['Random Sampling'])
         regrets_rand = regrets_rand / simulation_count
+        optimal_action_ratio_rand = optimal_action_ratio_rand/simulation_count
+
 
 
     #Step 4: Plots
@@ -135,8 +139,8 @@ def main(mode=None):
         #optimal_action_ratio_all_policies = np.stack((optimal_action_ratio,
         #regrets_rand))
         optimal_action_ratio_all_policies = np.stack((optimal_action_ratio,
-            optimal_action_ratio))
-        mse_all_policies = np.stack((mse,mse))
+            optimal_action_ratio_rand))
+        mse_all_policies = np.array([mse])
     else:
         regrets_all_policies = np.array([regrets])
         optimal_action_ratio_all_policies = np.array([optimal_action_ratio])
@@ -150,8 +154,8 @@ def main(mode=None):
     bplots.plot_optimal_action_ratio(user_count, policies,
             optimal_action_ratio_all_policies, simulation_count, batch_size)
 
-    bplots.plot_mse(user_count, policies, mse_all_policies, simulation_count,
-                    batch_size)
+    bplots.plot_mse(user_count, ['Thompson Sampling'], mse_all_policies,
+                    simulation_count, batch_size)
     bplots.plot_coeff_ranking(user_count, 'Thompson Sampling',
                 beta_thompson_coeffs, hypo_params, simulation_count,
                 batch_size, save_fig=True)
