@@ -54,6 +54,7 @@ def main(mode=None):
     mse = np.zeros(user_count)
     beta_thompson_coeffs = np.zeros((user_count, len(hypo_params)))
     coeff_sign_error = np.zeros((user_count, len(hypo_params)))
+    bias_in_coeff = np.zeros((user_count, len(hypo_params)))
     policies = []
     policies.append(['Thompson Sampling'])
 
@@ -102,6 +103,9 @@ def main(mode=None):
         coeff_sign_error += np.sign(np.array(true_params_in_hypo) * np.array(
             thompson_output[5]))
 
+        bias_in_coeff += np.array(np.array(true_params_in_hypo) - np.array(
+            thompson_output[5]))
+
         if(rand_sampling_applied):
             rand_outputs= random.apply_random_sampling(users_context,
                                                         experiment_vars,
@@ -118,10 +122,10 @@ def main(mode=None):
 
 
     regrets = regrets / simulation_count
-    regrets_rand = regrets_rand / simulation_count
     optimal_action_ratio = optimal_action_ratio /simulation_count
     mse = mse / simulation_count
     beta_thompson_coeffs = beta_thompson_coeffs / simulation_count
+    bias_in_coeff = bias_in_coeff / simulation_count
     if(rand_sampling_applied):
         policies.append(['Random Sampling'])
         regrets_rand = regrets_rand / simulation_count
@@ -152,7 +156,8 @@ def main(mode=None):
 
 
     bplots.plot_optimal_action_ratio(user_count, policies,
-            optimal_action_ratio_all_policies, simulation_count, batch_size)
+            optimal_action_ratio_all_policies, simulation_count, batch_size,
+            mode='per_batch')
 
     bplots.plot_mse(user_count, ['Thompson Sampling'], mse_all_policies,
                     simulation_count, batch_size)
@@ -162,6 +167,10 @@ def main(mode=None):
 
     bplots.plot_coeff_sign_error(user_count, 'Thompson Sampling', hypo_params,
                 coeff_sign_error, simulation_count, batch_size, save_fig=True)
+
+
+    bplots.plot_bias_in_coeff(user_count, 'Thompson Sampling', hypo_params,
+                bias_in_coeff, simulation_count, batch_size, save_fig=True)
 
 
     if(show_fig):
