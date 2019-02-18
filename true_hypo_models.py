@@ -12,7 +12,7 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
         ndarray: containing the coefficients of the true model
     """
     #noise = np.array([["noise_mean", 0],["noise_std", 5]], dtype=object)
-    noise = {"noise_mean": 0, "noise_std": 1}
+    noise = {"noise_mean": 0, "noise_std": 1.0}
     '''true_coeff = {"bias": 40,
                     "ch2": 10,
                     "ch3": 20, 
@@ -23,9 +23,9 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
                     "republic*matching": -5}
     context_vars = np.array(['republic'])
     experiment_vars = np.array(['ch2','ch3', 'matching'])'''
-    true_coeff = {"bias": 1,
-                    "d1": 0.9,
-                    "d1*x1": -0.9}
+    true_coeff = {"intercept": 0,
+                    "d1": 0.1,
+                    "d1*x1": -0.8}
     context_vars = np.array(['x1'])
     experiment_vars = np.array(['d1'])
 
@@ -65,7 +65,7 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
         list: containing the available parameters in hypothesized model
     """
     #hypo_model_params = ['bias', 'ch2','ch3', 'matching', 'republic']
-    hypo_model_params = ['bias','d1', 'd1*x1']
+    hypo_model_params = ['intercept','d1', 'd1*x1']
     '''hypo_model_params =["bias",
                         "ch2",
                         "ch3", 
@@ -97,7 +97,7 @@ def true_model_output(true_coeff, experiment_vars, user_context, applied_arm,
 
     for coeff_name, coeff_value in true_coeff.items():
         temp = 0
-        if(coeff_name == 'bias'):
+        if(coeff_name == 'intercept'):
             temp += coeff_value
         elif('*' in coeff_name):
             interact_vars = coeff_name.split('*')
@@ -122,7 +122,7 @@ def calculate_hypo_regressors(hypo_model_params, experiment_vars, user_context,
     X =[]
     for param in hypo_model_params:
         temp = 0
-        if(param == 'bias'):
+        if(param == 'intercept'):
             temp = 1
         elif('*' in param):
             interact_vars = param.split('*')
@@ -157,7 +157,7 @@ def hypo_model_output(estimated_coeff, experiment_vars, user_context,
 
     for coeff_name, coeff_value in estimated_coeff.items():
         temp = 0
-        if(coeff_name == 'bias'):
+        if(coeff_name == 'intercept'):
             temp += coeff_value
         elif('*' in coeff_name):
             interact_vars = coeff_name.split('*')
@@ -167,7 +167,8 @@ def hypo_model_output(estimated_coeff, experiment_vars, user_context,
             temp = coeff_value * temp
         else:
             temp = coeff_value * user_params[coeff_name]
-        dependant_var_estimate += temp
+
+        dependant_var_estimate = np.add(dependant_var_estimate, temp)
 
     return dependant_var_estimate
 

@@ -138,21 +138,25 @@ def apply_thompson_sampling(user_context, experiment_vars, bandit_arms, hypo_mod
                                                         beta_thompson,
                                                         user_context[user],
                                                         experiment_vars,
-                                                        bandit_arms,
-                                                        noise_stats)
+                                                        bandit_arms)
             received_reward = models.true_model_output(true_coeff,
                                                         experiment_vars,
                                                         user_context[user],
                                                         hypo_optimal_action[0],
                                                         noise_stats)
+            received_reward_no_noise = models.true_model_output(true_coeff,
+                                                        experiment_vars,
+                                                        user_context[user],
+                                                        hypo_optimal_action[0],
+                                                        {"noise_mean": 0,
+                                                        "noise_std": 0.0})
             true_optimal_action = making_decision.pick_true_optimal_arm(
                                                         true_coeff,
                                                         user_context[user],
                                                         experiment_vars,
-                                                        bandit_arms,
-                                                        noise_stats)
+                                                        bandit_arms)
             regret = making_decision.calculate_regret(true_optimal_action[1], 
-                                                        received_reward)
+                                                    received_reward_no_noise)
             X = models.calculate_hypo_regressors(hypo_model_params,
                                                 experiment_vars,
                                                 user_context[user],

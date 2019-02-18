@@ -4,7 +4,7 @@ import true_hypo_models as models
 
 
 def pick_hypo_optimal_arm(estimated_hypo_coeff, user_context, experiment_vars,
-                            bandit_arms, noise_stats):
+                            bandit_arms):
     """
     Find the optimal arms to be applied to the user based on its user_context.
 
@@ -22,7 +22,7 @@ def pick_hypo_optimal_arm(estimated_hypo_coeff, user_context, experiment_vars,
 
     for arm in bandit_arms:
         temp_result = models.hypo_model_output(estimated_hypo_coeff, experiment_vars, user_context, arm)
-        if(temp_result == optimal_arm_est_output):
+        if( abs(temp_result-optimal_arm_est_output)<0.00000001):
             optimal_arm.append(arm)
         elif(temp_result > optimal_arm_est_output):
             optimal_arm = [arm]
@@ -34,7 +34,7 @@ def pick_hypo_optimal_arm(estimated_hypo_coeff, user_context, experiment_vars,
 
 
 def pick_true_optimal_arm(true_coeff, user_context, experiment_vars,
-                            bandit_arms, noise_stats):
+                            bandit_arms):
     """
     Find the optimal arms to be applied to the user based on its user_context.
 
@@ -52,8 +52,10 @@ def pick_true_optimal_arm(true_coeff, user_context, experiment_vars,
 
     for arm in bandit_arms:
         temp_result = models.true_model_output(true_coeff, experiment_vars,
-                                                user_context, arm, noise_stats)
-        if(temp_result == optimal_arm_est_output):
+                                                user_context, arm,
+                                                {"noise_mean": 0,
+                                                "noise_std": 0.0})
+        if(abs(temp_result-optimal_arm_est_output)<0.00000001):
             optimal_arm.append(arm)
         elif(temp_result > optimal_arm_est_output):
             optimal_arm = [arm]
