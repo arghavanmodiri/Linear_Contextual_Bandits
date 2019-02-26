@@ -1,10 +1,15 @@
 import numpy as np
+import pandas as pd
 import true_hypo_models as models
 import policies.thompson_sampling_nig as thompson
 import policies.random_sampling as random
 import plots.plot_basics as bplots
 import matplotlib.pyplot as plt
 import seaborn as sns
+import statsmodels.formula.api as sm
+
+
+np.set_printoptions(threshold=np.nan)
 
 def main(mode=None):
     """start the model"""
@@ -56,6 +61,9 @@ def main(mode=None):
     coeff_sign_error = np.zeros((user_count, len(hypo_params)))
     bias_in_coeff = np.zeros((user_count, len(hypo_params)))
     policies = []
+    regression_intercept_all_sim = []
+    regression_d1_all_sim = []
+    regression_d1x1_all_sim = []
     policies.append(['Thompson Sampling'])
 
     for sim in range(0, simulation_count):
@@ -64,6 +72,10 @@ def main(mode=None):
         b_pre = 0
         mean_pre = np.zeros(len(hypo_params))
         cov_pre = np.identity(len(hypo_params))
+
+        regression_intercept = []
+        regression_d1 = []
+        regression_d1x1 = []
 
 
         #Step 3: Calls the right policy
@@ -100,9 +112,9 @@ def main(mode=None):
             if(hypo_param_name in true_coeff):
                 true_params_in_hypo.append(true_coeff[hypo_param_name])
 
-        coeff_sign_error += np.sign(np.array(true_params_in_hypo) * np.array(
-            thompson_output[5]))
-
+        #coeff_sign_error += np.sign(np.array(true_params_in_hypo) * np.array(
+        #    thompson_output[5]))
+        coeff_sign_error += np.sign(np.array(true_params_in_hypo)) - np.sign(np.array(thompson_output[5])) == np.zeros(len(hypo_params))
         bias_in_coeff += np.array(np.array(true_params_in_hypo) - np.array(
             thompson_output[5]))
 
@@ -121,11 +133,67 @@ def main(mode=None):
                     range(0,user_count))).astype(int)
 
 
+        ################# OLS REGRESSION STARTS ########################
+        '''
+        x1 = np.empty((0,len(users_context[0].keys())))
+        for i in range(0,len(users_context)):
+            user_context_list = np.array([])
+            for key,value in users_context[i].items():
+                user_context_list = np.append(user_context_list,value)
+            x1 = np.append(x1,[user_context_list], axis=0)
+        x1 = [x1[i][0] for i in range(0,len(x1))]
+        d1 = [thompson_output[1][i][0] for i in range(0,len(thompson_output[1]))]
+        #d1 = [rand_outputs[1][i][0] for i in range(0,len(rand_outputs[1]))]
+        d1_x1 = [a*b for a,b in zip(d1,x1)]
+        df = pd.DataFrame({'d1':d1, 'd1x1':d1_x1, 'y':thompson_output[3]})
+
+
+        for iteration in range(1, user_count+1):
+            regression = sm.ols(formula="y ~ d1 + d1x1",
+                                data=df.iloc[:iteration]).fit()
+            regression_intercept.append(regression.params['Intercept'])
+            regression_d1.append(regression.params['d1'])
+            regression_d1x1.append(regression.params['d1x1'])
+        regression_intercept_all_sim.append(regression_intercept)
+        regression_d1_all_sim.append(regression_d1)
+        regression_d1x1_all_sim.append(regression_d1x1)
+    
+    regression_intercept_all_sim_df=pd.DataFrame(regression_intercept_all_sim)
+    regression_d1_all_sim_df=pd.DataFrame(regression_d1_all_sim)
+    regression_d1x1_all_sim_df=pd.DataFrame(regression_d1x1_all_sim)
+
+    regression_intercept_all_sim_mean = np.mean(regression_intercept_all_sim_df, axis=0)
+
+    regression_d1_all_sim_mean = np.mean(regression_d1_all_sim_df, axis=0)
+    regression_d1x1_all_sim_mean = np.mean(regression_d1x1_all_sim_df, axis=0)
+
+
+
+    regression_intercept_all_sim_std = np.std(regression_intercept_all_sim_df, axis=0)
+
+    regression_d1_all_sim_std = np.std(regression_d1_all_sim_df, axis=0)
+    regression_d1x1_all_sim_std = np.std(regression_d1x1_all_sim_df, axis=0)
+
+    regression_params_dict = {"intercept" : regression_intercept_all_sim_mean,
+                           "d1" : regression_d1_all_sim_mean,
+                            "d1x1": regression_d1x1_all_sim_mean}
+
+    regression_params_std_dict = {"intercept":regression_intercept_all_sim_std,
+                            "d1" : regression_d1_all_sim_std,
+                            "d1x1": regression_d1x1_all_sim_std}
+
+
+    bplots.plot_regression(user_count, regression_params_dict, regression_params_std_dict, true_coeff,
+                simulation_count, batch_size, save_fig=True)
+    '''
+    ################# OLS REGRESSION ENDS ########################
+
     regrets = regrets / simulation_count
     optimal_action_ratio = optimal_action_ratio /simulation_count
     mse = mse / simulation_count
     beta_thompson_coeffs = beta_thompson_coeffs / simulation_count
     bias_in_coeff = bias_in_coeff / simulation_count
+    coeff_sign_error = coeff_sign_error / simulation_count
     if(rand_sampling_applied):
         policies.append(['Random Sampling'])
         regrets_rand = regrets_rand / simulation_count
@@ -153,7 +221,6 @@ def main(mode=None):
 
     bplots.plot_regret(user_count, policies, regrets_all_policies,
                         simulation_count, batch_size)
-
 
     bplots.plot_optimal_action_ratio(user_count, policies,
             optimal_action_ratio_all_policies, simulation_count, batch_size,
