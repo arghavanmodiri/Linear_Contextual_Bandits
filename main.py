@@ -56,7 +56,8 @@ def main(mode=None):
     regrets_rand = np.zeros(user_count)
     optimal_action_ratio = np.zeros(user_count)
     optimal_action_ratio_rand = np.zeros(user_count)
-    mse = np.zeros(user_count)
+    # Hammad update: MSE is for each parameter
+    mse = np.zeros((user_count, len(hypo_params)))
     beta_thompson_coeffs = np.zeros((user_count, len(hypo_params)))
     coeff_sign_error = np.zeros((user_count, len(hypo_params)))
     bias_in_coeff = np.zeros((user_count, len(hypo_params)))
@@ -102,8 +103,11 @@ def main(mode=None):
         #policies.append(['Thompson Sampling'])
         regrets += thompson_output[2]
         optimal_action_ratio += np.array(list((thompson_output[1][i] in thompson_output[0][i]) for i in range(0,user_count))).astype(int)
-        mse += np.power(np.array(thompson_output[3]) - np.array(thompson_output
-            [4]),2)
+        # mse += np.power(np.array(thompson_output[3]) - np.array(thompson_output[4]),2)
+
+        # Hammad update: MSE = E((coeff - true_param)^2)
+        mse += np.power(np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo)),2)
+        
         beta_thompson_coeffs += np.array(thompson_output[5])
 
         #for coeff_name, coeff_value in true_coeff.items():
