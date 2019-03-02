@@ -53,5 +53,6 @@ def apply_random_sampling(user_context, experiment_vars, bandit_arms,
 
         # Update actions list
         applied_action_all.append(bandit_arms[action_index])
+        #print("X = ",user_context[user]['x1'], "D = ",rand_action, rand_regret)
 
     return [received_reward_all,applied_action_all,rand_regret_all]

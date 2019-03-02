@@ -65,7 +65,7 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
         list: containing the available parameters in hypothesized model
     """
     #hypo_model_params = ['bias', 'ch2','ch3', 'matching', 'republic']
-    hypo_model_params = ['intercept','d1']
+    hypo_model_params = ['intercept','d1', 'd1*x1']
     '''hypo_model_params =["bias",
                         "ch2",
                         "ch3", 

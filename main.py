@@ -66,6 +66,15 @@ def main(mode=None):
     regression_d1x1_all_sim = []
     policies.append(['Thompson Sampling'])
 
+    x0_suboptimal_ratio = np.zeros(user_count)
+    x1_suboptimal_ratio = np.zeros(user_count)
+    x0_suboptimal_ratio_rand = np.zeros(user_count)
+    x1_suboptimal_ratio_rand = np.zeros(user_count)
+    x0_d0_count_quarter = [0]*4
+    x0_d1_count_quarter = [0]*4
+    x1_d0_count_quarter = [0]*4
+    x1_d1_count_quarter = [0]*4
+
     for sim in range(0, simulation_count):
         print("sim: ",sim)
         a_pre = 0
@@ -115,9 +124,7 @@ def main(mode=None):
         #coeff_sign_error += np.sign(np.array(true_params_in_hypo) * np.array(
         #    thompson_output[5]))
         coeff_sign_error += np.sign(np.array(true_params_in_hypo)) - np.sign(np.array(thompson_output[5])) == np.zeros(len(hypo_params))
-        bias_in_coeff += np.array(np.array(true_params_in_hypo) - np.array(
-            thompson_output[5]))
-
+        bias_in_coeff += np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
         if(rand_sampling_applied):
             rand_outputs= random.apply_random_sampling(users_context,
                                                         experiment_vars,
@@ -131,6 +138,65 @@ def main(mode=None):
             optimal_action_ratio_rand += np.array(list((rand_outputs[1][i] in
                     thompson_output[0][i]) for i in 
                     range(0,user_count))).astype(int)
+
+
+        quarter = int(user_count/4)
+        first_user = 0
+        last_user = quarter
+        for j in range(0,4):
+            for i in range(first_user, last_user):
+                if(users_context[i]['x1']==0 and thompson_output[1][i][0]==0):
+                    x0_d0_count_quarter[j] += 1
+                elif(users_context[i]['x1']==0 and thompson_output[1][i][0]==1):
+                    x0_d1_count_quarter[j] += 1
+                elif(users_context[i]['x1']==1 and thompson_output[1][i][0]==0):
+                    x1_d0_count_quarter[j] += 1
+                elif(users_context[i]['x1']==1 and thompson_output[1][i][0]==1):
+                    x1_d1_count_quarter[j] += 1
+            first_user += quarter
+            last_user += quarter
+
+        x0_d0_count = np.zeros(user_count)
+        x0_d1_count = np.zeros(user_count)
+        x1_d0_count = np.zeros(user_count)
+        x1_d1_count = np.zeros(user_count)
+        for i in range(0,user_count):
+            if(users_context[i]['x1']==0 and thompson_output[1][i][0]==0):
+                    x0_d0_count[i] = 1
+            elif(users_context[i]['x1']==0 and thompson_output[1][i][0]==1):
+                x0_d1_count[i] = 1
+            elif(users_context[i]['x1']==1 and thompson_output[1][i][0]==0):
+                x1_d0_count[i] = 1
+            elif(users_context[i]['x1']==1 and thompson_output[1][i][0]==1):
+                x1_d1_count[i] = 1
+        x0_d0_count = np.cumsum(x0_d0_count)
+        x0_d1_count = np.cumsum(x0_d1_count)
+        x1_d0_count = np.cumsum(x1_d0_count)
+        x1_d1_count = np.cumsum(x1_d1_count)
+        x0_suboptimal_ratio += np.divide(x0_d0_count,(x0_d0_count+x0_d1_count),out=np.zeros_like(x0_d0_count), where=(x0_d0_count+x0_d1_count)!=0)
+
+        x1_suboptimal_ratio += np.divide(x1_d1_count,(x1_d1_count+x1_d0_count),out=np.zeros_like(x1_d1_count), where=(x1_d1_count+x1_d0_count)!=0)
+
+        x0_d0_count = np.zeros(user_count)
+        x0_d1_count = np.zeros(user_count)
+        x1_d0_count = np.zeros(user_count)
+        x1_d1_count = np.zeros(user_count)
+        for i in range(0,user_count):
+            if(users_context[i]['x1']==0 and rand_outputs[1][i][0]==0):
+                    x0_d0_count[i] = 1
+            elif(users_context[i]['x1']==0 and rand_outputs[1][i][0]==1):
+                x0_d1_count[i] = 1
+            elif(users_context[i]['x1']==1 and rand_outputs[1][i][0]==0):
+                x1_d0_count[i] = 1
+            elif(users_context[i]['x1']==1 and rand_outputs[1][i][0]==1):
+                x1_d1_count[i] = 1
+        x0_d0_count = np.cumsum(x0_d0_count)
+        x0_d1_count = np.cumsum(x0_d1_count)
+        x1_d0_count = np.cumsum(x1_d0_count)
+        x1_d1_count = np.cumsum(x1_d1_count)
+        x0_suboptimal_ratio_rand += np.divide(x0_d0_count,(x0_d0_count+x0_d1_count),out=np.zeros_like(x0_d0_count), where=(x0_d0_count+x0_d1_count)!=0)
+
+        x1_suboptimal_ratio_rand += np.divide(x1_d1_count,(x1_d1_count+x1_d0_count),out=np.zeros_like(x1_d1_count), where=(x1_d1_count+x1_d0_count)!=0)
 
 
         ################# OLS REGRESSION STARTS ########################
@@ -188,6 +254,19 @@ def main(mode=None):
     '''
     ################# OLS REGRESSION ENDS ########################
 
+    x0_d0_count_quarter = np.array(x0_d0_count_quarter) /simulation_count / quarter
+    x0_d1_count_quarter = np.array(x0_d1_count_quarter) / simulation_count / quarter
+    x1_d0_count_quarter = np.array(x1_d0_count_quarter) /simulation_count /quarter
+    x1_d1_count_quarter = np.array(x1_d1_count_quarter) / simulation_count / quarter
+    print("x0_d0_count_quarter : ", x0_d0_count_quarter)
+    print("x0_d1_count_quarter : ", x0_d1_count_quarter)
+    print("x1_d0_count_quarter : ", x1_d0_count_quarter)
+    print("x1_d1_count_quarter : ", x1_d1_count_quarter)
+    x0_suboptimal_ratio = x0_suboptimal_ratio / simulation_count
+    x1_suboptimal_ratio = x1_suboptimal_ratio / simulation_count
+    x0_suboptimal_ratio_rand = x0_suboptimal_ratio_rand /simulation_count
+    x1_suboptimal_ratio_rand = x1_suboptimal_ratio_rand /simulation_count
+
     regrets = regrets / simulation_count
     optimal_action_ratio = optimal_action_ratio /simulation_count
     mse = mse / simulation_count
@@ -213,18 +292,26 @@ def main(mode=None):
         optimal_action_ratio_all_policies = np.stack((optimal_action_ratio,
             optimal_action_ratio_rand))
         mse_all_policies = np.array([mse])
+        suboptimal_ratio_all_policies = np.stack((x0_suboptimal_ratio,
+                x1_suboptimal_ratio, x0_suboptimal_ratio_rand, x1_suboptimal_ratio_rand))
     else:
         regrets_all_policies = np.array([regrets])
         optimal_action_ratio_all_policies = np.array([optimal_action_ratio])
         mse_all_policies = np.array([mse])
+        suboptimal_ratio_all_policies = np.stack((x0_suboptimal_ratio,
+                x1_suboptimal_ratio))
 
 
     bplots.plot_regret(user_count, policies, regrets_all_policies,
                         simulation_count, batch_size)
 
+    bplots.plot_suboptimal_action_ratio(user_count, ['Thompson Sampling X = 0','Thompson Sampling X = 1', 'Random Sampling X=0', 'Random Sampling X=1'],
+            suboptimal_ratio_all_policies, simulation_count, batch_size,
+            mode='per_user')
+
     bplots.plot_optimal_action_ratio(user_count, policies,
             optimal_action_ratio_all_policies, simulation_count, batch_size,
-            mode='per_batch')
+            mode='per_user')
 
     bplots.plot_mse(user_count, ['Thompson Sampling'], mse_all_policies,
                     simulation_count, batch_size)
