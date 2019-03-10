@@ -6,10 +6,11 @@ import policies.random_sampling as random
 import plots.plot_basics as bplots
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy.random as nprnd
 import statsmodels.formula.api as sm
 
 
-np.set_printoptions(threshold=np.nan)
+#np.set_printoptions(threshold=np.nan)
 
 def main(mode=None):
     """start the model"""
@@ -47,7 +48,7 @@ def main(mode=None):
 
     user_count = 1000
     batch_size = 10
-    simulation_count = 500
+    simulation_count = 100
     extensive = True
     rand_sampling_applied = True
     show_fig=True
@@ -68,10 +69,13 @@ def main(mode=None):
     policies.append(['Thompson Sampling'])
 
     for sim in range(0, simulation_count):
+
+        # Set priors
         print("sim: ",sim)
         a_pre = 0
         b_pre = 0
-        mean_pre = np.zeros(len(hypo_params))
+        #mean_pre = np.zeros(len(hypo_params))
+        mean_pre = np.array([0,0])
         cov_pre = np.identity(len(hypo_params))
 
         regression_intercept = []
@@ -104,9 +108,6 @@ def main(mode=None):
         regrets += thompson_output[2]
         optimal_action_ratio += np.array(list((thompson_output[1][i] in thompson_output[0][i]) for i in range(0,user_count))).astype(int)
         # mse += np.power(np.array(thompson_output[3]) - np.array(thompson_output[4]),2)
-
-        # Hammad update: MSE = E((coeff - true_param)^2)
-        mse += np.power(np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo)),2)
         
         beta_thompson_coeffs += np.array(thompson_output[5])
 
@@ -115,6 +116,9 @@ def main(mode=None):
         for  idx, hypo_param_name in enumerate(hypo_params):
             if(hypo_param_name in true_coeff):
                 true_params_in_hypo.append(true_coeff[hypo_param_name])
+
+        # Hammad update: MSE = E((coeff - true_param)^2)
+        mse += np.power(np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo)),2)
 
         #coeff_sign_error += np.sign(np.array(true_params_in_hypo) * np.array(
         #    thompson_output[5]))
@@ -138,7 +142,8 @@ def main(mode=None):
 
 
         ################# OLS REGRESSION STARTS ########################
-        '''
+
+        # Construct context vector
         x1 = np.empty((0,len(users_context[0].keys())))
         for i in range(0,len(users_context)):
             user_context_list = np.array([])
@@ -146,18 +151,31 @@ def main(mode=None):
                 user_context_list = np.append(user_context_list,value)
             x1 = np.append(x1,[user_context_list], axis=0)
         x1 = [x1[i][0] for i in range(0,len(x1))]
-        d1 = [thompson_output[1][i][0] for i in range(0,len(thompson_output[1]))]
-        #d1 = [rand_outputs[1][i][0] for i in range(0,len(rand_outputs[1]))]
+
+        # Thompson policy assignment
+        #d1 = [thompson_output[1][i][0] for i in range(0,len(thompson_output[1]))]
+
+        # Hammad Update: Random policy assignment
+        d1 = [rand_outputs[1][i][0] for i in range(0,len(rand_outputs[1]))]
+        
+        # Get values for interaction term
         d1_x1 = [a*b for a,b in zip(d1,x1)]
-        df = pd.DataFrame({'d1':d1, 'd1x1':d1_x1, 'y':thompson_output[3]})
 
+        # Thompson policy data frame
+        #df = pd.DataFrame({'d1':d1, 'd1x1':d1_x1, 'y':thompson_output[3]})
 
+        # Hammad update: Random policy data frame
+        df = pd.DataFrame({'d1':d1, 'd1x1':d1_x1, 'y':rand_outputs[0]})
+
+        # OLS Regression for N = user itteration
         for iteration in range(1, user_count+1):
             regression = sm.ols(formula="y ~ d1 + d1x1",
                                 data=df.iloc[:iteration]).fit()
             regression_intercept.append(regression.params['Intercept'])
             regression_d1.append(regression.params['d1'])
             regression_d1x1.append(regression.params['d1x1'])
+
+        # OLS regression coefficients for each simulations
         regression_intercept_all_sim.append(regression_intercept)
         regression_d1_all_sim.append(regression_d1)
         regression_d1x1_all_sim.append(regression_d1x1)
@@ -166,15 +184,13 @@ def main(mode=None):
     regression_d1_all_sim_df=pd.DataFrame(regression_d1_all_sim)
     regression_d1x1_all_sim_df=pd.DataFrame(regression_d1x1_all_sim)
 
+    # Average OLS coefficients across simulations
     regression_intercept_all_sim_mean = np.mean(regression_intercept_all_sim_df, axis=0)
-
     regression_d1_all_sim_mean = np.mean(regression_d1_all_sim_df, axis=0)
     regression_d1x1_all_sim_mean = np.mean(regression_d1x1_all_sim_df, axis=0)
 
-
-
+    # Standard deviation of coefficients acrosss simulations
     regression_intercept_all_sim_std = np.std(regression_intercept_all_sim_df, axis=0)
-
     regression_d1_all_sim_std = np.std(regression_d1_all_sim_df, axis=0)
     regression_d1x1_all_sim_std = np.std(regression_d1x1_all_sim_df, axis=0)
 
@@ -186,11 +202,23 @@ def main(mode=None):
                             "d1" : regression_d1_all_sim_std,
                             "d1x1": regression_d1x1_all_sim_std}
 
-
+    # Plot OLS coefficients for either thompson or random policy
     bplots.plot_regression(user_count, regression_params_dict, regression_params_std_dict, true_coeff,
                 simulation_count, batch_size, save_fig=True)
-    '''
+    
     ################# OLS REGRESSION ENDS ########################
+    '''
+    ## Hammad Update: Add Random policy + OLS
+    
+
+    for i in range(user_count):
+
+        # Generate randomly sampled actions
+        treat_uniform = nprnd.randint(2, size = i)
+        
+    '''
+        
+    
 
     regrets = regrets / simulation_count
     optimal_action_ratio = optimal_action_ratio /simulation_count
@@ -222,10 +250,10 @@ def main(mode=None):
         optimal_action_ratio_all_policies = np.array([optimal_action_ratio])
         mse_all_policies = np.array([mse])
 
-
+    '''
     bplots.plot_regret(user_count, policies, regrets_all_policies,
                         simulation_count, batch_size)
-
+    
     bplots.plot_optimal_action_ratio(user_count, policies,
             optimal_action_ratio_all_policies, simulation_count, batch_size,
             mode='per_batch')
@@ -241,7 +269,7 @@ def main(mode=None):
 
 
     bplots.plot_bias_in_coeff(user_count, 'Thompson Sampling', hypo_params,
-                bias_in_coeff, simulation_count, batch_size, save_fig=True)
+                bias_in_coeff, simulation_count, batch_size, save_fig=True)'''
 
 
     if(show_fig):
