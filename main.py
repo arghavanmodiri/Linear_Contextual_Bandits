@@ -43,12 +43,14 @@ def main(mode=None):
     bandit_arms = models.find_possible_actions()
     noise_stats = true_model_params['noise']
     true_coeff = true_model_params['true_coeff']
+    # Hammad update: list of coefficinets
+    true_coeff_list = list(true_coeff.values())
     context_vars = true_model_params['context_vars']
     experiment_vars = true_model_params['experiment_vars']
 
     user_count = 1000
     batch_size = 10
-    simulation_count = 100
+    simulation_count = 50
     extensive = True
     rand_sampling_applied = True
     show_fig=True
@@ -81,7 +83,6 @@ def main(mode=None):
         regression_intercept = []
         regression_d1 = []
         regression_d1x1 = []
-
 
         #Step 3: Calls the right policy
         '''
@@ -123,8 +124,23 @@ def main(mode=None):
         #coeff_sign_error += np.sign(np.array(true_params_in_hypo) * np.array(
         #    thompson_output[5]))
         coeff_sign_error += np.sign(np.array(true_params_in_hypo)) - np.sign(np.array(thompson_output[5])) == np.zeros(len(hypo_params))
-        bias_in_coeff += np.array(np.array(true_params_in_hypo) - np.array(
-            thompson_output[5]))
+
+
+        # Hammad update: bias = E(coeff) - true_param
+        # bias_in_coeff is dimensions n_{user} x 3
+        
+        # Correct specified model bias (Y = B0 + B1X + B2X*D)
+        if len(true_params_in_hypo) == 3:
+            # Bias(B1) = E(B1)
+            bias_in_coeff += np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
+
+        # Under specified model bias (Y = A0 + A1D)
+        else:
+            # Bias(A1) = E(A1) - (B1 + B2/2)
+            true_coeff_list_main = [true_coeff_list[0], true_coeff_list[1] + true_coeff_list[2]/2]
+            bias_in_coeff += np.array(np.array(thompson_output[5]) - np.array(true_coeff_list_main))
+        
+        #bias_in_coeff += np.array(np.array(true_params_in_hypo) - np.array(thompson_output[5]))
 
         if(rand_sampling_applied):
             rand_outputs= random.apply_random_sampling(users_context,
@@ -143,7 +159,8 @@ def main(mode=None):
 
         ################# OLS REGRESSION STARTS ########################
 
-        # Construct context vector
+        
+        '''# Construct context vector
         x1 = np.empty((0,len(users_context[0].keys())))
         for i in range(0,len(users_context)):
             user_context_list = np.array([])
@@ -204,21 +221,11 @@ def main(mode=None):
 
     # Plot OLS coefficients for either thompson or random policy
     bplots.plot_regression(user_count, regression_params_dict, regression_params_std_dict, true_coeff,
-                simulation_count, batch_size, save_fig=True)
+                simulation_count, batch_size, save_fig=True)'''
     
     ################# OLS REGRESSION ENDS ########################
-    '''
-    ## Hammad Update: Add Random policy + OLS
     
 
-    for i in range(user_count):
-
-        # Generate randomly sampled actions
-        treat_uniform = nprnd.randint(2, size = i)
-        
-    '''
-        
-    
 
     regrets = regrets / simulation_count
     optimal_action_ratio = optimal_action_ratio /simulation_count
@@ -250,26 +257,27 @@ def main(mode=None):
         optimal_action_ratio_all_policies = np.array([optimal_action_ratio])
         mse_all_policies = np.array([mse])
 
-    '''
+    
     bplots.plot_regret(user_count, policies, regrets_all_policies,
                         simulation_count, batch_size)
-    
+    '''
     bplots.plot_optimal_action_ratio(user_count, policies,
             optimal_action_ratio_all_policies, simulation_count, batch_size,
             mode='per_batch')
 
     bplots.plot_mse(user_count, ['Thompson Sampling'], mse_all_policies,
-                    simulation_count, batch_size)
+                    simulation_count, batch_size)'''
+    
     bplots.plot_coeff_ranking(user_count, 'Thompson Sampling',
                 beta_thompson_coeffs, hypo_params, simulation_count,
                 batch_size, save_fig=True)
 
-    bplots.plot_coeff_sign_error(user_count, 'Thompson Sampling', hypo_params,
-                coeff_sign_error, simulation_count, batch_size, save_fig=True)
+    '''bplots.plot_coeff_sign_error(user_count, 'Thompson Sampling', hypo_params,
+                coeff_sign_error, simulation_count, batch_size, save_fig=True)'''
 
-
+    
     bplots.plot_bias_in_coeff(user_count, 'Thompson Sampling', hypo_params,
-                bias_in_coeff, simulation_count, batch_size, save_fig=True)'''
+                bias_in_coeff, simulation_count, batch_size, save_fig=True)
 
 
     if(show_fig):
