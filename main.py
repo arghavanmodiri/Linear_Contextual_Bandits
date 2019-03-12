@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import true_hypo_models as models
@@ -7,7 +8,11 @@ import plots.plot_basics as bplots
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.formula.api as sm
+from datetime import date
+from datetime import datetime
 
+TODAY = date.today()
+NOW = datetime.now()
 
 np.set_printoptions(threshold=np.nan)
 
@@ -64,6 +69,9 @@ def main(mode=None):
     regression_intercept_all_sim = []
     regression_d1_all_sim = []
     regression_d1x1_all_sim = []
+    regression_intercept_all_sim_random = []
+    regression_d1_all_sim_random = []
+    regression_d1x1_all_sim_random = []
     policies.append(['Thompson Sampling'])
 
     x0_suboptimal_ratio = np.zeros(user_count)
@@ -75,6 +83,24 @@ def main(mode=None):
     x1_d0_count_quarter = [0]*4
     x1_d1_count_quarter = [0]*4
 
+    save_output_folder = 'saved_output/raw_data/'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
+    if not os.path.exists(save_output_folder):
+        os.mkdir(save_output_folder)
+    save_optimal_action_ratio_thompson_df = pd.DataFrame()
+    save_mse_thompson_df = pd.DataFrame()
+    save_coeff_sign_err_thompson_df = pd.DataFrame()
+    save_bias_in_coeff_thompson_df = pd.DataFrame()
+    save_regret_thompson_df = pd.DataFrame()
+    save_suboptimal_action_ratio_group_thompson_df = pd.DataFrame()
+    save_optimal_action_ratio_random_df = pd.DataFrame()
+    save_mse_random_df = pd.DataFrame()
+    save_coeff_sign_err_random_df = pd.DataFrame()
+    save_bias_in_coeff_random_df = pd.DataFrame()
+    save_regret_random_df = pd.DataFrame()
+    save_suboptimal_action_ratio_group_random_df = pd.DataFrame()
+    save_context_action_thompson_df = pd.DataFrame()
+    save_context_action_random_df = pd.DataFrame()
+
     for sim in range(0, simulation_count):
         print("sim: ",sim)
         a_pre = 0
@@ -85,6 +111,9 @@ def main(mode=None):
         regression_intercept = []
         regression_d1 = []
         regression_d1x1 = []
+        regression_intercept_random = []
+        regression_d1_random = []
+        regression_d1x1_random = []
 
 
         #Step 3: Calls the right policy
@@ -110,9 +139,24 @@ def main(mode=None):
                                                     noise_stats)
         #policies.append(['Thompson Sampling'])
         regrets += thompson_output[2]
-        optimal_action_ratio += np.array(list((thompson_output[1][i] in thompson_output[0][i]) for i in range(0,user_count))).astype(int)
-        mse += np.power(np.array(thompson_output[3]) - np.array(thompson_output
-            [4]),2)
+        save_regret_thompson_df = pd.concat([save_regret_thompson_df,
+                                    pd.DataFrame(thompson_output[2])],
+                                    ignore_index=True, axis=1)
+
+        optimal_action_ratio_per_sim = np.array(list((thompson_output[1][i] in thompson_output[0][i]) for i in range(0,user_count))).astype(int)
+        optimal_action_ratio += optimal_action_ratio_per_sim
+        save_optimal_action_ratio_thompson_df = pd.concat([
+                                save_optimal_action_ratio_thompson_df,
+                                pd.DataFrame(optimal_action_ratio_per_sim)],
+                                ignore_index=True, axis=1)
+
+        mse_per_sim = np.power(np.array(thompson_output[3]) -
+                                np.array(thompson_output[4]),2)
+        mse += mse_per_sim
+        save_mse_thompson_df = pd.concat([save_mse_thompson_df,
+                                pd.DataFrame(mse_per_sim)],
+                                ignore_index=True, axis=1)
+
         beta_thompson_coeffs += np.array(thompson_output[5])
 
         #for coeff_name, coeff_value in true_coeff.items():
@@ -123,8 +167,26 @@ def main(mode=None):
 
         #coeff_sign_error += np.sign(np.array(true_params_in_hypo) * np.array(
         #    thompson_output[5]))
-        coeff_sign_error += np.sign(np.array(true_params_in_hypo)) - np.sign(np.array(thompson_output[5])) == np.zeros(len(hypo_params))
-        bias_in_coeff += np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
+        coeff_sign_error_per_sim = np.sign(np.array(true_params_in_hypo)) - np.sign(np.array(thompson_output[5])) == np.zeros(len(hypo_params))
+        coeff_sign_error +=coeff_sign_error_per_sim
+        coeff_sign_error_per_sim_df = pd.DataFrame(
+            coeff_sign_error_per_sim.astype(int))
+        coeff_sign_error_per_sim_df.columns = pd.MultiIndex.from_product([
+                [sim], hypo_params])
+        save_coeff_sign_err_thompson_df = pd.concat([
+                                save_coeff_sign_err_thompson_df,
+                                coeff_sign_error_per_sim_df], axis=1)
+
+
+        bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
+        bias_in_coeff += bias_in_coeff_per_sim
+        bias_in_coeff_per_sim_df = pd.DataFrame(bias_in_coeff_per_sim)
+        bias_in_coeff_per_sim_df.columns = pd.MultiIndex.from_product([
+                [sim], hypo_params])
+        save_bias_in_coeff_thompson_df = pd.concat([
+                                save_bias_in_coeff_thompson_df,
+                                bias_in_coeff_per_sim_df], axis=1)
+
         if(rand_sampling_applied):
             rand_outputs= random.apply_random_sampling(users_context,
                                                         experiment_vars,
@@ -135,10 +197,19 @@ def main(mode=None):
                                                         extensive,
                                                         noise_stats)
             regrets_rand += rand_outputs[2]
-            optimal_action_ratio_rand += np.array(list((rand_outputs[1][i] in
+            save_regret_random_df = pd.concat([save_regret_random_df,
+                                    pd.DataFrame(rand_outputs[2])],
+                                    ignore_index=True, axis=1)
+
+            optimal_action_ratio_rand_per_sim = np.array(list((
+                    rand_outputs[1][i] in
                     thompson_output[0][i]) for i in 
                     range(0,user_count))).astype(int)
-
+            optimal_action_ratio_rand += optimal_action_ratio_rand_per_sim
+            save_optimal_action_ratio_random_df = pd.concat([
+                            save_optimal_action_ratio_random_df,
+                            pd.DataFrame(optimal_action_ratio_rand_per_sim)],
+                            ignore_index=True, axis=1)
 
         quarter = int(user_count/4)
         first_user = 0
@@ -169,38 +240,63 @@ def main(mode=None):
                 x1_d0_count[i] = 1
             elif(users_context[i]['x1']==1 and thompson_output[1][i][0]==1):
                 x1_d1_count[i] = 1
+
+        context_action_thompson_per_sim_df = pd.DataFrame([x0_d0_count,
+                x0_d1_count, x1_d0_count, x1_d1_count]).T
+        context_action_thompson_per_sim_df.columns = \
+            pd.MultiIndex.from_product([[sim], ['x0_d0','x0_d1','x1_d0','x1_d1']])
+        save_context_action_thompson_df = pd.concat([
+                                save_context_action_thompson_df,
+                                context_action_thompson_per_sim_df], axis=1)
+
         x0_d0_count = np.cumsum(x0_d0_count)
         x0_d1_count = np.cumsum(x0_d1_count)
         x1_d0_count = np.cumsum(x1_d0_count)
         x1_d1_count = np.cumsum(x1_d1_count)
-        x0_suboptimal_ratio += np.divide(x0_d0_count,(x0_d0_count+x0_d1_count),out=np.zeros_like(x0_d0_count), where=(x0_d0_count+x0_d1_count)!=0)
+        x0_suboptimal_ratio += np.divide(x0_d0_count,(x0_d0_count+x0_d1_count),
+            out=np.zeros_like(x0_d0_count), where=(x0_d0_count+x0_d1_count)!=0)
 
-        x1_suboptimal_ratio += np.divide(x1_d1_count,(x1_d1_count+x1_d0_count),out=np.zeros_like(x1_d1_count), where=(x1_d1_count+x1_d0_count)!=0)
+        x1_suboptimal_ratio += np.divide(x1_d1_count,(x1_d1_count+x1_d0_count),
+            out=np.zeros_like(x1_d1_count), where=(x1_d1_count+x1_d0_count)!=0)
 
-        x0_d0_count = np.zeros(user_count)
-        x0_d1_count = np.zeros(user_count)
-        x1_d0_count = np.zeros(user_count)
-        x1_d1_count = np.zeros(user_count)
-        for i in range(0,user_count):
-            if(users_context[i]['x1']==0 and rand_outputs[1][i][0]==0):
-                    x0_d0_count[i] = 1
-            elif(users_context[i]['x1']==0 and rand_outputs[1][i][0]==1):
-                x0_d1_count[i] = 1
-            elif(users_context[i]['x1']==1 and rand_outputs[1][i][0]==0):
-                x1_d0_count[i] = 1
-            elif(users_context[i]['x1']==1 and rand_outputs[1][i][0]==1):
-                x1_d1_count[i] = 1
-        x0_d0_count = np.cumsum(x0_d0_count)
-        x0_d1_count = np.cumsum(x0_d1_count)
-        x1_d0_count = np.cumsum(x1_d0_count)
-        x1_d1_count = np.cumsum(x1_d1_count)
-        x0_suboptimal_ratio_rand += np.divide(x0_d0_count,(x0_d0_count+x0_d1_count),out=np.zeros_like(x0_d0_count), where=(x0_d0_count+x0_d1_count)!=0)
+        if(rand_sampling_applied):
+            x0_d0_count = np.zeros(user_count)
+            x0_d1_count = np.zeros(user_count)
+            x1_d0_count = np.zeros(user_count)
+            x1_d1_count = np.zeros(user_count)
+            for i in range(0,user_count):
+                if(users_context[i]['x1']==0 and rand_outputs[1][i][0]==0):
+                        x0_d0_count[i] = 1
+                elif(users_context[i]['x1']==0 and rand_outputs[1][i][0]==1):
+                    x0_d1_count[i] = 1
+                elif(users_context[i]['x1']==1 and rand_outputs[1][i][0]==0):
+                    x1_d0_count[i] = 1
+                elif(users_context[i]['x1']==1 and rand_outputs[1][i][0]==1):
+                    x1_d1_count[i] = 1
 
-        x1_suboptimal_ratio_rand += np.divide(x1_d1_count,(x1_d1_count+x1_d0_count),out=np.zeros_like(x1_d1_count), where=(x1_d1_count+x1_d0_count)!=0)
+            context_action_random_per_sim_df = pd.DataFrame([x0_d0_count,
+                    x0_d1_count, x1_d0_count, x1_d1_count]).T
+            context_action_random_per_sim_df.columns = \
+                pd.MultiIndex.from_product([[sim], ['x0_d0','x0_d1','x1_d0','x1_d1']])
+            save_context_action_random_df = pd.concat([
+                                    save_context_action_random_df,
+                                    context_action_random_per_sim_df],
+                                    axis=1)
+            x0_d0_count = np.cumsum(x0_d0_count)
+            x0_d1_count = np.cumsum(x0_d1_count)
+            x1_d0_count = np.cumsum(x1_d0_count)
+            x1_d1_count = np.cumsum(x1_d1_count)
+            x0_suboptimal_ratio_rand += np.divide(x0_d0_count,
+                    (x0_d0_count+x0_d1_count),out=np.zeros_like(x0_d0_count),
+                    where=(x0_d0_count+x0_d1_count)!=0)
+
+            x1_suboptimal_ratio_rand += np.divide(x1_d1_count,
+                    (x1_d1_count+x1_d0_count),out=np.zeros_like(x1_d1_count),
+                    where=(x1_d1_count+x1_d0_count)!=0)
 
 
         ################# OLS REGRESSION STARTS ########################
-        '''
+        
         x1 = np.empty((0,len(users_context[0].keys())))
         for i in range(0,len(users_context)):
             user_context_list = np.array([])
@@ -220,15 +316,65 @@ def main(mode=None):
             regression_intercept.append(regression.params['Intercept'])
             regression_d1.append(regression.params['d1'])
             regression_d1x1.append(regression.params['d1x1'])
+
         regression_intercept_all_sim.append(regression_intercept)
         regression_d1_all_sim.append(regression_d1)
         regression_d1x1_all_sim.append(regression_d1x1)
-    
+
+        #Only saving the output of OLS Random Policy, and not plotting it
+        if(rand_sampling_applied):
+            d1_r = [rand_outputs[1][i][0] for i in range(0,
+                        len(rand_outputs[1]))]
+            d1_x1_r = [a*b for a,b in zip(d1_r,x1)]
+            df_r = pd.DataFrame({'d1':d1_r, 'd1x1':d1_x1_r,
+                                    'y':rand_outputs[0]})
+            for iteration in range(1, user_count+1):
+                regression_r = sm.ols(formula="y ~ d1 + d1x1",
+                                    data=df_r.iloc[:iteration]).fit()
+                regression_intercept_random.append(
+                                            regression_r.params['Intercept'])
+                regression_d1_random.append(regression_r.params['d1'])
+                regression_d1x1_random.append(regression_r.params['d1x1'])
+
+            regression_intercept_all_sim_random.append(
+                                                regression_intercept_random)
+            regression_d1_all_sim_random.append(regression_d1_random)
+            regression_d1x1_all_sim_random.append(regression_d1x1_random)
+
+
     regression_intercept_all_sim_df=pd.DataFrame(regression_intercept_all_sim)
     regression_d1_all_sim_df=pd.DataFrame(regression_d1_all_sim)
     regression_d1x1_all_sim_df=pd.DataFrame(regression_d1x1_all_sim)
 
-    regression_intercept_all_sim_mean = np.mean(regression_intercept_all_sim_df, axis=0)
+    regression_intercept_all_sim_df.T.to_csv(
+                                '{}thompson_ols_intercept.csv'.format(
+                                save_output_folder), index_label='iteration')
+    regression_d1_all_sim_df.T.to_csv(
+                                '{}thompson_ols_d1.csv'.format(
+                                save_output_folder), index_label='iteration')
+    regression_d1x1_all_sim_df.T.to_csv(
+                                '{}thompson_ols_d1x1.csv'.format(
+                                save_output_folder), index_label='iteration')
+    if(rand_sampling_applied):
+        regression_intercept_all_sim_random_df=pd.DataFrame(
+                                        regression_intercept_all_sim_random)
+        regression_d1_all_sim_random_df=pd.DataFrame(
+                                        regression_d1_all_sim_random)
+        regression_d1x1_all_sim_random_df=pd.DataFrame(
+                                        regression_d1x1_all_sim_random)
+
+        regression_intercept_all_sim_random_df.T.to_csv(
+                                    '{}random_ols_intercept.csv'.format(
+                                    save_output_folder), index_label='iteration')
+        regression_d1_all_sim_random_df.T.to_csv(
+                                    '{}random_ols_d1.csv'.format(
+                                    save_output_folder), index_label='iteration')
+        regression_d1x1_all_sim_random_df.T.to_csv(
+                                    '{}random_ols_d1x1.csv'.format(
+                                    save_output_folder), index_label='iteration')
+        
+    regression_intercept_all_sim_mean = np.mean(
+            regression_intercept_all_sim_df, axis=0)
 
     regression_d1_all_sim_mean = np.mean(regression_d1_all_sim_df, axis=0)
     regression_d1x1_all_sim_mean = np.mean(regression_d1x1_all_sim_df, axis=0)
@@ -251,8 +397,37 @@ def main(mode=None):
 
     bplots.plot_regression(user_count, regression_params_dict, regression_params_std_dict, true_coeff,
                 simulation_count, batch_size, save_fig=True)
-    '''
+    
     ################# OLS REGRESSION ENDS ########################
+
+    save_regret_thompson_df.to_csv('{}thompson_regrets.csv'.format(
+                                save_output_folder), index_label='iteration')
+    save_optimal_action_ratio_thompson_df.to_csv(
+                                '{}thompson_optimal_action_ratio.csv'.format(
+                                save_output_folder), index_label='iteration')
+    save_mse_thompson_df.to_csv('{}thompson_mse.csv'.format(
+                                save_output_folder), index_label='iteration')
+    save_bias_in_coeff_thompson_df.to_csv(
+                                '{}thompson_bias_in_coeff.csv'.format(
+                                save_output_folder))
+    save_coeff_sign_err_thompson_df.to_csv(
+                                '{}thompson_coeff_sign_err.csv'.format(
+                                save_output_folder))
+    save_context_action_thompson_df.to_csv(
+                                '{}thompson_context_action.csv'.format(
+                                save_output_folder))
+
+    if(rand_sampling_applied):
+        save_regret_random_df.to_csv('{}random_regrets.csv'.format(
+                                    save_output_folder),
+                                    index_label='iteration')
+        save_optimal_action_ratio_random_df.to_csv(
+                                    '{}random_optimal_action_ratio.csv'.format(
+                                    save_output_folder),
+                                    index_label='iteration')
+        save_context_action_random_df.to_csv(
+                                    '{}random_context_action.csv'.format(
+                                    save_output_folder))
 
     x0_d0_count_quarter = np.array(x0_d0_count_quarter) /simulation_count / quarter
     x0_d1_count_quarter = np.array(x0_d1_count_quarter) / simulation_count / quarter
@@ -262,21 +437,22 @@ def main(mode=None):
     print("x0_d1_count_quarter : ", x0_d1_count_quarter)
     print("x1_d0_count_quarter : ", x1_d0_count_quarter)
     print("x1_d1_count_quarter : ", x1_d1_count_quarter)
+
     x0_suboptimal_ratio = x0_suboptimal_ratio / simulation_count
     x1_suboptimal_ratio = x1_suboptimal_ratio / simulation_count
-    x0_suboptimal_ratio_rand = x0_suboptimal_ratio_rand /simulation_count
-    x1_suboptimal_ratio_rand = x1_suboptimal_ratio_rand /simulation_count
-
     regrets = regrets / simulation_count
     optimal_action_ratio = optimal_action_ratio /simulation_count
     mse = mse / simulation_count
     beta_thompson_coeffs = beta_thompson_coeffs / simulation_count
     bias_in_coeff = bias_in_coeff / simulation_count
     coeff_sign_error = coeff_sign_error / simulation_count
+
     if(rand_sampling_applied):
         policies.append(['Random Sampling'])
         regrets_rand = regrets_rand / simulation_count
         optimal_action_ratio_rand = optimal_action_ratio_rand/simulation_count
+        x0_suboptimal_ratio_rand = x0_suboptimal_ratio_rand /simulation_count
+        x1_suboptimal_ratio_rand = x1_suboptimal_ratio_rand /simulation_count
 
 
 
@@ -305,7 +481,8 @@ def main(mode=None):
     bplots.plot_regret(user_count, policies, regrets_all_policies,
                         simulation_count, batch_size)
 
-    bplots.plot_suboptimal_action_ratio(user_count, ['Thompson Sampling X = 0','Thompson Sampling X = 1', 'Random Sampling X=0', 'Random Sampling X=1'],
+    if(rand_sampling_applied):
+        bplots.plot_suboptimal_action_ratio(user_count, ['Thompson Sampling X = 0','Thompson Sampling X = 1', 'Random Sampling X=0', 'Random Sampling X=1'],
             suboptimal_ratio_all_policies, simulation_count, batch_size,
             mode='per_user')
 

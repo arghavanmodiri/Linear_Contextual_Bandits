@@ -6,14 +6,6 @@ from statistics import mean
 
 TODAY = date.today()
 
-plt.figure()
-x = ["1st quarter", "2nd quarter", "3rd quarter", "4th quarter"]
-x0_d0_count = [  91.182,  108.142 , 113.794 , 117.376]
-x0_d1_count = [ 34.186,  17.024 , 11.218 ,  7.362]
-x1_d0_count = [  90.736 , 107.794 , 113.812 , 117.944]
-x1_d1_count = [ 33.896 , 17.04 ,  11.176 ,  7.318]
-plt.hist(x0_d0_count)
-
 def plot_regret(user_count, policy_names, regrets_all_policies,
                 simulation_count, batch_size, save_fig=True):
     plt.figure()
