@@ -104,6 +104,42 @@ def plot_optimal_action_ratio(user_count, policy_names,
                     'sims_optimal_action_ratio.png'.format(date=TODAY,
                     i=user_count, sim=simulation_count))
 
+def plot_suboptimal_action_ratio(user_count, policy_names,
+                                optimal_action_ratio_all_policies,
+                                simulation_count, batch_size, mode='per_user',
+                                save_fig=True):
+    plt.figure()
+
+    if(mode == 'per_user'):
+        UserItter = range(1,user_count+1)
+        #plt.plot(UserItter, prop_best_sim_itter, label = "Contextual Policy")
+        for idx, policy in enumerate(policy_names):
+            plt.plot(UserItter, optimal_action_ratio_all_policies[idx], label =
+                policy)
+        plt.xlabel('User Itterations', fontsize = 18)
+    elif(mode == 'per_batch'):
+        batchItter = range(1,int(user_count/batch_size)+1)
+        #plt.plot(UserItter, prop_best_sim_itter, label = "Contextual Policy")
+        for idx, policy in enumerate(policy_names):
+            optimal_action_ratio_batch = list(mean(
+                optimal_action_ratio_all_policies[idx][i:i+batch_size])
+                for i in range(0,
+                len(optimal_action_ratio_all_policies[idx]),
+                batch_size))
+            plt.plot(batchItter, optimal_action_ratio_batch, label = policy)
+        plt.xlabel('Batch Itterations', fontsize = 18)
+
+    plt.legend(loc='upper left', fontsize = 12)
+    plt.ylabel('Proportion of Sub-optimal Action Assignment', fontsize = 12)
+    plt.title('Proportion of Sub-optimal Action at Each Itteration per User Context\n '
+                '(Simulations = {sims}, Batch Size={batches})'.format(sims=
+                simulation_count, batches=batch_size),fontsize = 12)
+    if(save_fig):
+        plt.savefig('saved_output//{date}_{i}iterations_{sim} '
+                    'sims_suboptimal_action_ratio.png'.format(date=TODAY,
+                    i=user_count, sim=simulation_count))
+
+
 
 def plot_mse(user_count, policy_names, mse_all_policies,
                 simulation_count, batch_size, save_fig=True):
