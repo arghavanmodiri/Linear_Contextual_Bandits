@@ -49,10 +49,12 @@ def main(mode=None):
     true_coeff = true_model_params['true_coeff']
     context_vars = true_model_params['context_vars']
     experiment_vars = true_model_params['experiment_vars']
+    #Hammad: Bias Correction
+    true_coeff_list = list(true_coeff.values())
 
     user_count = 1000
     batch_size = 10
-    simulation_count = 500
+    simulation_count = 2
     extensive = True
     rand_sampling_applied = True
     show_fig=True
@@ -61,7 +63,8 @@ def main(mode=None):
     regrets_rand = np.zeros(user_count)
     optimal_action_ratio = np.zeros(user_count)
     optimal_action_ratio_rand = np.zeros(user_count)
-    mse = np.zeros(user_count)
+    #mse = np.zeros(user_count)
+    mse = np.zeros((user_count, len(hypo_params)))
     beta_thompson_coeffs = np.zeros((user_count, len(hypo_params)))
     coeff_sign_error = np.zeros((user_count, len(hypo_params)))
     bias_in_coeff = np.zeros((user_count, len(hypo_params)))
@@ -105,6 +108,7 @@ def main(mode=None):
         print("sim: ",sim)
         a_pre = 0
         b_pre = 0
+        #Hammad: Bias Correction
         mean_pre = np.zeros(len(hypo_params))
         cov_pre = np.identity(len(hypo_params))
 
@@ -150,13 +154,6 @@ def main(mode=None):
                                 pd.DataFrame(optimal_action_ratio_per_sim)],
                                 ignore_index=True, axis=1)
 
-        mse_per_sim = np.power(np.array(thompson_output[3]) -
-                                np.array(thompson_output[4]),2)
-        mse += mse_per_sim
-        save_mse_thompson_df = pd.concat([save_mse_thompson_df,
-                                pd.DataFrame(mse_per_sim)],
-                                ignore_index=True, axis=1)
-
         beta_thompson_coeffs += np.array(thompson_output[5])
 
         #for coeff_name, coeff_value in true_coeff.items():
@@ -164,6 +161,17 @@ def main(mode=None):
         for  idx, hypo_param_name in enumerate(hypo_params):
             if(hypo_param_name in true_coeff):
                 true_params_in_hypo.append(true_coeff[hypo_param_name])
+
+        #mse_per_sim = np.power(np.array(thompson_output[3]) -
+        #                        np.array(thompson_output[4]),2)
+        mse_per_sim = np.power(np.array(np.array(thompson_output[5]) -
+                                np.array(true_params_in_hypo)),2)
+        mse += mse_per_sim
+        mse_per_sim_df = pd.DataFrame(mse_per_sim)
+        mse_per_sim_df.columns = pd.MultiIndex.from_product([
+                [sim], hypo_params])
+        save_mse_thompson_df = pd.concat([save_mse_thompson_df,
+                                mse_per_sim_df], axis=1)
 
         #coeff_sign_error += np.sign(np.array(true_params_in_hypo) * np.array(
         #    thompson_output[5]))
@@ -178,7 +186,19 @@ def main(mode=None):
                                 coeff_sign_error_per_sim_df], axis=1)
 
 
-        bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
+        #Hammad: Bias Correction
+        if len(true_params_in_hypo) == 3:
+            bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
+
+        # Under specified model bias (Y = A0 + A1D)
+        else:
+            # Bias(A1) = E(A1) - (B1 + B2/2)
+            true_coeff_list_main = [true_coeff_list[0], true_coeff_list[1] + true_coeff_list[2]/2]
+            bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_coeff_list_main))
+
+        #bias_in_coeff += np.array(np.array(true_params_in_hypo) - np.array(thompson_output[5]))
+
+        #bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
         bias_in_coeff += bias_in_coeff_per_sim
         bias_in_coeff_per_sim_df = pd.DataFrame(bias_in_coeff_per_sim)
         bias_in_coeff_per_sim_df.columns = pd.MultiIndex.from_product([
