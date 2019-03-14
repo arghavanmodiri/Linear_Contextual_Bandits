@@ -32,24 +32,35 @@ import pandas as pd
 
 # Read TeX template file into a string
 temp_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableTemplate.tex"
-with open (temp_path, "r") as tpl_file:
-    tpl_lines = tpl_file.read()
 
-# Open data set with results
-result_path = "/Users/hammadshaikh/linear_contextual_bandits/saved_output/LargeMABCorrectFitCorrect/"
-df_results = pd.read_csv(result_path + "BanditSimResults.csv")
+# Simulations
+sim_list = ["SmallMABCorrectFitCorrect", "SmallMABUnderFitCorrect", "LargeMABCorrectFitCorrect", "LargeMABUnderFitCorrect", "SmallUniformPolicy", "LargeUniformPolicy"]
+sim_names = ["_SCC", "_SUC", "_LCC", "_LUC", "_SR", "_LR"]
 
-# Replace TeX parameters with data
-#col_names = list(df_results)
+for sim_count in range(len(sim_names)):
 
-# Loop over variables to replace
-for col in col_names:
-    tpl_lines = tpl_lines.replace(col, str(df_results[col][0]))
+    # Read template as string
+    with open (temp_path, "r") as tpl_file:
+        tpl_lines = tpl_file.read()
 
-# Output TeX file with results
-write_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableResults.tex"
-with open (write_path, "w") as output_file:
-    output_file.write(tpl_lines)
+    # Open data set with results
+    result_path = "/Users/hammadshaikh/linear_contextual_bandits/saved_output/" + str(sim_list[sim_count]) + "/"
+    df_results = pd.read_csv(result_path + "BanditSimResults" + str(sim_names[sim_count]) + ".csv")
+
+    # Replace TeX parameters with data
+    col_names = list(df_results)
+
+    # Loop over variables to replace
+    for col in col_names:
+        tpl_lines = tpl_lines.replace(col, str(df_results[col][0]))
+
+    # Output TeX file with results
+    write_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableResults.tex"
+    with open (write_path, "w") as output_file:
+        output_file.write(tpl_lines)
+
+    # Update template path
+    temp_path = write_path
 
     
 
