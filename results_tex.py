@@ -27,6 +27,7 @@ sim_names = ["_SCC", "_LCC", "_LUC"]
 import os
 import sys
 import pandas as pd
+import numpy as np
 
 # Load results data set
 
@@ -34,8 +35,10 @@ import pandas as pd
 temp_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableTemplate.tex"
 
 # Simulations
-sim_list = ["SmallMABCorrectFitCorrect", "SmallMABUnderFitCorrect", "LargeMABCorrectFitCorrect", "LargeMABUnderFitCorrect", "SmallUniformPolicy", "LargeUniformPolicy"]
-sim_names = ["_SCC", "_SUC", "_LCC", "_LUC", "_SR", "_LR"]
+sim_list = ["SmallMABCorrectFitCorrect", "SmallMABUnderFitCorrect", "LargeMABCorrectFitCorrect", "LargeMABUnderFitCorrect",
+            "SmallMABUnderFitUnder","LargeMABUnderFitUnder","SmallRandomCorrect", "LargeRandomCorrect",
+            "SmallRandomUnder", "LargeRandomUnder", "SmallUniformPolicy", "LargeUniformPolicy"]
+sim_names = ["_SCC", "_SUC", "_LCC", "_LUC", "_SUU", "_LUU", "_SRC", "_LRC", "_SRU", "_LRU", "_SR","_LR"]
 
 for sim_count in range(len(sim_names)):
 
@@ -52,7 +55,7 @@ for sim_count in range(len(sim_names)):
 
     # Loop over variables to replace
     for col in col_names:
-        tpl_lines = tpl_lines.replace(col, str(df_results[col][0]))
+        tpl_lines = tpl_lines.replace(col, str(np.round(df_results[col][0], 4)))
 
     # Output TeX file with results
     write_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableResults.tex"
