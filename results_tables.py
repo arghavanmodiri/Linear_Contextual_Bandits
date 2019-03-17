@@ -1,5 +1,5 @@
 '''
-Purpose: Process simulation data and make Tables
+Purpose: Process simulation data and store in CSV files. The CSV files can be used to make Tables.
 
 Date started: March 13, 2019
 
@@ -7,6 +7,12 @@ Input Data
 - thompson_bias_in_coeff.csv
 - thompson_context_action.csv
 - thompson_regrets.csv
+- thompson_ols_d1.csv
+- thompson_ols_d1x1.csv
+- random_ols_d1.csv
+- random_ols_d1x1.csv
+- random_context_action.csv
+- random_regrets.csv
 
 Notes:
 
@@ -17,11 +23,17 @@ import pandas as pd
 import numpy as np
 
 # List of simulations
-sim_list = ["SmallMABCorrectFitCorrect", "SmallMABUnderFitCorrect", "LargeMABCorrectFitCorrect", "LargeMABUnderFitCorrect", "SmallUniformPolicy", "LargeUniformPolicy"]
+#sim_list = ["SmallMABCorrectFitCorrect", "SmallMABUnderFitCorrect", "LargeMABCorrectFitCorrect", "LargeMABUnderFitCorrect", "SmallUniformPolicy", "LargeUniformPolicy"]
+sim_list = ["SmallMABCorrectFitCorrect", "SmallMABUnderFitCorrect", "LargeMABCorrectFitCorrect", "LargeMABUnderFitCorrect",
+            "SmallMABUnderFitUnder","LargeMABUnderFitUnder","SmallRandomCorrect", "LargeRandomCorrect",
+            "SmallRandomUnder", "LargeRandomUnder", "SmallUniformPolicy", "LargeUniformPolicy"]
 #sim_list = ["SmallUniformPolicy", "LargeUniformPolicy"]
 #sim_names = ["_SR", "_LR"]
-sim_names = ["_SCC", "_SUC", "_LCC", "_LUC", "_SR", "_LR"]
+sim_names = ["_SCC", "_SUC", "_LCC", "_LUC", "_SUU", "_LUU", "_SRC", "_LRC", "_SRU", "_LRU", "_SR","_LR"]
+#sim_names = ["_SCC", "_SUC", "_LCC", "_LUC"]
 sim_count = 0
+true_fit_d1 = 0.25
+true_fit_d1x1 = [-0.4, -0.4, -0.8, -0.8, -0.4, -0.8, -0.4, -0.8, -0.4, -0.8]
 
 # Loop over simulations
 for sim_type in sim_list:
@@ -34,17 +46,246 @@ for sim_type in sim_list:
     n_user = 1000
     n_q1 = 250
     n_q4 = 750
-    
-    # None value variables (underspecified and uniform)
-    d1x1_bias = None
-    d1_bias_q1 = None
-    d1x1_bias_q1 = None
-    d1_bias_q4 = None
-    d1x1_bias_q4 = None
 
-    ### MAB Policy ###
+    # Not random policy and OLS fit
+    if sim_list[sim_count][5] != "R" and len(sim_names[sim_count]) != 3:
+        
+        # None value variables (underspecified and uniform)
+        d1_bias_ts_ols_q1 = None
+        d1x1_bias_ts_ols_q1 = None
+        d1_bias_ts_ols_q4 = None
+        d1x1_bias_ts_ols_q4 = None
 
+        ### MAB Policy ###
+
+        # Load d1 thompson sampling ols bias data
+        d1_ts_ols = pd.read_csv("thompson_ols_d1.csv")
+        d1_ts_ols = d1_ts_ols.drop(columns = ["iteration"])
+
+        # Compute mean coeff across simulations
+        if sim_names[sim_count][3] != "U":
+            d1_bias_ts_ols = d1_ts_ols.mean(axis=1) - true_fit_d1
+        # Underspecified
+        else:
+            d1_bias_ts_ols = d1_ts_ols.mean(axis=1) - true_fit_d1 - true_fit_d1x1[sim_count]/2
+
+        # Compute OLS fitted bias Q1
+        d1_bias_ts_ols_q1 = np.round(np.mean(d1_bias_ts_ols[0:(n_q1+1)]),4)
+        print("[0,250] bias(d1) fit model "  + sim_names[sim_count][1:4] + " " + str(d1_bias_ts_ols_q1))
+
+        # Compute OLS fitted bias Q4
+        d1_bias_ts_ols_q4 = np.round(np.mean(d1_bias_ts_ols[n_q4:(n_user+1)]),4)
+        print("[750,1000] bias(d1) fit model " + sim_names[sim_count][1:4] + " " + str(d1_bias_ts_ols_q4))
+
+        # Compute bias for d1x1 if not underspecified
+        if sim_names[sim_count][3] != "U":
+            # Load d1*x1 thompson sampling ols bias data
+            d1x1_ts_ols = pd.read_csv("thompson_ols_d1x1.csv")
+            d1x1_ts_ols = d1x1_ts_ols.drop(columns = ["iteration"])
+
+            # Compute mean coeff across simulations
+            d1x1_bias_ts_ols = d1x1_ts_ols.mean(axis=1) - true_fit_d1x1[sim_count]
+
+            # Compute OLS fitted bias for interaction at Q1/Q4
+            d1x1_bias_ts_ols_q1 = np.round(np.mean(d1x1_bias_ts_ols[0:(n_q1+1)]),4)
+            print("[0,250] bias(d1x1) fit model " + sim_names[sim_count][1:4] + " " + str(d1x1_bias_ts_ols_q1))
+
+            d1x1_bias_ts_ols_q4 = np.round(np.mean(d1x1_bias_ts_ols[n_q4:(n_user+1)]),4)
+            print("[750,1000] bias(d1x1) fit model " + sim_names[sim_count][1:4] + " " + str(d1x1_bias_ts_ols_q4))
+
+
+        # Load thompson sampling slope data
+            
+        # Load regret data
+        df_regret_thompson = pd.read_csv('thompson_regrets.csv')
+        df_regret_thompson = df_regret_thompson.drop(columns = ["iteration"])
+
+        # Compute mean regret (across simulation) for each itteration
+        df_regret = df_regret_thompson.mean(axis=1)
+
+        # Compute regret for [0,250]
+        df_regret_q1 = np.round_(np.mean(df_regret[0:(n_q1+1)]),2)
+        print("[0,250] regret TS " + sim_names[sim_count][1:4] + " "+ str(df_regret_q1))
+
+        # Compute regret for [750,1000]
+        df_regret_q4 = np.round(np.mean(df_regret[n_q4:(n_user+1)]),2)
+        print("[750,1000] regret TS "+ sim_names[sim_count][1:4] + " "+ str(df_regret_q4))
+
+        # Load action choosen given context data
+        df_action_context_thompson = pd.read_csv("thompson_context_action.csv",skiprows=1)
+        df_action_context_thompson["x0_d1.0"] = df_action_context_thompson["x0_d1"] 
+        df_action_context_thompson["x0_d0.0"] = df_action_context_thompson["x0_d0"]
+        df_action_context_thompson["x1_d1.0"] = df_action_context_thompson["x1_d1"] 
+        df_action_context_thompson["x1_d0.0"] = df_action_context_thompson["x1_d0"] 
+
+        # Compute prop. of optimal action choosen (X = 0)
+        # Optimal action for X = 0 is D = 1
+        count_x0_optimal = [sum([df_action_context_thompson["x0_d1." + str(sim)][user] for sim in range(n_sim)]) for user in range(n_user)]
+        count_x0_total = [sum([(df_action_context_thompson["x0_d1." + str(sim)][user] + df_action_context_thompson["x0_d0." + str(sim)][user]) for sim in range(n_sim)]) for user in range(n_user)]
+        prop_x0_optimal = [count_x0_optimal[user]/count_x0_total[user] for user in range(n_user)]
+        df_action_context_thompson["prop_x0_optimal"] = prop_x0_optimal
+
+        # Compute prop. of optimal action choosen (X = 1)
+        # Optimal action for X = 1 is D = 0
+        count_x1_optimal = [sum([df_action_context_thompson["x1_d0." + str(sim)][user] for sim in range(n_sim)]) for user in range(n_user)]
+        count_x1_total = [sum([(df_action_context_thompson["x1_d1." + str(sim)][user] + df_action_context_thompson["x1_d0." + str(sim)][user]) for sim in range(n_sim)]) for user in range(n_user)]
+        prop_x1_optimal = [count_x1_optimal[user]/count_x1_total[user] for user in range(n_user)]
+        df_action_context_thompson["prop_x1_optimal"] = prop_x1_optimal
+
+        # Compute prop. of optimal action choosen (X = 0) for Q1
+        prop_x0_optimal_q1 = np.round(np.mean(prop_x0_optimal[0:(n_q1+1)]), 2)
+        print("[0,250] prop. optimal (X = 0) " + sim_names[sim_count][1:4] + " "+ str(prop_x0_optimal_q1))
+
+        # Compute prop. of optimal action choosen (X = 0) for Q4
+        prop_x0_optimal_q4 = np.round(np.mean(prop_x0_optimal[n_q4:(n_user+1)]),2)
+        print("[750,1000] prop. optimal (X = 0) " + sim_names[sim_count][1:4] + " "+ str(prop_x0_optimal_q4))
+
+        # Compute prop. of optimal action choosen (X = 1) for Q1
+        prop_x1_optimal_q1 = np.round(np.mean(prop_x1_optimal[0:(n_q1+1)]),2)
+        print("[0,250] prop. optimal (X = 1) " + sim_names[sim_count][1:4] + " "+ str(prop_x1_optimal_q1))
+
+        # Compute prop. of optimal action choosen (X = 1) for Q4
+        prop_x1_optimal_q4 = np.round(np.mean(prop_x1_optimal[n_q4:(n_user+1)]),2)
+        print("[750,1000] prop. optimal (X = 1) " + sim_names[sim_count][1:4] + " "+ str(prop_x1_optimal_q4))
+
+        # End of a simulation
+        print("Simulation results for " +  sim_list[sim_count] + " are finished")
+
+        # Save data frame with column names as place holder variables
+        data_list = [d1_bias_ts_ols_q1, d1x1_bias_ts_ols_q1, d1_bias_ts_ols_q4, d1x1_bias_ts_ols_q4, df_regret_q1, df_regret_q4,
+                     prop_x0_optimal_q1, prop_x0_optimal_q4, prop_x1_optimal_q1, prop_x1_optimal_q4]
+        cols = ["d1_bias_ts_ols_q1", "d1x1_bias_ts_ols_q1", "d1_bias_ts_ols_q4", "d1x1_bias_ts_ols_q4", "df_regret_q1", "df_regret_q4",
+                "prop_x0_optimal_q1", "prop_x0_optimal_q4", "prop_x1_optimal_q1", "prop_x1_optimal_q4"]
+        cols = [cols[i] + sim_names[sim_count] for i in range(len(cols))]
+        results_df = pd.DataFrame([data_list], columns=cols)
+        results_df.to_csv("BanditSimResults" + sim_names[sim_count] +".csv")
+
+    # Random policy and OLS fit
+    if sim_list[sim_count][5] == "R" and len(sim_names[sim_count]) != 3:
+
+        # None value variables (underspecified and uniform)
+        d1x1_bias_rand_ols_q1 = None
+        d1x1_bias_rand_ols_q4 = None
+        
+        # Load d1 random OLS fit
+        d1_rand_ols = pd.read_csv("random_ols_d1.csv")
+        d1_rand_ols = d1_rand_ols.drop(columns = ["iteration"])
+
+        # Compute mean coeff across simulations
+        if sim_names[sim_count][3] != "U":
+            d1_bias_rand_ols = d1_rand_ols.mean(axis=1) - true_fit_d1
+        else:
+            d1_bias_rand_ols = d1_rand_ols.mean(axis=1) - true_fit_d1 - true_fit_d1x1[sim_count]/2
+
+        # Compute Q1 for d1 random ols fit
+        d1_bias_rand_ols_q1 = np.round(np.mean(d1_bias_rand_ols[0:(n_q1+1)]),4)
+        print("[0,250] bias(d1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1_bias_rand_ols_q1))
+
+        # Compute Q4 for d1 random ols fit
+        d1_bias_rand_ols_q4 = np.round(np.mean(d1_bias_rand_ols[n_q4:(n_user+1)]),4)
+        print("[750,1000] bias(d1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1_bias_rand_ols_q4))
+
+        if sim_names[sim_count][3] != "U":
+            
+            # Load d1 random OLS fit
+            d1x1_rand_ols = pd.read_csv("random_ols_d1x1.csv")
+            d1x1_rand_ols = d1x1_rand_ols.drop(columns = ["iteration"])
+
+            # Compute mean coeff across simulations
+            d1x1_bias_rand_ols = d1x1_rand_ols.mean(axis=1) - true_fit_d1x1[sim_count]
+
+            # Compute Q1 for d1 random ols fit
+            d1x1_bias_rand_ols_q1 = np.round(np.mean(d1x1_bias_rand_ols[0:(n_q1+1)]),4)
+            print("[0,250] bias(d1x1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1x1_bias_rand_ols_q1))
+
+            # Compute Q4 for d1 random ols fit
+            d1x1_bias_rand_ols_q4 = np.round(np.mean(d1x1_bias_rand_ols[n_q4:(n_user+1)]),4)
+            print("[750,1000] bias(d1x1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1x1_bias_rand_ols_q4))
+
+            # End of a simulation
+            print("Simulation results for " +  sim_list[sim_count] + " are finished")
+
+            # Save data frame user column names for place holder variables
+            data_list = [d1_bias_rand_ols_q1, d1_bias_rand_ols_q4, d1x1_bias_rand_ols_q1, d1x1_bias_rand_ols_q4]
+            cols = ["d1_bias_rand_ols_q1", "d1_bias_rand_ols_q4", "d1x1_bias_rand_ols_q1", "d1x1_bias_rand_ols_q4"]
+            cols = [cols[i] + sim_names[sim_count] for i in range(len(cols))]
+
+        results_df = pd.DataFrame([data_list], columns=cols)
+        results_df.to_csv("BanditSimResults" + sim_names[sim_count] +".csv")
+
+    # Uniform sampling and no OLS fit
+    if len(sim_names[sim_count]) == 3:
+
+        # Load regret data
+        df_regret_thompson = pd.read_csv('random_regrets.csv')
+        df_regret_thompson = df_regret_thompson.drop(columns = ["iteration"])
+
+        # Compute mean regret (across simulation) for each itteration
+        df_regret = df_regret_thompson.mean(axis=1)
+
+        # Compute regret for [0,250]
+        df_regret_q1 = np.round_(np.mean(df_regret[0:(n_q1+1)]),2)
+        print("[0,250] regret UP " + sim_names[sim_count][1:4] + " "+ str(df_regret_q1))
+
+        # Compute regret for [750,1000]
+        df_regret_q4 = np.round(np.mean(df_regret[n_q4:(n_user+1)]),2)
+        print("[750,1000] regret UP "+ sim_names[sim_count][1:4] + " "+ str(df_regret_q4))
+
+        # Load action choosen given context data
+        df_action_context_thompson = pd.read_csv("random_context_action.csv",skiprows=1)
+        df_action_context_thompson["x0_d1.0"] = df_action_context_thompson["x0_d1"] 
+        df_action_context_thompson["x0_d0.0"] = df_action_context_thompson["x0_d0"]
+        df_action_context_thompson["x1_d1.0"] = df_action_context_thompson["x1_d1"] 
+        df_action_context_thompson["x1_d0.0"] = df_action_context_thompson["x1_d0"] 
+
+        # Compute prop. of optimal action choosen (X = 0)
+        count_x0_optimal = [sum([df_action_context_thompson["x0_d1." + str(sim)][user] for sim in range(n_sim)]) for user in range(n_user)]
+        count_x0_total = [sum([(df_action_context_thompson["x0_d1." + str(sim)][user] + df_action_context_thompson["x0_d0." + str(sim)][user]) for sim in range(n_sim)]) for user in range(n_user)]
+        prop_x0_optimal = [count_x0_optimal[user]/count_x0_total[user] for user in range(n_user)]
+        df_action_context_thompson["prop_x0_optimal"] = prop_x0_optimal
+
+        # Compute prop. of optimal action choosen (X = 1)
+        count_x1_optimal = [sum([df_action_context_thompson["x1_d0." + str(sim)][user] for sim in range(n_sim)]) for user in range(n_user)]
+        count_x1_total = [sum([(df_action_context_thompson["x1_d1." + str(sim)][user] + df_action_context_thompson["x1_d0." + str(sim)][user]) for sim in range(n_sim)]) for user in range(n_user)]
+        prop_x1_optimal = [count_x1_optimal[user]/count_x1_total[user] for user in range(n_user)]
+        df_action_context_thompson["prop_x1_optimal"] = prop_x1_optimal
+
+        # Compute prop. of optimal action choosen (X = 0) for Q1
+        prop_x0_optimal_q1 = np.round(np.mean(prop_x0_optimal[0:(n_q1+1)]), 2)
+        print("[0,250] prop. optimal (X = 0) " + sim_names[sim_count][1:4] + " "+ str(prop_x0_optimal_q1))
+
+        # Compute prop. of optimal action choosen (X = 0) for Q4
+        prop_x0_optimal_q4 = np.round(np.mean(prop_x0_optimal[n_q4:(n_user+1)]),2)
+        print("[750,1000] prop. optimal (X = 0) " + sim_names[sim_count][1:4] + " "+ str(prop_x0_optimal_q4))
+
+        # Compute prop. of optimal action choosen (X = 1) for Q1
+        prop_x1_optimal_q1 = np.round(np.mean(prop_x1_optimal[0:(n_q1+1)]),2)
+        print("[0,250] prop. optimal (X = 1) " + sim_names[sim_count][1:4] + " "+ str(prop_x1_optimal_q1))
+
+        # Compute prop. of optimal action choosen (X = 1) for Q4
+        prop_x1_optimal_q4 = np.round(np.mean(prop_x1_optimal[n_q4:(n_user+1)]),2)
+        print("[750,1000] prop. optimal (X = 1) " + sim_names[sim_count][1:4] + " "+ str(prop_x1_optimal_q4))
+
+        # Save uniform policy data
+        data_list = [prop_x0_optimal_q1, prop_x0_optimal_q4, prop_x1_optimal_q1, prop_x1_optimal_q4,
+                     df_regret_q1, df_regret_q4]
+        cols = ["prop_x0_optimal_q1", "prop_x0_optimal_q4", "prop_x1_optimal_q1", "prop_x1_optimal_q4",
+                "df_regret_q1", "df_regret_q4"]
+        cols = [cols[i] + sim_names[sim_count] for i in range(len(cols))]
+        results_df = pd.DataFrame([data_list], columns=cols)
+        results_df.to_csv("BanditSimResults" + sim_names[sim_count] +".csv")
+
+        # End of a simulation
+        print("Simulation results for " +  sim_list[sim_count] + " are finished")
+
+    # Increase simulation counter
+    sim_count += 1
+
+
+'''
+    ##### Code for MAB posterior mean bias
     if sim_names[sim_count][2] != "R":
+
         # Load data of MAB bias
         df_bias_thompson = pd.read_csv('thompson_bias_in_coeff.csv',skiprows=1)
 
@@ -76,76 +317,4 @@ for sim_type in sim_list:
             d1x1_bias_q4 = np.round(np.mean(d1x1_bias[n_q4:(n_user+1)]),4)
             print("[750,1000] bias(d1*x1) "+ sim_names[sim_count][1:4] + " " + str(d1x1_bias_q4))
 
-    # Load regret data
-    df_regret_thompson = pd.read_csv('thompson_regrets.csv')
-    df_regret_thompson = df_regret_thompson.drop(columns = ["iteration"])
-
-    # Compute mean regret (across simulation) for each itteration
-    df_regret = df_regret_thompson.mean(axis=1)
-
-    # Compute regret for [0,250]
-    df_regret_q1 = np.round_(np.mean(df_regret[0:(n_q1+1)]),2)
-    print("[0,250] regret TS " + sim_names[sim_count][1:4] + " "+ str(df_regret_q1))
-
-    # Compute regret for [750,1000]
-    df_regret_q4 = np.round(np.mean(df_regret[n_q4:(n_user+1)]),2)
-    print("[750,1000] regret TS "+ sim_names[sim_count][1:4] + " "+ str(df_regret_q4))
-
-    # Load action choosen given context data
-    df_action_context_thompson = pd.read_csv("thompson_context_action.csv",skiprows=1)
-    df_action_context_thompson["x0_d1.0"] = df_action_context_thompson["x0_d1"] 
-    df_action_context_thompson["x0_d0.0"] = df_action_context_thompson["x0_d0"]
-    df_action_context_thompson["x1_d1.0"] = df_action_context_thompson["x1_d1"] 
-    df_action_context_thompson["x1_d0.0"] = df_action_context_thompson["x1_d0"] 
-
-    # Compute prop. of optimal action choosen (X = 0)
-    count_x0_optimal = [sum([df_action_context_thompson["x0_d1." + str(sim)][user] for sim in range(n_sim)]) for user in range(n_user)]
-    count_x0_total = [sum([(df_action_context_thompson["x0_d1." + str(sim)][user] + df_action_context_thompson["x0_d0." + str(sim)][user]) for sim in range(n_sim)]) for user in range(n_user)]
-    prop_x0_optimal = [count_x0_optimal[user]/count_x0_total[user] for user in range(n_user)]
-    df_action_context_thompson["prop_x0_optimal"] = prop_x0_optimal
-
-    # Compute prop. of optimal action choosen (X = 1)
-    count_x1_optimal = [sum([df_action_context_thompson["x1_d0." + str(sim)][user] for sim in range(n_sim)]) for user in range(n_user)]
-    count_x1_total = [sum([(df_action_context_thompson["x1_d1." + str(sim)][user] + df_action_context_thompson["x1_d0." + str(sim)][user]) for sim in range(n_sim)]) for user in range(n_user)]
-    prop_x1_optimal = [count_x1_optimal[user]/count_x1_total[user] for user in range(n_user)]
-    df_action_context_thompson["prop_x1_optimal"] = prop_x1_optimal
-
-
-    # Compute prop. of optimal action choosen (X = 0) for [0,250]
-    prop_x0_optimal_q1 = np.round(np.mean(prop_x0_optimal[0:(n_q1+1)]), 2)
-    print("[0,250] prop. optimal (X = 0) " + sim_names[sim_count][1:4] + " "+ str(prop_x0_optimal_q1))
-
-    # Compute prop. of optimal action choosen (X = 0) for [750,1000]
-    prop_x0_optimal_q4 = np.round(np.mean(prop_x0_optimal[n_q4:(n_user+1)]),2)
-    print("[750,1000] prop. optimal (X = 0) " + sim_names[sim_count][1:4] + " "+ str(prop_x0_optimal_q4))
-
-    # Compute prop. of optimal action choosen (X = 1) for [0,250]
-    prop_x1_optimal_q1 = np.round(np.mean(prop_x1_optimal[0:(n_q1+1)]),2)
-    print("[0,250] prop. optimal (X = 1) " + sim_names[sim_count][1:4] + " "+ str(prop_x1_optimal_q1))
-
-    # Compute prop. of optimal action choosen (X = 1) for [750,1000]
-    prop_x1_optimal_q4 = np.round(np.mean(prop_x1_optimal[n_q4:(n_user+1)]),2)
-    print("[750,1000] prop. optimal (X = 1) " + sim_names[sim_count][1:4] + " "+ str(prop_x1_optimal_q4))
-
-    # End of a simulation
-    print("Simulation results for " +  sim_list[sim_count] + " are finished")
-
-    # Save data frame
-    data_list = [d1_bias_q1, d1x1_bias_q1, d1_bias_q4, d1x1_bias_q4, df_regret_q1, df_regret_q4,
-                 prop_x0_optimal_q1, prop_x0_optimal_q4, prop_x1_optimal_q1, prop_x1_optimal_q4]
-    cols = ["d1_bias_q1", "d1x1_bias_q1", "d1_bias_q4", "d1x1_bias_q4", "df_regret_q1", "df_regret_q4",
-                 "prop_x0_optimal_q1", "prop_x0_optimal_q4", "prop_x1_optimal_q1", "prop_x1_optimal_q4"]
-    cols = [cols[i] + sim_names[sim_count] for i in range(len(cols))]
-    results_df = pd.DataFrame([data_list], columns=cols)
-    results_df.to_csv("BanditSimResults" + sim_names[sim_count] +".csv")
-
-    # Increase simulation counter
-    sim_count += 1
-    
-
-
-
-
-
-
-
+'''
