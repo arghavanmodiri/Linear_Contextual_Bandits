@@ -39,8 +39,8 @@ sim_names = ["_SCC"]
 #sim_names = ["_SR"]
 sim_count = 0
 #true_fit_d1 = 0.25
-true_fit_d1 = 0.3
-true_fit_d1x1 = [-0.6, -0.6, -0.6, -0.6, -0.6]
+true_fit_d1 = 0.6
+true_fit_d1x1 = [-1.2, -1.2, -1.2, -1.2, -1.2]
 #true_fit_d1x1 = [-0.4, -0.4, -0.8, -0.8, -0.4, -0.8, -0.4, -0.8, -0.4, -0.8]
 
 # Loop over simulations
@@ -78,24 +78,52 @@ for sim_type in sim_list:
         else:
             d1_bias_ts_ols = d1_ts_ols.mean(axis=1) - true_fit_d1 - true_fit_d1x1[sim_count]/2
 
+
+        # d1_bias_rand_ols_se_q1 = np.round(np.std(d1_ts_ols[0:(n_q1+1)].mean(axis=0))/np.sqrt(n_sim),5)
+
         # Compute OLS fitted bias Q1
         d1_bias_ts_ols_q1 = np.round(np.mean(d1_bias_ts_ols[0:(n_q1+1)]),4)
         print("[0,250] bias(d1) fit model "  + sim_names[sim_count][1:4] + " " + str(d1_bias_ts_ols_q1))
+
+        # Compute OLS SE(d1) fitted bias Q1
+        d1_bias_ts_ols_se_q1 = np.round(np.std(d1_ts_ols[0:(n_q1+1)].mean(axis=0))/np.sqrt(n_sim),5)
+        print("[0,250] SE(d1) fit model "  + sim_names[sim_count][1:4] + " " + str(d1_bias_ts_ols_se_q1))
 
         # Compute OLS fitted bias Q2
         d1_bias_ts_ols_q2 = np.round(np.mean(d1_bias_ts_ols[n_q1:n_q2]),4)
         print("[250,500] bias(d1) fit model "  + sim_names[sim_count][1:4] + " " + str(d1_bias_ts_ols_q2))
 
+        # Compute OLS SE(d2) fitted bias Q2
+        d1_bias_ts_ols_se_q2 = np.round(np.std(d1_ts_ols[n_q1:n_q2].mean(axis=0))/np.sqrt(n_sim),5)
+        print("[250,500] SE(d1) fit model "  + sim_names[sim_count][1:4] + " " + str(d1_bias_ts_ols_se_q2))
+
         # Compute OLS fitted bias Q3
         d1_bias_ts_ols_q3 = np.round(np.mean(d1_bias_ts_ols[n_q2:n_q3]),4)
         print("[500,750] bias(d1) fit model "  + sim_names[sim_count][1:4] + " " + str(d1_bias_ts_ols_q3))
+
+        # Compute OLS SE(d2) fitted bias Q3
+        d1_bias_ts_ols_se_q3 = np.round(np.std(d1_ts_ols[n_q2:n_q3].mean(axis=0))/np.sqrt(n_sim),5)
+        print("[500,750] SE(d1) fit model "  + sim_names[sim_count][1:4] + " " + str(d1_bias_ts_ols_se_q3))
 
         # Compute OLS fitted bias Q4
         d1_bias_ts_ols_q4 = np.round(np.mean(d1_bias_ts_ols[n_q3:(n_user+1)]),4)
         print("[750,1000] bias(d1) fit model " + sim_names[sim_count][1:4] + " " + str(d1_bias_ts_ols_q4))
 
+        # Compute OLS SE(d4) fitted bias Q4
+        d1_bias_ts_ols_se_q4 = np.round(np.std(d1_ts_ols[n_q3:(n_user+1)].mean(axis=0))/np.sqrt(n_sim),5)
+        print("[750,1000] SE(d1) fit model " + sim_names[sim_count][1:4] + " " + str(d1_bias_ts_ols_se_q4))
+
+
+        # SE for d1 
+        #se_ts_ols = d1_ts_ols.var(axis=1)
+        #se_ts_ols = 
+
+        # SE for d1 at Q1
+        #se_ts_ols_q1 = np.sqrt(np.sum(se_ts_ols))/n_q1
+
         # Compute bias for d1x1 if not underspecified
         if sim_names[sim_count][3] != "U":
+        
             # Load d1*x1 thompson sampling ols bias data
             d1x1_ts_ols = pd.read_csv("thompson_ols_d1x1.csv")
             d1x1_ts_ols = d1x1_ts_ols.drop(columns = ["iteration"])
@@ -107,28 +135,67 @@ for sim_type in sim_list:
             d1x1_bias_ts_ols_q1 = np.round(np.mean(d1x1_bias_ts_ols[0:(n_q1+1)]),4)
             print("[0,250] bias(d1x1) fit model " + sim_names[sim_count][1:4] + " " + str(d1x1_bias_ts_ols_q1))
 
+            # Compute OLS SE(d1x1) fitted bias for interaction at Q1
+            d1x1_bias_ts_ols_se_q1 = np.round(np.std(d1x1_ts_ols[0:(n_q1+1)].mean(axis=0))/np.sqrt(n_sim),5)
+            print("[0,250] SE(d1x1) fit model " + sim_names[sim_count][1:4] + " " + str(d1x1_bias_ts_ols_se_q1))
+
             # Compute OLS fitted bias for interaction at Q2
             d1x1_bias_ts_ols_q2 = np.round(np.mean(d1x1_bias_ts_ols[n_q1:n_q2]),4)
             print("[250,500] bias(d1x1) fit model " + sim_names[sim_count][1:4] + " " + str(d1x1_bias_ts_ols_q2))
+
+            # Compute OLS SE(d1x1) fitted bias for interaction at Q2
+            d1x1_bias_ts_ols_se_q2 = np.round(np.std(d1x1_ts_ols[n_q1:n_q2].mean(axis=0))/np.sqrt(n_sim),5)
+            print("[250,500] SE(d1x1) fit model " + sim_names[sim_count][1:4] + " " + str(d1x1_bias_ts_ols_se_q2))
 
             # Compute OLS fitted bias for interaction at Q3
             d1x1_bias_ts_ols_q3 = np.round(np.mean(d1x1_bias_ts_ols[n_q2:n_q3]),4)
             print("[500,750] bias(d1x1) fit model " + sim_names[sim_count][1:4] + " " + str(d1x1_bias_ts_ols_q3))
 
+            # Compute OLS SE(d1x1) fitted bias for interaction at Q3
+            d1x1_bias_ts_ols_se_q3 = np.round(np.std(d1x1_ts_ols[n_q2:n_q3].mean(axis=0))/np.sqrt(n_sim),5)
+            print("[500,750] SE(d1x1) fit model " + sim_names[sim_count][1:4] + " " + str(d1x1_bias_ts_ols_se_q3))
+
             # Compute OLS fitted bias for interaction at Q4
             d1x1_bias_ts_ols_q4 = np.round(np.mean(d1x1_bias_ts_ols[n_q3:(n_user+1)]),4)
             print("[750,1000] bias(d1x1) fit model " + sim_names[sim_count][1:4] + " " + str(d1x1_bias_ts_ols_q4))
 
+            # Compute OLS SE(d1) fitted bias for interaction at Q4
+            d1x1_bias_ts_ols_se_q4 = np.round(np.std(d1x1_ts_ols[n_q3:(n_user+1)].mean(axis=0))/np.sqrt(n_sim),5)
+            print("[750,1000] SE(d1x1) fit model " + sim_names[sim_count][1:4] + " " + str(d1x1_bias_ts_ols_se_q4))
+
             # Compute OLS fitted bias for d1 + d1x1 from Q1 - Q4
             d1x1_x1_bias_ts_ols = d1_bias_ts_ols + d1x1_bias_ts_ols
+
+            # Compute OLS Bias(d1x1 + d1) fitted bias for interaction at Q1
             d1x1_x1_bias_ts_ols_q1 = np.round(np.mean(d1x1_x1_bias_ts_ols[0:(n_q1+1)]),4)
             print("[0,250] bias(d1x1 + d1) fit model " + sim_names[sim_count][1:4] + " " + str(d1x1_x1_bias_ts_ols_q1))
+
+
+            # Compute OLS SE(d1x1 + d1) fitted bias for interaction at Q1
+            
+
+            # Compute OLS Bias(d1x1 + d1) fitted bias for interaction at Q2
             d1x1_x1_bias_ts_ols_q2 = np.round(np.mean(d1x1_x1_bias_ts_ols[n_q1:n_q2]),4)
             print("[250,500] bias(d1x1 + d1) fit model " + sim_names[sim_count][1:4] + " " + str(d1x1_x1_bias_ts_ols_q2))
+
+
+            # Compute OLS SE(d1x1 +d1) fitted bias for interaction at Q2
+            
+
+            # Compute OLS Bias(d1x1 +d1) fitted bias for interaction at Q3
             d1x1_x1_bias_ts_ols_q3 = np.round(np.mean(d1x1_x1_bias_ts_ols[n_q2:n_q3]),4)
             print("[500,750] bias(d1x1 + d1) fit model " + sim_names[sim_count][1:4] + " " + str(d1x1_x1_bias_ts_ols_q3))
+
+
+            # Compute OLS SE(d1x1 +d1) fitted bias for interaction at Q3
+
+
+            # Compute OLS Bias(d1x1 +d1) fitted bias for interaction at Q4
             d1x1_x1_bias_ts_ols_q4 = np.round(np.mean(d1x1_x1_bias_ts_ols[n_q3:(n_user+1)]),4)
             print("[750,1000] bias(d1x1 + d1) fit model " + sim_names[sim_count][1:4] + " " + str(d1x1_x1_bias_ts_ols_q4))
+
+
+            # Compute OLS SE(d1x1 +d1) fitted bias for interaction at Q4
 
         # Load thompson sampling slope data
             
@@ -139,21 +206,40 @@ for sim_type in sim_list:
         # Compute mean regret (across simulation) for each itteration
         df_regret = df_regret_thompson.mean(axis=1)
 
+        # Variance of regret across simulations for each user
+        # df_regret_var = df_regret_thompson.var(axis=1)
+
         # Compute regret for Q1
         df_regret_q1 = np.round_(np.mean(df_regret[0:(n_q1+1)]),4)
         print("[0,250] overall regret TS " + sim_names[sim_count][1:4] + " "+ str(df_regret_q1))
+
+        # Compute SE(regret) for Q1
+        df_regret_se_q1 = np.round(np.std(df_regret_thompson[0:(n_q1+1)].mean(axis=0))/np.sqrt(n_sim),5)
+        print("[0, 250] SE of regret TS "+ sim_names[sim_count][1:4] + " "+ str(df_regret_se_q1))
 
         # Compute regret for Q2
         df_regret_q2 = np.round_(np.mean(df_regret[n_q1:n_q2]),4)
         print("[250,500] overall regret TS " + sim_names[sim_count][1:4] + " "+ str(df_regret_q2))
 
+        # Compute SE(regret) for Q2
+        df_regret_se_q2 = np.round(np.std(df_regret_thompson[n_q1:n_q2].mean(axis=0))/np.sqrt(n_sim),5)
+        print("[250, 500] SE of regret TS "+ sim_names[sim_count][1:4] + " "+ str(df_regret_se_q2))
+
         # Compute regret for Q3
         df_regret_q3 = np.round_(np.mean(df_regret[n_q2:n_q3]),4)
         print("[500,750] overall regret TS " + sim_names[sim_count][1:4] + " "+ str(df_regret_q3))
 
+        # Compute SE(regret) for Q3
+        df_regret_se_q3 = np.round(np.std(df_regret_thompson[n_q2:n_q3].mean(axis=0))/np.sqrt(n_sim),5)
+        print("[500, 750] SE of regret TS "+ sim_names[sim_count][1:4] + " "+ str(df_regret_se_q3))
+
         # Compute regret for Q4
         df_regret_q4 = np.round(np.mean(df_regret[n_q3:(n_user+1)]),4)
         print("[750,1000] overall regret TS "+ sim_names[sim_count][1:4] + " "+ str(df_regret_q4))
+
+        # Compute SE(regret) for Q4
+        df_regret_se_q4 = np.round(np.std(df_regret_thompson[n_q3:(n_user+1)].mean(axis=0))/np.sqrt(n_sim),5)
+        print("[750, 1000] SE of regret TS "+ sim_names[sim_count][1:4] + " "+ str(df_regret_se_q4))
 
         # Load action choosen given context data
         df_action_context_thompson = pd.read_csv("thompson_context_action.csv",skiprows=1)
@@ -161,7 +247,6 @@ for sim_type in sim_list:
         df_action_context_thompson["x0_d0.0"] = df_action_context_thompson["x0_d0"]
         df_action_context_thompson["x1_d1.0"] = df_action_context_thompson["x1_d1"] 
         df_action_context_thompson["x1_d0.0"] = df_action_context_thompson["x1_d0"]
-
 
         # Compute prop. of optimal action choosen (X = 0)
         # Optimal action for X = 0 is D = 1
@@ -263,21 +348,43 @@ for sim_type in sim_list:
         else:
             d1_bias_rand_ols = d1_rand_ols.mean(axis=1) - true_fit_d1 - true_fit_d1x1[sim_count]/2
 
+        # Variance of OLS across simulation for each user
+        d1_bias_rand_ols_var = d1_rand_ols.var(axis=1)
+
         # Compute Q1 for d1 random ols fit
         d1_bias_rand_ols_q1 = np.round(np.mean(d1_bias_rand_ols[0:(n_q1+1)]),4)
         print("[0,250] bias(d1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1_bias_rand_ols_q1))
+
+        # Compute standard errors for Q1
+        #d1_bias_rand_ols_se_q1 = np.roundnp.std(d1_bias_rand_ols[0:(n_q1+1)].mean(axis=0)
+        d1_bias_rand_ols_se_q1 = np.round(np.std(d1_rand_ols[0:(n_q1+1)].mean(axis=0))/np.sqrt(n_sim),5)
+        print("[0,250] SE(d1) random fit model " + str(d1_bias_rand_ols_se_q1))
 
         # Compute Q2 for d1 random ols fit
         d1_bias_rand_ols_q2 = np.round(np.mean(d1_bias_rand_ols[n_q1:n_q2]),4)
         print("[250,500] bias(d1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1_bias_rand_ols_q2))
 
+        # Compute standard errors for Q2
+        # d1_bias_rand_ols_se_q2 = np.round(np.sqrt(np.sum(d1_bias_rand_ols_var[n_q1:n_q2])/n_sim)/n_q1,5)
+        d1_bias_rand_ols_se_q2 = np.round(np.std(d1_rand_ols[n_q1:n_q2].mean(axis=0))/np.sqrt(n_sim),5)
+        print("[250,500] SE(d1) random fit model " + str(d1_bias_rand_ols_se_q2))
+
         # Compute Q3 for d1 random ols fit
         d1_bias_rand_ols_q3 = np.round(np.mean(d1_bias_rand_ols[n_q2:n_q3]),4)
         print("[500,750] bias(d1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1_bias_rand_ols_q3))
+
+        # Compute standard errors for Q3
+        # d1_bias_rand_ols_se_q3 = np.round(np.sqrt(np.sum(d1_bias_rand_ols_var[n_q2:n_q3])/n_sim)/n_q1,5)
+        d1_bias_rand_ols_se_q3 = np.round(np.std(d1_rand_ols[n_q2:n_q3].mean(axis=0))/np.sqrt(n_sim),5)
+        print("[500,750] SE(d1) random fit model " + str(d1_bias_rand_ols_se_q3))
                                        
         # Compute Q4 for d1 random ols fit
         d1_bias_rand_ols_q4 = np.round(np.mean(d1_bias_rand_ols[n_q3:(n_user+1)]),4)
         print("[750,1000] bias(d1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1_bias_rand_ols_q4))
+
+        # Compute standard errors for Q4
+        d1_bias_rand_ols_se_q4 = np.round(np.std(d1_rand_ols[n_q3:(n_user+1)].mean(axis=0))/np.sqrt(n_sim),5)
+        print("[750,1000] SE(d1) random fit model " + str(d1_bias_rand_ols_se_q4))
 
         if sim_names[sim_count][3] != "U":
             
@@ -292,17 +399,33 @@ for sim_type in sim_list:
             d1x1_bias_rand_ols_q1 = np.round(np.mean(d1x1_bias_rand_ols[0:(n_q1+1)]),4)
             print("[0,250] bias(d1x1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1x1_bias_rand_ols_q1))
 
+            # Compute Q1 for SE(d1x1) random ols fit
+            d1x1_bias_rand_ols_se_q1 = np.round(np.std(d1x1_rand_ols[0:(n_q1+1)].mean(axis=0))/np.sqrt(n_sim),5)
+            print("[0,250] SE(d1x1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1x1_bias_rand_ols_se_q1))
+
             # Compute Q2 for d1x1 random ols fit
             d1x1_bias_rand_ols_q2 = np.round(np.mean(d1x1_bias_rand_ols[n_q1:n_q2]),4)
             print("[250,500] bias(d1x1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1x1_bias_rand_ols_q2))
+
+            # Compute Q2 for SE(d1x1) random ols fit
+            d1x1_bias_rand_ols_se_q2 = np.round(np.std(d1x1_rand_ols[n_q1:n_q2].mean(axis=0))/np.sqrt(n_sim),5)
+            print("[250,500] SE(d1x1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1x1_bias_rand_ols_se_q2))
 
             # Compute Q3 for d1x1 random ols fit
             d1x1_bias_rand_ols_q3 = np.round(np.mean(d1x1_bias_rand_ols[n_q2:n_q3]),4)
             print("[500,750] bias(d1x1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1x1_bias_rand_ols_q3))
 
+            # Compute Q3 for SE(d1x1) random ols fit
+            d1x1_bias_rand_ols_se_q3 = np.round(np.std(d1x1_rand_ols[n_q2:n_q3].mean(axis=0))/np.sqrt(n_sim),5)
+            print("[500,750] SE(d1x1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1x1_bias_rand_ols_se_q3))
+
             # Compute Q4 for d1x1 random ols fit
             d1x1_bias_rand_ols_q4 = np.round(np.mean(d1x1_bias_rand_ols[n_q3:(n_user+1)]),4)
             print("[750,1000] bias(d1x1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1x1_bias_rand_ols_q4))
+
+            # Compute Q4 for SE(d1x1) random ols fit
+            d1x1_bias_rand_ols_se_q4 = np.round(np.std(d1x1_rand_ols[n_q3:(n_user+1)].mean(axis=0))/np.sqrt(n_sim),5)
+            print("[750,1000] SE(d1x1) random fit model " + sim_names[sim_count][1:4] + " "+ str(d1x1_bias_rand_ols_se_q4))
 
             # End of a simulation
             print("Simulation results for " +  sim_list[sim_count] + " are finished")
