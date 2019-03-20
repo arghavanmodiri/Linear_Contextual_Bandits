@@ -32,14 +32,23 @@ import numpy as np
 # Load results data set
 
 # Read TeX template file into a string
-temp_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableTemplate.tex"
+temp_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableTemplateFinal.tex"
 
 # Simulations
-sim_list = ["SmallMABCorrectFitCorrect", "SmallMABUnderFitCorrect", "LargeMABCorrectFitCorrect", "LargeMABUnderFitCorrect",
+'''sim_list = ["SmallMABCorrectFitCorrect", "SmallMABUnderFitCorrect", "LargeMABCorrectFitCorrect", "LargeMABUnderFitCorrect",
             "SmallMABUnderFitUnder","LargeMABUnderFitUnder","SmallRandomCorrect", "LargeRandomCorrect",
             "SmallRandomUnder", "LargeRandomUnder", "SmallUniformPolicy", "LargeUniformPolicy"]
-sim_names = ["_SCC", "_SUC", "_LCC", "_LUC", "_SUU", "_LUU", "_SRC", "_LRC", "_SRU", "_LRU", "_SR","_LR"]
+sim_names = ["_SCC", "_SUC", "_LCC", "_LUC", "_SUU", "_LUU", "_SRC", "_LRC", "_SRU", "_LRU", "_SR","_LR"]'''
 
+#sim_list = ["SimCCorrectMABFitCorrect", "SimCUnderMABFitCorrect", "SimCRandomCorrect",  "SimCUniformPolicy"]
+#sim_names = ["_CSCC", "_CSUC", "_CSRC", "_CSR"]
+
+# Simulations C and D
+sim_list = ["SimCCorrectMABFitCorrect", "SimCUnderMABFitCorrect", "SimCRandomCorrect",  "SimCUniformPolicy",
+            "SimDCorrectMABFitCorrect", "SimDUnderMABFitCorrect", "SimDRandomCorrect", "SimDUniformPolicy"]
+sim_names = ["_CSCC", "_CSUC", "_CSRC", "_CSR","_DLCC", "_DLUC", "_DLRC", "_DLR"]
+
+# Loop over simulations
 for sim_count in range(len(sim_names)):
 
     # Read template as string
@@ -58,7 +67,7 @@ for sim_count in range(len(sim_names)):
         tpl_lines = tpl_lines.replace(col, str(np.round(df_results[col][0], 4)))
 
     # Output TeX file with results
-    write_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableResults.tex"
+    write_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableResultsFinal3.tex"
     with open (write_path, "w") as output_file:
         output_file.write(tpl_lines)
 
