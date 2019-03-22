@@ -32,7 +32,7 @@ import numpy as np
 # Load results data set
 
 # Read TeX template file into a string
-temp_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableTemplateFinal.tex"
+temp_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableTemplateTest.tex"
 
 # Simulations
 '''sim_list = ["SmallMABCorrectFitCorrect", "SmallMABUnderFitCorrect", "LargeMABCorrectFitCorrect", "LargeMABUnderFitCorrect",
@@ -67,7 +67,7 @@ for sim_count in range(len(sim_names)):
         tpl_lines = tpl_lines.replace(col, str(np.round(df_results[col][0], 4)))
 
     # Output TeX file with results
-    write_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableResultsFinal3.tex"
+    write_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableResultsBiasUpdated.tex"
     with open (write_path, "w") as output_file:
         output_file.write(tpl_lines)
 
