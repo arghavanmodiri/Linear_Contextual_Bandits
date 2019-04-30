@@ -1,0 +1,17 @@
+## Core pdflatex auxiliary files:
+*.aux
+*.log
+
+# Mac
+.DS_Store
+
+## Intermediate documents:
+*.pdf
+.*png
+
+## Build tool auxiliary files:
+*.synctex.gz
+*.synctex.gz(busy)
+
+# Python junk
+*.pyc

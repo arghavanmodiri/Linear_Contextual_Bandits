@@ -51,6 +51,7 @@ def pick_true_optimal_arm(true_coeff, user_context, experiment_vars,
     optimal_arm_est_output = -100000
 
     for arm in bandit_arms:
+        # Compute outcome for true model
         temp_result = models.true_model_output(true_coeff, experiment_vars,
                                                 user_context, arm,
                                                 {"noise_mean": 0,
@@ -60,7 +61,7 @@ def pick_true_optimal_arm(true_coeff, user_context, experiment_vars,
         elif(temp_result > optimal_arm_est_output):
             optimal_arm = [arm]
             optimal_arm_est_output = temp_result
-
+    # Optimal action and corresponding outcome
     return [optimal_arm, optimal_arm_est_output]
 
 

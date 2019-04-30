@@ -64,7 +64,7 @@ for sim_count in range(len(sim_names)):
 
     # Loop over variables to replace
     for col in col_names:
-        tpl_lines = tpl_lines.replace(col, str(np.round(df_results[col][0], 4)))
+        tpl_lines = tpl_lines.replace(col, " " + str(np.round(df_results[col][0], 4)))
 
     # Output TeX file with results
     write_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableResultsBiasUpdated.tex"

@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import true_hypo_models as models
+import making_decision
 import policies.thompson_sampling_nig as thompson
 import policies.random_sampling as random
 import plots.plot_basics as bplots
@@ -49,15 +50,15 @@ def main(mode=None):
     noise_stats = true_model_params['noise']
     true_coeff = true_model_params['true_coeff']
     # Hammad update: list of coefficinets
-    # true_coeff_list = list(true_coeff.values())
+    true_coeff_list = list(true_coeff.values())
     context_vars = true_model_params['context_vars']
     experiment_vars = true_model_params['experiment_vars']
 
-    user_count = 50
+    user_count = 500
     batch_size = 10
-    simulation_count = 10
+    simulation_count = 50
     extensive = True
-    rand_sampling_applied = True
+    rand_sampling_applied = False
     show_fig=True
 
     regrets = np.zeros(user_count)
@@ -341,14 +342,6 @@ def main(mode=None):
 
 
 
-
-
-
-
-
-
-
-
         ################# OLS REGRESSION STARTS ########################
 
         
@@ -371,6 +364,7 @@ def main(mode=None):
         d1 = [thompson_output[1][i][0] for i in range(0,len(thompson_output[1]))]
         d1_x1 = [a*b for a,b in zip(d1,x1)]
         df = pd.DataFrame({'d1':d1, 'd1x1':d1_x1, 'y':thompson_output[3]})
+        #df = pd.DataFrame({'d1':d1, 'y':thompson_output[3]})
 
         # Thompson policy data frame
         #df = pd.DataFrame({'d1':d1, 'd1x1':d1_x1, 'y':thompson_output[3]})
@@ -382,9 +376,36 @@ def main(mode=None):
         for iteration in range(1, user_count+1):
             regression = sm.ols(formula="y ~ d1 + d1x1",
                                 data=df.iloc[:iteration]).fit()
+            #regression = sm.ols(formula="y ~ d1",
+            #                    data=df.iloc[:iteration]).fit()
             regression_intercept.append(regression.params['Intercept'])
             regression_d1.append(regression.params['d1'])
             regression_d1x1.append(regression.params['d1x1'])
+
+        # Compute OLS implies policy
+        # Dictonary of OLS coefficients
+        ols_coeff_dict = {"intercept": regression.params['Intercept'], "d1":regression.params['d1'], "d1*x1":regression.params['d1x1']}
+
+        # Contextual values
+        context_value0 = {"x1": 0}
+        context_value1 = {"x1": 1}
+
+        # Compute optimal arm for X1 = 0
+        ols_optimal_x0 = making_decision.pick_true_optimal_arm(ols_coeff_dict, context_value0, experiment_vars,bandit_arms)[0][0][0]
+        #print("OLS optimal action x = 0 is " + str(ols_optimal_x0))
+
+
+        # Compute optimal arm for X1 = 1
+        ols_optimal_x1 = making_decision.pick_true_optimal_arm(ols_coeff_dict, context_value1, experiment_vars,bandit_arms)[0][0][0]
+        #print("OLS optimal action x = 1 is " + str(ols_optimal_x1))
+
+        # Determine whether OLS picked optimal action
+        ols_action_optimal_sim = []
+        ols_action_optimal = (ols_optimal_x0 == 1 and ols_optimal_x1 == 0)
+        print(ols_action_optimal)
+
+        # Simulations in which optimal policy was choosen by OLS
+        ols_action_optimal_sim.append(ols_action_optimal)
 
         # OLS regression coefficients for each simulations
         regression_intercept_all_sim.append(regression_intercept)
@@ -475,8 +496,8 @@ def main(mode=None):
                             "d1x1": regression_d1x1_all_sim_std}
 
     # Plot OLS coefficients for either thompson or random policy
-    bplots.plot_regression(user_count, regression_params_dict, regression_params_std_dict, true_coeff,
-                simulation_count, batch_size, save_fig=True)
+    '''bplots.plot_regression(user_count, regression_params_dict, regression_params_std_dict, true_coeff,
+                simulation_count, batch_size, save_fig=True)'''
     
     ################# OLS REGRESSION ENDS ########################
 
@@ -582,8 +603,8 @@ def main(mode=None):
                 beta_thompson_coeffs, hypo_params, simulation_count,
                 batch_size, save_fig=True)
 
-    '''bplots.plot_coeff_sign_error(user_count, 'Thompson Sampling', hypo_params,
-                coeff_sign_error, simulation_count, batch_size, save_fig=True)'''
+    bplots.plot_coeff_sign_error(user_count, 'Thompson Sampling', hypo_params,
+                coeff_sign_error, simulation_count, batch_size, save_fig=True)
 
     
     bplots.plot_bias_in_coeff(user_count, 'Thompson Sampling', hypo_params,

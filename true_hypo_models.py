@@ -12,7 +12,8 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
         ndarray: containing the coefficients of the true model
     """
     #noise = np.array([["noise_mean", 0],["noise_std", 5]], dtype=object)
-    noise = {"noise_mean": 0, "noise_std": 0.976}
+    # noise = {"noise_mean": 0, "noise_std": 0.976}
+    noise = {"noise_mean": 0, "noise_std": 1}
     '''true_coeff = {"bias": 40,
                     "ch2": 10,
                     "ch3": 20, 
@@ -23,9 +24,9 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
                     "republic*matching": -5}
     context_vars = np.array(['republic'])
     experiment_vars = np.array(['ch2','ch3', 'matching'])'''
-    true_coeff = {"intercept": -0.025,
-                    "d1": 0.25,
-                    "d1*x1": -0.4}
+    true_coeff = {"intercept": 0,
+                    "d1": 0.3,
+                    "d1*x1": -1.2}
     #true_coeff = {"intercept": 0, "d1":0.50}
     context_vars = np.array(['x1'])
     experiment_vars = np.array(['d1'])
@@ -66,7 +67,12 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
         list: containing the available parameters in hypothesized model
     """
     #hypo_model_params = ['bias', 'ch2','ch3', 'matching', 'republic']
+
+    # Contextual MAB
     hypo_model_params = ['intercept','d1','d1*x1']
+
+    # Typical MAB
+    #hypo_model_params = ['intercept','d1']
     '''hypo_model_params =["bias",
                         "ch2",
                         "ch3", 
