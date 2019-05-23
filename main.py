@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import numpy as np
 import pandas as pd
@@ -187,15 +188,16 @@ def main(mode=None):
 
 
         #Hammad: Bias Correction
-        if len(true_params_in_hypo) == 3:
+        if True:# Arghavan just changed this for DIAMANTE len(true_params_in_hypo) == 3:
             bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
 
         # Under specified model bias (Y = A0 + A1D)
+        '''
         else:
             # Bias(A1) = E(A1) - (B1 + B2/2)
             true_coeff_list_main = [true_coeff_list[0], true_coeff_list[1] + true_coeff_list[2]/2]
             bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_coeff_list_main))
-
+        '''
         #bias_in_coeff += np.array(np.array(true_params_in_hypo) - np.array(thompson_output[5]))
 
         #bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
@@ -231,6 +233,7 @@ def main(mode=None):
                             pd.DataFrame(optimal_action_ratio_rand_per_sim)],
                             ignore_index=True, axis=1)
 
+        '''
         quarter = int(user_count/4)
         first_user = 0
         last_user = quarter
@@ -314,9 +317,9 @@ def main(mode=None):
                     (x1_d1_count+x1_d0_count),out=np.zeros_like(x1_d1_count),
                     where=(x1_d1_count+x1_d0_count)!=0)
 
-
+        '''
         ################# OLS REGRESSION STARTS ########################
-        
+        '''
         x1 = np.empty((0,len(users_context[0].keys())))
         for i in range(0,len(users_context)):
             user_context_list = np.array([])
@@ -328,6 +331,7 @@ def main(mode=None):
         #d1 = [rand_outputs[1][i][0] for i in range(0,len(rand_outputs[1]))]
         d1_x1 = [a*b for a,b in zip(d1,x1)]
         df = pd.DataFrame({'d1':d1, 'd1x1':d1_x1, 'y':thompson_output[3]})
+
 
 
         for iteration in range(1, user_count+1):
@@ -342,6 +346,7 @@ def main(mode=None):
         regression_d1x1_all_sim.append(regression_d1x1)
 
         #Only saving the output of OLS Random Policy, and not plotting it
+
         if(rand_sampling_applied):
             d1_r = [rand_outputs[1][i][0] for i in range(0,
                         len(rand_outputs[1]))]
@@ -361,7 +366,6 @@ def main(mode=None):
             regression_d1_all_sim_random.append(regression_d1_random)
             regression_d1x1_all_sim_random.append(regression_d1x1_random)
 
-
     regression_intercept_all_sim_df=pd.DataFrame(regression_intercept_all_sim)
     regression_d1_all_sim_df=pd.DataFrame(regression_d1_all_sim)
     regression_d1x1_all_sim_df=pd.DataFrame(regression_d1x1_all_sim)
@@ -375,6 +379,7 @@ def main(mode=None):
     regression_d1x1_all_sim_df.T.to_csv(
                                 '{}thompson_ols_d1x1.csv'.format(
                                 save_output_folder), index_label='iteration')
+
     if(rand_sampling_applied):
         regression_intercept_all_sim_random_df=pd.DataFrame(
                                         regression_intercept_all_sim_random)
@@ -391,8 +396,9 @@ def main(mode=None):
                                     save_output_folder), index_label='iteration')
         regression_d1x1_all_sim_random_df.T.to_csv(
                                     '{}random_ols_d1x1.csv'.format(
-                                    save_output_folder), index_label='iteration')
-        
+                                    save_output_folder),
+                                    index_label='iteration')
+
     regression_intercept_all_sim_mean = np.mean(
             regression_intercept_all_sim_df, axis=0)
 
@@ -416,8 +422,7 @@ def main(mode=None):
 
 
     bplots.plot_regression(user_count, regression_params_dict, regression_params_std_dict, true_coeff,
-                simulation_count, batch_size, save_fig=True)
-    
+                simulation_count, batch_size, save_fig=True)'''
     ################# OLS REGRESSION ENDS ########################
 
     save_regret_thompson_df.to_csv('{}thompson_regrets.csv'.format(
@@ -448,7 +453,7 @@ def main(mode=None):
         save_context_action_random_df.to_csv(
                                     '{}random_context_action.csv'.format(
                                     save_output_folder))
-
+    '''
     x0_d0_count_quarter = np.array(x0_d0_count_quarter) /simulation_count / quarter
     x0_d1_count_quarter = np.array(x0_d1_count_quarter) / simulation_count / quarter
     x1_d0_count_quarter = np.array(x1_d0_count_quarter) /simulation_count /quarter
@@ -460,6 +465,7 @@ def main(mode=None):
 
     x0_suboptimal_ratio = x0_suboptimal_ratio / simulation_count
     x1_suboptimal_ratio = x1_suboptimal_ratio / simulation_count
+    '''
     regrets = regrets / simulation_count
     optimal_action_ratio = optimal_action_ratio /simulation_count
     mse = mse / simulation_count
@@ -498,7 +504,8 @@ def main(mode=None):
                 x1_suboptimal_ratio))
 
 
-    bplots.plot_regret(user_count, policies, regrets_all_policies,
+    fig, ax = plt.subplots(1,1,sharey=False)
+    bplots.plot_regret(ax,user_count, policies, regrets_all_policies,
                         simulation_count, batch_size)
 
     if(rand_sampling_applied):
@@ -523,7 +530,7 @@ def main(mode=None):
     bplots.plot_bias_in_coeff(user_count, 'Thompson Sampling', hypo_params,
                 bias_in_coeff, simulation_count, batch_size, save_fig=True)
 
-
+    
     if(show_fig):
         #plt.show(block=False)
         plt.show()

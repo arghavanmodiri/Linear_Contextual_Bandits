@@ -12,7 +12,7 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
         ndarray: containing the coefficients of the true model
     """
     #noise = np.array([["noise_mean", 0],["noise_std", 5]], dtype=object)
-    noise = {"noise_mean": 0, "noise_std": 0.976}
+    noise = {"noise_mean": 0, "noise_std": 100}
     '''true_coeff = {"bias": 40,
                     "ch2": 10,
                     "ch3": 20, 
@@ -23,11 +23,111 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
                     "republic*matching": -5}
     context_vars = np.array(['republic'])
     experiment_vars = np.array(['ch2','ch3', 'matching'])'''
-    true_coeff = {"intercept": -0.025,
-                    "d1": 0.25,
-                    "d1*x1": -0.4}
-    context_vars = np.array(['x1'])
-    experiment_vars = np.array(['d1'])
+    '''true_coeff = {"intercept": 0,
+                    "d1": 0.3,
+                    "d1*x1": -0.6}'''
+    true_coeff = {"intercept": 1000,
+                    "feedbackMsg1": 500,
+                    "feedbackMsg2": 800,
+                    "feedbackMsg3": 100,
+                    "feedbackMsg4": 0,
+                    "motivationMsg1": 1000,
+                    "motivationMsg2": -200,
+                    "motivationMsg3": 500,
+                    "Sent Message Code": 0, #discrete 0 for now
+                    "time1": 50,
+                    "time2": 1000,
+                    "time3": -100,
+                    "daysSinceFeedbackMsg1": 1,
+                    "daysSinceFeedbackMsg2": 1,
+                    "daysSinceFeedbackMsg3": 1,
+                    "daysSinceFeedbackMsg4": 1,
+                    "daysSinceMotivationMsg1": 1,
+                    "daysSinceMotivationMsg2": 1,
+                    "daysSinceMotivationMsg3": 1,
+                    "Age": 0, #discrete 0 for now
+                    "Gender": 0, #0=female, 1=male
+                    "Days-in-study": 0,
+                    "Study-week": 0, #discrete 0 for now
+                    "DaysText": 0, #discrete 0 for now
+                    "WeeklyMood": 0, #discrete 0 for now
+                    "Steps-yesterday": 0, #Continuoues 0 for now
+                    "Steps-day-before": 0, #Continuoues 0 for now
+                    "Step-difference": 0, #Continuoues 0 for now
+                    "Steps7days": 0, #Continuoues 0 for now
+                    "PercentageGoalWeek": 1000,
+                    "PercentageGoalYesterday": 0, #Continuoues not 0 for now
+                    "PHQBaseline": 0, # 0 for now
+                    "BABaseline": 0, # 0 for now
+                    "feedbackMsg1*motivationMsg1": 1,
+                    "feedbackMsg1*motivationMsg2": 1,
+                    "feedbackMsg1*motivationMsg3": 1,
+                    "feedbackMsg2*motivationMsg1": 1,
+                    "feedbackMsg2*motivationMsg2": 1,
+                    "feedbackMsg2*motivationMsg3": 1,
+                    "feedbackMsg3*motivationMsg1": 1,
+                    "feedbackMsg3*motivationMsg2": 1,
+                    "feedbackMsg3*motivationMsg3": 1,
+                    "feedbackMsg4*motivationMsg1": 1,
+                    "feedbackMsg4*motivationMsg2": 1,
+                    "feedbackMsg4*motivationMsg3": 1,
+                    "feedbackMsg1*time1": 1,
+                    "feedbackMsg1*time2": 1,
+                    "feedbackMsg1*time3": 1,
+                    "feedbackMsg2*time1": 1,
+                    "feedbackMsg2*time2": 1,
+                    "feedbackMsg2*time3": 1,
+                    "feedbackMsg3*time1": 1,
+                    "feedbackMsg3*time2": 1,
+                    "feedbackMsg3*time3": 1,
+                    "feedbackMsg4*time1": 1,
+                    "feedbackMsg4*time2": 1,
+                    "feedbackMsg4*time3": 1,
+                    "motivationMsg1*time1": 1,
+                    "motivationMsg1*time2": 1,
+                    "motivationMsg1*time3": 1,
+                    "motivationMsg2*time1": 1,
+                    "motivationMsg2*time2": 1,
+                    "motivationMsg2*time3": 1,
+                    "motivationMsg3*time1": 1,
+                    "motivationMsg3*time2": 1,
+                    "motivationMsg3*time3": 1
+                    }
+    context_vars = np.array(["Sent Message Code",
+                            "daysSinceFeedbackMsg1",
+                            "daysSinceFeedbackMsg2", 
+                            "daysSinceFeedbackMsg3", 
+                            "daysSinceFeedbackMsg4", 
+                            "daysSinceMotivationMsg1", 
+                            "daysSinceMotivationMsg2", 
+                            "daysSinceMotivationMsg3", 
+                            "Age",
+                            "Gender",
+                            "Days-in-study",
+                            "Study-week",
+                            "DaysText",
+                            "WeeklyMood",
+                            "Sent Message Code",
+                            "Steps-yesterday",
+                            "Steps-day-before",
+                            "Step-difference",
+                            "Steps7days",
+                            "PercentageGoalYesterday",
+                            "PercentageGoalWeek",
+                            "PHQBaseline",
+                            "BABaseline"])
+    experiment_vars = np.array([
+                            "feedbackMsg1",
+                            "feedbackMsg2",
+                            "feedbackMsg3",
+                            "feedbackMsg4",
+                            "motivationMsg1",
+                            "motivationMsg2",
+                            "motivationMsg3",
+                            "time1",
+                            "time2",
+                            "time3"
+                            ])
 
     true_model_params = {'noise':noise,
                         'true_coeff': true_coeff,
@@ -47,7 +147,92 @@ def find_possible_actions(true_model_params_file='True_Model_Coefficients.csv'):
         list: List of all possible actions
     """
     #possible_actions =  [[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1]]
-    possible_actions =  [[0],[1]]
+    # possible_actions =  [[0],[1]]
+    possible_actions =  [
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 1, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 1, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 1, 0, 0, 1],
+                        [0, 0, 0, 1, 0, 0, 1, 0, 1, 0],
+                        [0, 0, 0, 1, 0, 0, 1, 1, 0, 0],
+                        [0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 1, 0, 0, 0, 1],
+                        [0, 0, 0, 1, 0, 1, 0, 0, 1, 0],
+                        [0, 0, 0, 1, 0, 1, 0, 1, 0, 0],
+                        [0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 1, 0, 0, 0, 0, 1],
+                        [0, 0, 0, 1, 1, 0, 0, 0, 1, 0],
+                        [0, 0, 0, 1, 1, 0, 0, 1, 0, 0],
+
+                        [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+                        [0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
+                        [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
+                        [0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+                        [0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+                        [0, 0, 1, 0, 0, 0, 1, 0, 1, 0],
+                        [0, 0, 1, 0, 0, 0, 1, 1, 0, 0],
+                        [0, 0, 1, 0, 0, 1, 0, 0, 0, 0],
+                        [0, 0, 1, 0, 0, 1, 0, 0, 0, 1],
+                        [0, 0, 1, 0, 0, 1, 0, 0, 1, 0],
+                        [0, 0, 1, 0, 0, 1, 0, 1, 0, 0],
+                        [0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+                        [0, 0, 1, 0, 1, 0, 0, 0, 0, 1],
+                        [0, 0, 1, 0, 1, 0, 0, 0, 1, 0],
+                        [0, 0, 1, 0, 1, 0, 0, 1, 0, 0],
+
+                        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+                        [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
+                        [0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+                        [0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
+                        [0, 1, 0, 0, 0, 0, 1, 0, 0, 1],
+                        [0, 1, 0, 0, 0, 0, 1, 0, 1, 0],
+                        [0, 1, 0, 0, 0, 0, 1, 1, 0, 0],
+                        [0, 1, 0, 0, 0, 1, 0, 0, 0, 0],
+                        [0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+                        [0, 1, 0, 0, 0, 1, 0, 0, 1, 0],
+                        [0, 1, 0, 0, 0, 1, 0, 1, 0, 0],
+                        [0, 1, 0, 0, 1, 0, 0, 0, 0, 0],
+                        [0, 1, 0, 0, 1, 0, 0, 0, 0, 1],
+                        [0, 1, 0, 0, 1, 0, 0, 0, 1, 0],
+                        [0, 1, 0, 0, 1, 0, 0, 1, 0, 0],
+
+                        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                        [1, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                        [1, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+                        [1, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                        [1, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+                        [1, 0, 0, 0, 0, 0, 1, 0, 1, 0],
+                        [1, 0, 0, 0, 0, 0, 1, 1, 0, 0],
+                        [1, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                        [1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+                        [1, 0, 0, 0, 0, 1, 0, 0, 1, 0],
+                        [1, 0, 0, 0, 0, 1, 0, 1, 0, 0],
+                        [1, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+                        [1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+                        [1, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+                        [1, 0, 0, 0, 1, 0, 0, 1, 0, 0],
+
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+                        [0, 0, 0, 0, 0, 0, 1, 0, 1, 0],
+                        [0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
+                        [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+                        [0, 0, 0, 0, 0, 1, 0, 0, 1, 0],
+                        [0, 0, 0, 0, 0, 1, 0, 1, 0, 0],
+                        [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+                        [0, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+                        [0, 0, 0, 0, 1, 0, 0, 1, 0, 0]]
 
 
     return possible_actions
@@ -65,7 +250,74 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
         list: containing the available parameters in hypothesized model
     """
     #hypo_model_params = ['bias', 'ch2','ch3', 'matching', 'republic']
-    hypo_model_params = ['intercept','d1']
+    #hypo_model_params = ['intercept','d1', 'd1*x1']
+    hypo_model_params = [
+                    "intercept",
+                    "feedbackMsg1",
+                    "feedbackMsg2",
+                    "feedbackMsg3",
+                    "feedbackMsg4",
+                    "motivationMsg1",
+                    "motivationMsg2",
+                    "motivationMsg3",
+                    "Sent Message Code",
+                    "time1",
+                    "time2",
+                    "time3",
+                    "daysSinceFeedbackMsg1",
+                    "daysSinceFeedbackMsg2", 
+                    "daysSinceFeedbackMsg3", 
+                    "daysSinceFeedbackMsg4", 
+                    "daysSinceMotivationMsg1", 
+                    "daysSinceMotivationMsg2", 
+                    "daysSinceMotivationMsg3", 
+                    "Age",
+                    "Gender",
+                    "Days-in-study",
+                    "Study-week", #discrete 0 for now
+                    "DaysText", #discrete 0 for now
+                    "WeeklyMood", #discrete 0 for now
+                    "Steps-yesterday",
+                    "Steps-day-before",
+                    "Step-difference",
+                    "Steps7days",
+                    "PercentageGoalWeek",
+                    "PercentageGoalYesterday",
+                    "PHQBaseline",
+                    "BABaseline",
+                    "feedbackMsg1*motivationMsg1", 
+                    "feedbackMsg1*motivationMsg2", 
+                    "feedbackMsg1*motivationMsg3", 
+                    "feedbackMsg2*motivationMsg1", 
+                    "feedbackMsg2*motivationMsg2", 
+                    "feedbackMsg2*motivationMsg3", 
+                    "feedbackMsg3*motivationMsg1", 
+                    "feedbackMsg3*motivationMsg2", 
+                    "feedbackMsg3*motivationMsg3", 
+                    "feedbackMsg4*motivationMsg1", 
+                    "feedbackMsg4*motivationMsg2", 
+                    "feedbackMsg4*motivationMsg3", 
+                    "feedbackMsg1*time1", 
+                    "feedbackMsg1*time2", 
+                    "feedbackMsg1*time3", 
+                    "feedbackMsg2*time1", 
+                    "feedbackMsg2*time2", 
+                    "feedbackMsg2*time3", 
+                    "feedbackMsg3*time1", 
+                    "feedbackMsg3*time2", 
+                    "feedbackMsg3*time3", 
+                    "feedbackMsg4*time1", 
+                    "feedbackMsg4*time2", 
+                    "feedbackMsg4*time3", 
+                    "motivationMsg1*time1", 
+                    "motivationMsg1*time2", 
+                    "motivationMsg1*time3", 
+                    "motivationMsg2*time1", 
+                    "motivationMsg2*time2", 
+                    "motivationMsg2*time3", 
+                    "motivationMsg3*time1", 
+                    "motivationMsg3*time2", 
+                    "motivationMsg3*time3"]
     '''hypo_model_params =["bias",
                         "ch2",
                         "ch3", 
@@ -152,7 +404,7 @@ def hypo_model_output(estimated_coeff, experiment_vars, user_context,
     """
     applied_arm_dict = {experiment_vars[i]:applied_arm[i] for i
                         in range(0, len(applied_arm))}
-    user_params = {**user_context, **applied_arm_dict} 
+    user_params = {**user_context, **applied_arm_dict}
     dependant_var_estimate = 0
 
     for coeff_name, coeff_value in estimated_coeff.items():
