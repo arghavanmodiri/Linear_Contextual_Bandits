@@ -51,12 +51,14 @@ def main(mode=None):
     true_coeff = true_model_params['true_coeff']
     # Hammad update: list of coefficinets
     true_coeff_list = list(true_coeff.values())
+    print(true_coeff_list)
     context_vars = true_model_params['context_vars']
     experiment_vars = true_model_params['experiment_vars']
 
-    user_count = 500
-    batch_size = 10
-    simulation_count = 50
+    # Simulation parameters
+    user_count = 1000 # 1000
+    batch_size = 10 # 10
+    simulation_count = 500 #2500
     extensive = True
     rand_sampling_applied = False
     show_fig=True
@@ -71,6 +73,8 @@ def main(mode=None):
     coeff_sign_error = np.zeros((user_count, len(hypo_params)))
     bias_in_coeff = np.zeros((user_count, len(hypo_params)))
     policies = []
+
+    # Need to generalize to toher models
     regression_intercept_all_sim = []
     regression_d1_all_sim = []
     regression_d1x1_all_sim = []
@@ -117,11 +121,12 @@ def main(mode=None):
 
         # Set priors
         print("sim: ",sim)
-        a_pre = 0
-        b_pre = 0
+        a_pre = 2
+        b_pre = 1
         mean_pre = np.zeros(len(hypo_params))
         cov_pre = np.identity(len(hypo_params))
 
+        # How to generalize this to other models?
         regression_intercept = []
         regression_d1 = []
         regression_d1x1 = []
@@ -206,7 +211,9 @@ def main(mode=None):
         # bias_in_coeff is dimensions n_{user} x 3
         
         # Correct specified model bias (Y = B0 + B1X + B2X*D)
-        if len(true_params_in_hypo) == 3:
+
+        # Need to generalize code
+        if len(true_params_in_hypo) >= 3:
             # Bias(B1) = E(B1) - B1
             #bias_in_coeff += np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
             bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))

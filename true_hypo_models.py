@@ -24,11 +24,15 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
                     "republic*matching": -5}
     context_vars = np.array(['republic'])
     experiment_vars = np.array(['ch2','ch3', 'matching'])'''
-    true_coeff = {"intercept": 0,
+    '''true_coeff = {"intercept": 0,
                     "d1": 0.3,
-                    "d1*x1": -1.2}
+                    "d1*x1": -1.2}'''
+    true_coeff = {"intercept": 0,
+                  "d1":0.3,
+                  "d1*x1": -1.2,
+                  "d1*x2":0}
     #true_coeff = {"intercept": 0, "d1":0.50}
-    context_vars = np.array(['x1'])
+    context_vars = np.array(['x1','x2'])
     experiment_vars = np.array(['d1'])
 
     true_model_params = {'noise':noise,
@@ -54,7 +58,7 @@ def find_possible_actions(true_model_params_file='True_Model_Coefficients.csv'):
 
     return possible_actions
 
-
+# Used by the bandit
 def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
     """
     Read the csv file containing the hypo model design. 1 indicats that the
@@ -69,7 +73,7 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
     #hypo_model_params = ['bias', 'ch2','ch3', 'matching', 'republic']
 
     # Contextual MAB
-    hypo_model_params = ['intercept','d1','d1*x1']
+    hypo_model_params = ['intercept','d1','d1*x1', 'd1*x2']
 
     # Typical MAB
     #hypo_model_params = ['intercept','d1']
