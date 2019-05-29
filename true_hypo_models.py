@@ -26,107 +26,25 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
     '''true_coeff = {"intercept": 0,
                     "d1": 0.3,
                     "d1*x1": -0.6}'''
-    true_coeff = {"intercept": 1000,
-                    "feedbackMsg1": 500,
-                    "feedbackMsg2": 800,
-                    "feedbackMsg3": 100,
-                    "feedbackMsg4": 0,
-                    "motivationMsg1": 1000,
-                    "motivationMsg2": -200,
-                    "motivationMsg3": 500,
-                    "Sent Message Code": 0, #discrete 0 for now
-                    "time1": 50,
-                    "time2": 1000,
-                    "time3": -100,
-                    "daysSinceFeedbackMsg1": 1,
-                    "daysSinceFeedbackMsg2": 1,
-                    "daysSinceFeedbackMsg3": 1,
-                    "daysSinceFeedbackMsg4": 1,
-                    "daysSinceMotivationMsg1": 1,
-                    "daysSinceMotivationMsg2": 1,
-                    "daysSinceMotivationMsg3": 1,
-                    "Age": 0, #discrete 0 for now
-                    "Gender": 0, #0=female, 1=male
-                    "Days-in-study": 0,
-                    "Study-week": 0, #discrete 0 for now
-                    "DaysText": 0, #discrete 0 for now
-                    "WeeklyMood": 0, #discrete 0 for now
-                    "Steps-yesterday": 0, #Continuoues 0 for now
-                    "Steps-day-before": 0, #Continuoues 0 for now
-                    "Step-difference": 0, #Continuoues 0 for now
-                    "Steps7days": 0, #Continuoues 0 for now
-                    "PercentageGoalWeek": 1000,
-                    "PercentageGoalYesterday": 0, #Continuoues not 0 for now
-                    "PHQBaseline": 0, # 0 for now
-                    "BABaseline": 0, # 0 for now
-                    "feedbackMsg1*motivationMsg1": 1,
-                    "feedbackMsg1*motivationMsg2": 1,
-                    "feedbackMsg1*motivationMsg3": 1,
-                    "feedbackMsg2*motivationMsg1": 1,
-                    "feedbackMsg2*motivationMsg2": 1,
-                    "feedbackMsg2*motivationMsg3": 1,
-                    "feedbackMsg3*motivationMsg1": 1,
-                    "feedbackMsg3*motivationMsg2": 1,
-                    "feedbackMsg3*motivationMsg3": 1,
-                    "feedbackMsg4*motivationMsg1": 1,
-                    "feedbackMsg4*motivationMsg2": 1,
-                    "feedbackMsg4*motivationMsg3": 1,
-                    "feedbackMsg1*time1": 1,
-                    "feedbackMsg1*time2": 1,
-                    "feedbackMsg1*time3": 1,
-                    "feedbackMsg2*time1": 1,
-                    "feedbackMsg2*time2": 1,
-                    "feedbackMsg2*time3": 1,
-                    "feedbackMsg3*time1": 1,
-                    "feedbackMsg3*time2": 1,
-                    "feedbackMsg3*time3": 1,
-                    "feedbackMsg4*time1": 1,
-                    "feedbackMsg4*time2": 1,
-                    "feedbackMsg4*time3": 1,
-                    "motivationMsg1*time1": 1,
-                    "motivationMsg1*time2": 1,
-                    "motivationMsg1*time3": 1,
-                    "motivationMsg2*time1": 1,
-                    "motivationMsg2*time2": 1,
-                    "motivationMsg2*time3": 1,
-                    "motivationMsg3*time1": 1,
-                    "motivationMsg3*time2": 1,
-                    "motivationMsg3*time3": 1
+    true_coeff = {"intercept": 0,
+                    "gender": 100, #0=female, 1=male
+                    "percentageGoal": -200,
+                    "motivationMsg1": 100,
+                    "motivationMsg2": 0,
+                    "motivationMsg3": 100,
+                    "motivationMsg1*percentageGoal": -400,
+                    "motivationMsg1*gender": 400,
+                    "motivationMsg2*percentageGoal": 250,
+                    "motivationMsg2*gender": 300,
+                    "motivationMsg3*percentageGoal": 500,
+                    "motivationMsg3*gender": 0,
                     }
-    context_vars = np.array(["Sent Message Code",
-                            "daysSinceFeedbackMsg1",
-                            "daysSinceFeedbackMsg2", 
-                            "daysSinceFeedbackMsg3", 
-                            "daysSinceFeedbackMsg4", 
-                            "daysSinceMotivationMsg1", 
-                            "daysSinceMotivationMsg2", 
-                            "daysSinceMotivationMsg3", 
-                            "Age",
-                            "Gender",
-                            "Days-in-study",
-                            "Study-week",
-                            "DaysText",
-                            "WeeklyMood",
-                            "Sent Message Code",
-                            "Steps-yesterday",
-                            "Steps-day-before",
-                            "Step-difference",
-                            "Steps7days",
-                            "PercentageGoalYesterday",
-                            "PercentageGoalWeek",
-                            "PHQBaseline",
-                            "BABaseline"])
+    context_vars = np.array(["gender", #0=female, 1=male
+                            "percentageGoal"])
     experiment_vars = np.array([
-                            "feedbackMsg1",
-                            "feedbackMsg2",
-                            "feedbackMsg3",
-                            "feedbackMsg4",
                             "motivationMsg1",
                             "motivationMsg2",
-                            "motivationMsg3",
-                            "time1",
-                            "time2",
-                            "time3"
+                            "motivationMsg3"
                             ])
 
     true_model_params = {'noise':noise,
@@ -148,91 +66,10 @@ def find_possible_actions(true_model_params_file='True_Model_Coefficients.csv'):
     """
     #possible_actions =  [[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1]]
     # possible_actions =  [[0],[1]]
-    possible_actions =  [
-                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-                        [0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
-                        [0, 0, 0, 1, 0, 0, 0, 1, 0, 0],
-                        [0, 0, 0, 1, 0, 0, 1, 0, 0, 0],
-                        [0, 0, 0, 1, 0, 0, 1, 0, 0, 1],
-                        [0, 0, 0, 1, 0, 0, 1, 0, 1, 0],
-                        [0, 0, 0, 1, 0, 0, 1, 1, 0, 0],
-                        [0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
-                        [0, 0, 0, 1, 0, 1, 0, 0, 0, 1],
-                        [0, 0, 0, 1, 0, 1, 0, 0, 1, 0],
-                        [0, 0, 0, 1, 0, 1, 0, 1, 0, 0],
-                        [0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 1, 1, 0, 0, 0, 0, 1],
-                        [0, 0, 0, 1, 1, 0, 0, 0, 1, 0],
-                        [0, 0, 0, 1, 1, 0, 0, 1, 0, 0],
-
-                        [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
-                        [0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
-                        [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
-                        [0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
-                        [0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
-                        [0, 0, 1, 0, 0, 0, 1, 0, 1, 0],
-                        [0, 0, 1, 0, 0, 0, 1, 1, 0, 0],
-                        [0, 0, 1, 0, 0, 1, 0, 0, 0, 0],
-                        [0, 0, 1, 0, 0, 1, 0, 0, 0, 1],
-                        [0, 0, 1, 0, 0, 1, 0, 0, 1, 0],
-                        [0, 0, 1, 0, 0, 1, 0, 1, 0, 0],
-                        [0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
-                        [0, 0, 1, 0, 1, 0, 0, 0, 0, 1],
-                        [0, 0, 1, 0, 1, 0, 0, 0, 1, 0],
-                        [0, 0, 1, 0, 1, 0, 0, 1, 0, 0],
-
-                        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
-                        [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
-                        [0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
-                        [0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
-                        [0, 1, 0, 0, 0, 0, 1, 0, 0, 1],
-                        [0, 1, 0, 0, 0, 0, 1, 0, 1, 0],
-                        [0, 1, 0, 0, 0, 0, 1, 1, 0, 0],
-                        [0, 1, 0, 0, 0, 1, 0, 0, 0, 0],
-                        [0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-                        [0, 1, 0, 0, 0, 1, 0, 0, 1, 0],
-                        [0, 1, 0, 0, 0, 1, 0, 1, 0, 0],
-                        [0, 1, 0, 0, 1, 0, 0, 0, 0, 0],
-                        [0, 1, 0, 0, 1, 0, 0, 0, 0, 1],
-                        [0, 1, 0, 0, 1, 0, 0, 0, 1, 0],
-                        [0, 1, 0, 0, 1, 0, 0, 1, 0, 0],
-
-                        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                        [1, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-                        [1, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-                        [1, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-                        [1, 0, 0, 0, 0, 0, 1, 0, 0, 1],
-                        [1, 0, 0, 0, 0, 0, 1, 0, 1, 0],
-                        [1, 0, 0, 0, 0, 0, 1, 1, 0, 0],
-                        [1, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-                        [1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-                        [1, 0, 0, 0, 0, 1, 0, 0, 1, 0],
-                        [1, 0, 0, 0, 0, 1, 0, 1, 0, 0],
-                        [1, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-                        [1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-                        [1, 0, 0, 0, 1, 0, 0, 0, 1, 0],
-                        [1, 0, 0, 0, 1, 0, 0, 1, 0, 0],
-
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
-                        [0, 0, 0, 0, 0, 0, 1, 0, 1, 0],
-                        [0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
-                        [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-                        [0, 0, 0, 0, 0, 1, 0, 0, 1, 0],
-                        [0, 0, 0, 0, 0, 1, 0, 1, 0, 0],
-                        [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-                        [0, 0, 0, 0, 1, 0, 0, 0, 1, 0],
-                        [0, 0, 0, 0, 1, 0, 0, 1, 0, 0]]
+    possible_actions =  [[0, 0, 0],
+                        [0, 0, 1],
+                        [0, 1, 0],
+                        [1, 0, 0]]
 
 
     return possible_actions
@@ -253,71 +90,17 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
     #hypo_model_params = ['intercept','d1', 'd1*x1']
     hypo_model_params = [
                     "intercept",
-                    "feedbackMsg1",
-                    "feedbackMsg2",
-                    "feedbackMsg3",
-                    "feedbackMsg4",
+                    "gender", #0=female, 1=male
+                    "percentageGoal",
                     "motivationMsg1",
                     "motivationMsg2",
                     "motivationMsg3",
-                    "Sent Message Code",
-                    "time1",
-                    "time2",
-                    "time3",
-                    "daysSinceFeedbackMsg1",
-                    "daysSinceFeedbackMsg2", 
-                    "daysSinceFeedbackMsg3", 
-                    "daysSinceFeedbackMsg4", 
-                    "daysSinceMotivationMsg1", 
-                    "daysSinceMotivationMsg2", 
-                    "daysSinceMotivationMsg3", 
-                    "Age",
-                    "Gender",
-                    "Days-in-study",
-                    "Study-week", #discrete 0 for now
-                    "DaysText", #discrete 0 for now
-                    "WeeklyMood", #discrete 0 for now
-                    "Steps-yesterday",
-                    "Steps-day-before",
-                    "Step-difference",
-                    "Steps7days",
-                    "PercentageGoalWeek",
-                    "PercentageGoalYesterday",
-                    "PHQBaseline",
-                    "BABaseline",
-                    "feedbackMsg1*motivationMsg1", 
-                    "feedbackMsg1*motivationMsg2", 
-                    "feedbackMsg1*motivationMsg3", 
-                    "feedbackMsg2*motivationMsg1", 
-                    "feedbackMsg2*motivationMsg2", 
-                    "feedbackMsg2*motivationMsg3", 
-                    "feedbackMsg3*motivationMsg1", 
-                    "feedbackMsg3*motivationMsg2", 
-                    "feedbackMsg3*motivationMsg3", 
-                    "feedbackMsg4*motivationMsg1", 
-                    "feedbackMsg4*motivationMsg2", 
-                    "feedbackMsg4*motivationMsg3", 
-                    "feedbackMsg1*time1", 
-                    "feedbackMsg1*time2", 
-                    "feedbackMsg1*time3", 
-                    "feedbackMsg2*time1", 
-                    "feedbackMsg2*time2", 
-                    "feedbackMsg2*time3", 
-                    "feedbackMsg3*time1", 
-                    "feedbackMsg3*time2", 
-                    "feedbackMsg3*time3", 
-                    "feedbackMsg4*time1", 
-                    "feedbackMsg4*time2", 
-                    "feedbackMsg4*time3", 
-                    "motivationMsg1*time1", 
-                    "motivationMsg1*time2", 
-                    "motivationMsg1*time3", 
-                    "motivationMsg2*time1", 
-                    "motivationMsg2*time2", 
-                    "motivationMsg2*time3", 
-                    "motivationMsg3*time1", 
-                    "motivationMsg3*time2", 
-                    "motivationMsg3*time3"]
+                    "motivationMsg1*percentageGoal",
+                    "motivationMsg1*gender",
+                    "motivationMsg2*percentageGoal",
+                    "motivationMsg2*gender",
+                    "motivationMsg3*percentageGoal",
+                    "motivationMsg3*gender"]
     '''hypo_model_params =["bias",
                         "ch2",
                         "ch3", 
@@ -425,20 +208,49 @@ def hypo_model_output(estimated_coeff, experiment_vars, user_context,
     return dependant_var_estimate
 
 
-def generate_true_dataset(context_vars, user_count, user_dist=[],
-                            write_to_file=True):
+def generate_true_dataset(context_vars, user_count, is_binary_context = [], 
+                            user_dist=[], write_to_file=True):
     """
     Generate the users dataset randomly.
 
     Args:
         user_context (ndarray): 1D array containing user contextual values
         user_count (int): number of users to be generated
+        is_binary_context (list): if index i is 1, the corresponding
+        context_var is binary, otherwise it is continuoues. Empty set means
+        all are binary
         user_dist (ndarray): probability of generating 1 for each contextual variable. If not especified, the probability is 0.5
         write_to_file (bool): If True, the dataset will be stored in a file
 
     Returns:
         float: the true donation
     """
-    users_list = np.array([{context_vars[j]:nprnd.randint(2) for j in range(0,len(context_vars))} for i in range(0, user_count)])
+    users_list = []
+
+    if not is_binary_context:
+        users_list = np.array([{context_vars[j]:nprnd.randint(2) for j in range(0,len(context_vars))} for i in range(0, user_count)])
+    else:
+        if len(is_binary_context) != len(context_vars):
+            print("Some contectual varaiables are not set as binary or not.")
+            print("len(is_binary_context) != len(context_vars)")
+        for idx in range(0,len(context_vars)):
+            if idx == 0:
+                if is_binary_context[idx]:
+                    users_list = np.array([
+                        {context_vars[idx]:nprnd.randint(2)} for i in range(0,
+                            user_count)])
+                else:
+                    users_list = np.array([
+                        {context_vars[idx]:np.random.normal(0.7, 0.3)} for i in range(0, user_count)])
+
+            else:
+                if is_binary_context[idx]:
+                    for user in range(0,user_count):
+                        users_list[user].update({
+                                context_vars[idx]:nprnd.randint(2)})
+                else:
+                    for user in range(0,user_count):
+                        users_list[user].update(
+                            {context_vars[idx]:np.random.normal(0.7, 0.3)})
 
     return users_list

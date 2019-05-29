@@ -55,7 +55,7 @@ def main(mode=None):
 
     user_count = 1000
     batch_size = 10
-    simulation_count = 2
+    simulation_count = 200
     extensive = True
     rand_sampling_applied = True
     show_fig=True
@@ -128,7 +128,7 @@ def main(mode=None):
         by the user in command line (default: Calls thompson sampling)
             default priors: 0 unless it is specified by the user
         '''
-        users_context = models.generate_true_dataset(context_vars, user_count)
+        users_context = models.generate_true_dataset(context_vars, user_count, [1,0])
 
         thompson_output = thompson.apply_thompson_sampling(users_context,
                                                     experiment_vars,

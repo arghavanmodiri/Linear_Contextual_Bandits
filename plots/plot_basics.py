@@ -233,11 +233,15 @@ def plot_bias_in_coeff(user_count, policy_name, hypo_params,
                         save_fig=True):
     plt.figure()
     UserItter = range(1,user_count+1)
+    colors = ['#000000', '#b300b3', '#009933', '#002266', '#990000', '#b36b00', '#004de6',
+                '#99bbff' ,'#ff6666','#ffcccc', '#ffa31a','#ffe0b3']
+    color_idx = 0
     #plt.plot(UserItter, prop_best_sim_itter, label = "Contextual Policy")
 
     for param in range(0,len(hypo_params)):
         plt.plot(UserItter, bias_in_coeff[:,param], label = hypo_params[
-                param])
+                param], color=colors[color_idx])
+        color_idx += 1
 
     plt.legend(loc='upper right', fontsize = 12)
     plt.xlabel('User Iterations', fontsize = 18)
