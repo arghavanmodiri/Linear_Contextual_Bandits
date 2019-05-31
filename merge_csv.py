@@ -4,6 +4,14 @@ from subprocess import check_output
 import numpy as numpy
 import pandas as pd
 
+'''
+This file merges all the files inside folder1 and folder2 that have the same
+name. The merged results will be written into CSV files and stored inside
+parent_folder_name. After the results have been saved, they should be
+transfered to the desired destination, otherwise they will be replaced by the second run of this file.
+
+'''
+
 parent_folder_name = "saved_output/raw_data/to merge/"
 folder1 = parent_folder_name + 'first/'
 folder2 = parent_folder_name + 'second/'
