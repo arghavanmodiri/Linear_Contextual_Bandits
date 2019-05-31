@@ -4,6 +4,9 @@ import pandas as pd
 import plots.plot_basics as bplots
 import matplotlib.pyplot as plt
 
+'''
+This files is used to generate the plots of tiny.cc/pcontextual paper.
+'''
 parent_folder_name = "saved_output/raw_data/"
 interaction_size = 'D'
 d1 = 0.3
