@@ -173,14 +173,18 @@ def main(mode=None):
 
 
         #Hammad: Bias Correction
-        if len(true_params_in_hypo) == 3:
+        # Removed this if/else as it was not compatible with diamante model
+        # if len(true_params_in_hypo) == 3:
+        if True:
             bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
 
         # Under specified model bias (Y = A0 + A1D)
+        '''
         else:
             # Bias(A1) = E(A1) - (B1 + B2/2)
             true_coeff_list_main = [true_coeff_list[0], true_coeff_list[1] + true_coeff_list[2]/2]
             bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_coeff_list_main))
+        '''
 
         bias_in_coeff += bias_in_coeff_per_sim
         bias_in_coeff_per_sim_df = pd.DataFrame(bias_in_coeff_per_sim)
