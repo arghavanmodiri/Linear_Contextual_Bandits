@@ -15,7 +15,6 @@ from datetime import datetime
 TODAY = date.today()
 NOW = datetime.now()
 
-np.set_printoptions(threshold=np.nan)
 
 def main(mode=None):
     """start the model"""
@@ -76,7 +75,7 @@ def main(mode=None):
     regression_d1x1_all_sim_random = []
     policies.append(['Thompson Sampling'])
 
-    save_output_folder = 'saved_output/raw_data/'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
+    save_output_folder = 'saved_output/raw_data'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
     if not os.path.exists(save_output_folder):
         os.mkdir(save_output_folder)
     save_optimal_action_ratio_thompson_df = pd.DataFrame()
@@ -146,7 +145,7 @@ def main(mode=None):
 
         beta_thompson_coeffs += np.array(thompson_output[5])
 
-        #for coeff_name, coeff_value in true_coeff.items():
+        #list is the true coefficients of parameters that exist in both hypo and true models
         true_params_in_hypo = []
         for  idx, hypo_param_name in enumerate(hypo_params):
             if(hypo_param_name in true_coeff):
@@ -173,12 +172,15 @@ def main(mode=None):
 
 
         #Hammad: Bias Correction
-        if len(true_params_in_hypo) == 3:
+        # Changed == 3 to == len(true_coeff), meaning the model is accurately specified
+        if len(true_params_in_hypo) == len(true_coeff):
             bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
 
         # Under specified model bias (Y = A0 + A1D)
         else:
             # Bias(A1) = E(A1) - (B1 + B2/2)
+            #shouldn't this just be done once? same with true_params_in_hypo?
+            true_coeff_list_main = make_true_coeff_list()
             true_coeff_list_main = [true_coeff_list[0], true_coeff_list[1] + true_coeff_list[2]/2]
             bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_coeff_list_main))
 
