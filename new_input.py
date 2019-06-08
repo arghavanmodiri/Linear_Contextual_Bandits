@@ -1,4 +1,4 @@
-from new_main import main_algo
+from main import main
 import numpy as np
 import argparse
 import sys
@@ -17,6 +17,6 @@ if __name__ == "__main__":
 
     input_data = args.input_file[0]
     input_data = json.load(open(input_data))
-    main_algo(input_data)
+    main(input_data)
 
 
