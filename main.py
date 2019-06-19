@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 import os
+import sys
+import json
+import argparse
 import numpy as np
 import pandas as pd
 import true_hypo_models as models
@@ -14,6 +17,24 @@ from datetime import datetime
 
 TODAY = date.today()
 NOW = datetime.now()
+
+def calculated_expected_values(hypo_vars, dist):
+    """
+    :param hypo_vars: list hypothesized parameters in the model
+    :param dist: distribution for each of the hypothesized parameters
+    :return: dictionary with the expected value for each hypothesized parameter
+    """
+    e_vals = {}
+    for var in hypo_vars:
+        if dist[var][0] == "bin":
+            e_vals[var] = dist[var][2]
+        elif dist[var][0] == "norm":
+            e_vals[var] = dist[var][1]
+        elif dist[var][0] == "beta":
+            e_vals[var] = dist[var][1] / (dist[var][1] + dist[var][2])
+        else:
+            e_vals[var] = 0.5
+    return e_vals
 
 
 def main(input_dict, mode=None):
@@ -410,4 +431,16 @@ def main(input_dict, mode=None):
         plt.show()
 
 if __name__ == "__main__":
-    main()
+
+    parser = argparse.ArgumentParser(description='Process each .')
+    parser.add_argument('input_file', metavar='input_file', type=str, nargs=1,
+                        help='Name of the json config file')
+    args = parser.parse_args()
+
+    if (len(args.input_file) != 1) or (not args.input_file[0].endswith(".json")):
+        print( "Error: Function should have only one input, name of the JSON config file." )
+        sys.exit(1)
+
+    input_data = args.input_file[0]
+    input_data = json.load(open(input_data))
+    main(input_data)
