@@ -72,6 +72,9 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
     """
     #hypo_model_params = ['bias', 'ch2','ch3', 'matching', 'republic']
     hypo_model_params = ['intercept','m1', 'm2', 'f1', 'f2', 'm1*f1', 'm1*f2', 'm2*f1', 'm2*f2']
+    # TODO read from csv
+    if hypo_model_params_file == "Hypo_Model_No_Interection.csv":
+        hypo_model_params = ['intercept','m1', 'm2', 'f1', 'f2']
 
     '''hypo_model_params =["bias",
                         "ch2",
@@ -135,7 +138,7 @@ def true_model_output(true_coeff, experiment_vars, user_context, applied_arm,
 
 
 def calculate_hypo_regressors(hypo_model_params, experiment_vars, user_context,
-                                 applied_arm):
+                                 applied_arm, interaction=True):
     # applied_arm_dict = {experiment_vars[i]:applied_arm[i] for i in range(0, len(applied_arm))}
     # user_params = {**user_context, **applied_arm_dict} 
     X = np.zeros(len(hypo_model_params))
@@ -145,17 +148,18 @@ def calculate_hypo_regressors(hypo_model_params, experiment_vars, user_context,
         if arm != None:
             index = hypo_model_params.index(arm)
             X[index] = 1
-            for i in range(applied_arm.index(arm) + 1, len(applied_arm)): # 2-way interactions between actions
-                if applied_arm[i] != None:
-                    interaction = arm + "*" + applied_arm[i]
-                    index = hypo_model_params.index(interaction)
-                    X[index] = 1
-            for cont in user_context: # 2-way interactions between action and context
-                # TODO continuous contexts
-                if cont != None:
-                    interaction = arm + "*" + cont
-                    index = hypo_model_params.index(interaction)
-                    X[index] = 1
+            if interaction:
+                for i in range(applied_arm.index(arm) + 1, len(applied_arm)): # 2-way interactions between actions
+                    if applied_arm[i] != None:
+                        interaction_term = arm + "*" + applied_arm[i]
+                        index = hypo_model_params.index(interaction_term)
+                        X[index] = 1
+                for cont in user_context: # 2-way interactions between action and context
+                    # TODO continuous contexts
+                    if cont != None:
+                        interaction_term = arm + "*" + cont
+                        index = hypo_model_params.index(interaction_term)
+                        X[index] = 1
 
     '''X =[]
     for param in hypo_model_params:
@@ -176,7 +180,7 @@ def calculate_hypo_regressors(hypo_model_params, experiment_vars, user_context,
 
 # TODO get hypo_model_params to use calculate_hypo_regressors
 def hypo_model_output(estimated_coeff, experiment_vars, user_context,
-                        applied_arm):
+                        applied_arm, interaction=True):
     """
     Calculates the estimated donation for the specified user and arm
 
@@ -196,15 +200,16 @@ def hypo_model_output(estimated_coeff, experiment_vars, user_context,
     for arm in applied_arm:
         if arm != None:
             dependant_var_estimate += estimated_coeff[arm]
-            for i in range(applied_arm.index(arm) + 1, len(applied_arm)): # 2-way interactions
-                if applied_arm[i] != None:
-                    interaction = arm + "*" + applied_arm[i]
-                    dependant_var_estimate += estimated_coeff[interaction]
-            for cont in user_context: # 2-way interactions between action and context
-                # TODO continuous contexts
-                if cont != None:
-                    interaction = arm + "*" + cont
-                    dependant_var_estimate += estimated_coeff[interaction]
+            if interaction:
+                for i in range(applied_arm.index(arm) + 1, len(applied_arm)): # 2-way interactions
+                    if applied_arm[i] != None:
+                        interaction_term = arm + "*" + applied_arm[i]
+                        dependant_var_estimate += estimated_coeff[interaction_term]
+                for cont in user_context: # 2-way interactions between action and context
+                    # TODO continuous contexts
+                    if cont != None:
+                        interaction_term = arm + "*" + cont
+                        dependant_var_estimate += estimated_coeff[interaction_term]
 
     '''for coeff_name, coeff_value in estimated_coeff.items():
         temp = 0

@@ -4,7 +4,7 @@ import true_hypo_models as models
 
 
 def pick_hypo_optimal_arm(estimated_hypo_coeff, user_context, experiment_vars,
-                            bandit_arms):
+                            bandit_arms, interaction=True):
     """
     Find the optimal arms to be applied to the user based on its user_context.
 
@@ -21,7 +21,7 @@ def pick_hypo_optimal_arm(estimated_hypo_coeff, user_context, experiment_vars,
     optimal_arm_est_output = -100000
 
     for arm in bandit_arms:
-        temp_result = models.hypo_model_output(estimated_hypo_coeff, experiment_vars, user_context, arm)
+        temp_result = models.hypo_model_output(estimated_hypo_coeff, experiment_vars, user_context, arm, interaction)
         if( abs(temp_result-optimal_arm_est_output)<0.00000001):
             optimal_arm.append(arm)
         elif(temp_result > optimal_arm_est_output):

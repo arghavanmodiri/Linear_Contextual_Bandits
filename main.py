@@ -45,6 +45,7 @@ def main(mode=None):
     #models.generate_true_dataset(np.array(['var1', 'var2']), user_count)
     true_model_params = models.read_true_model()
     hypo_params = models.read_hypo_model()
+    hypo_params_no_interaction = models.read_hypo_model("Hypo_Model_No_Interection.csv")
     bandit_arms = models.find_possible_actions()
     noise_stats = true_model_params['noise']
     true_coeff = true_model_params['true_coeff']
@@ -57,16 +58,23 @@ def main(mode=None):
     simulation_count = 100
     extensive = True
     rand_sampling_applied = True
+    no_interaction_applied = True
     show_fig=True
 
     regrets = np.zeros(user_count)
+    regrets_no_interaction = np.zeros(user_count)
     regrets_rand = np.zeros(user_count)
     optimal_action_ratio = np.zeros(user_count)
+    optimal_action_ratio_no_interaction = np.zeros(user_count)
     optimal_action_ratio_rand = np.zeros(user_count)
     mse = np.zeros((user_count, len(hypo_params)))
+    mse_no_interaction = np.zeros((user_count, len(hypo_params_no_interaction)))
     beta_thompson_coeffs = np.zeros((user_count, len(hypo_params)))
+    beta_thompson_coeffs_no_interaction = np.zeros((user_count, len(hypo_params_no_interaction)))
     coeff_sign_error = np.zeros((user_count, len(hypo_params)))
+    coeff_sign_error_no_interaction = np.zeros((user_count, len(hypo_params_no_interaction)))
     bias_in_coeff = np.zeros((user_count, len(hypo_params)))
+    bias_in_coeff_no_interaction = np.zeros((user_count, len(hypo_params_no_interaction)))
     policies = []
     regression_intercept_all_sim = []
     regression_d1_all_sim = []
@@ -74,7 +82,7 @@ def main(mode=None):
     regression_intercept_all_sim_random = []
     regression_d1_all_sim_random = []
     regression_d1x1_all_sim_random = []
-    policies.append(['Thompson Sampling'])
+    policies.append(['Thompson with Interaction'])
 
     save_output_folder = 'saved_output/raw_data/'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
     if not os.path.exists(save_output_folder):
@@ -189,6 +197,58 @@ def main(mode=None):
         save_bias_in_coeff_thompson_df = pd.concat([
                                 save_bias_in_coeff_thompson_df,
                                 bias_in_coeff_per_sim_df], axis=1)
+
+        # TODO create methods or objects
+        # TODO save to df
+        if no_interaction_applied:
+            a_pre = 0
+            b_pre = 0
+            #Hammad: Bias Correction
+            mean_pre = np.zeros(len(hypo_params_no_interaction))
+            cov_pre = np.identity(len(hypo_params_no_interaction))
+
+            no_interaction_outputs = thompson.apply_thompson_sampling(users_context,
+                                                    experiment_vars,
+                                                    bandit_arms,
+                                                    hypo_params_no_interaction,
+                                                    true_coeff,
+                                                    batch_size,
+                                                    extensive,
+                                                    mean_pre,
+                                                    cov_pre,
+                                                    a_pre,
+                                                    b_pre,
+                                                    noise_stats,
+                                                    interaction=False)
+            regrets_no_interaction += no_interaction_outputs[2]
+            optimal_action_ratio_per_sim = np.array(list((no_interaction_outputs[1][i] in no_interaction_outputs[0][i]) for i in range(0,user_count))).astype(int)
+            optimal_action_ratio_no_interaction += optimal_action_ratio_per_sim
+
+            beta_thompson_coeffs_no_interaction += np.array(no_interaction_outputs[5])
+
+            true_params_in_hypo = []
+            for  idx, hypo_param_name in enumerate(hypo_params_no_interaction):
+                if(hypo_param_name in true_coeff):
+                    true_params_in_hypo.append(true_coeff[hypo_param_name])
+
+            mse_per_sim = np.power(np.array(np.array(no_interaction_outputs[5]) -
+                                np.array(true_params_in_hypo)),2)
+            mse_no_interaction += mse_per_sim
+
+            coeff_sign_error_per_sim = np.sign(np.array(true_params_in_hypo)) - np.sign(np.array(no_interaction_outputs[5])) == np.zeros(len(hypo_params_no_interaction))
+            coeff_sign_error_no_interaction +=coeff_sign_error_per_sim
+
+            #Hammad: Bias Correction
+            if len(true_params_in_hypo) >= 3:
+                bias_in_coeff_per_sim = np.array(np.array(no_interaction_outputs[5]) - np.array(true_params_in_hypo))
+
+            # Under specified model bias (Y = A0 + A1D)
+            else:
+                # Bias(A1) = E(A1) - (B1 + B2/2)
+                true_coeff_list_main = [true_coeff_list[0], true_coeff_list[1] + true_coeff_list[2]/2]
+                bias_in_coeff_per_sim = np.array(np.array(no_interaction_outputs[5]) - np.array(true_coeff_list_main))
+
+            bias_in_coeff_no_interaction += bias_in_coeff_per_sim
 
         if(rand_sampling_applied):
             rand_outputs= random.apply_random_sampling(users_context,
@@ -357,6 +417,16 @@ def main(mode=None):
     bias_in_coeff = bias_in_coeff / simulation_count
     coeff_sign_error = coeff_sign_error / simulation_count
 
+    # TODO create methods
+    if no_interaction_applied:
+        policies.append(['Thompson without Interaction'])
+        regrets_no_interaction = regrets_no_interaction / simulation_count
+        optimal_action_ratio_no_interaction = optimal_action_ratio_no_interaction /simulation_count
+        mse_no_interaction = mse_no_interaction / simulation_count
+        beta_thompson_coeffs_no_interaction = beta_thompson_coeffs_no_interaction / simulation_count
+        bias_in_coeff_no_interaction = bias_in_coeff_no_interaction / simulation_count
+        coeff_sign_error_no_interaction = coeff_sign_error_no_interaction / simulation_count
+
     if(rand_sampling_applied):
         policies.append(['Random Sampling'])
         regrets_rand = regrets_rand / simulation_count
@@ -368,17 +438,27 @@ def main(mode=None):
     user can plots more figures if desired.
     '''
     if(rand_sampling_applied):
-        regrets_all_policies = np.stack((regrets, regrets_rand))
-        #optimal_action_ratio_all_policies = np.stack((optimal_action_ratio,
-        #regrets_rand))
-        optimal_action_ratio_all_policies = np.stack((optimal_action_ratio,
-            optimal_action_ratio_rand))
-        mse_all_policies = np.array([mse])
-        # suboptimal_ratio_all_policies = np.stack((x0_suboptimal_ratio, x1_suboptimal_ratio, x0_suboptimal_ratio_rand, x1_suboptimal_ratio_rand))
+        if no_interaction_applied:
+            regrets_all_policies = np.stack((regrets, regrets_no_interaction, regrets_rand))
+            optimal_action_ratio_all_policies = np.stack((optimal_action_ratio, optimal_action_ratio_no_interaction,
+                optimal_action_ratio_rand))
+            # mse_all_policies = np.stack((mse, mse_no_interaction))
+        else:
+            regrets_all_policies = np.stack((regrets, regrets_rand))
+            #optimal_action_ratio_all_policies = np.stack((optimal_action_ratio,
+            #regrets_rand))
+            optimal_action_ratio_all_policies = np.stack((optimal_action_ratio,
+                optimal_action_ratio_rand))
+            # mse_all_policies = np.array([mse])
+            # suboptimal_ratio_all_policies = np.stack((x0_suboptimal_ratio, x1_suboptimal_ratio, x0_suboptimal_ratio_rand, x1_suboptimal_ratio_rand))
+    elif no_interaction_applied:
+        regrets_all_policies = np.stack((regrets, regrets_no_interaction))
+        optimal_action_ratio_all_policies = np.stack((optimal_action_ratio, optimal_action_ratio_no_interaction))
+        # mse_all_policies = np.stack((mse, mse_no_interaction))
     else:
         regrets_all_policies = np.array([regrets])
         optimal_action_ratio_all_policies = np.array([optimal_action_ratio])
-        mse_all_policies = np.array([mse])
+        # mse_all_policies = np.array([mse])
         # suboptimal_ratio_all_policies = np.stack((x0_suboptimal_ratio, x1_suboptimal_ratio))
 
     
@@ -400,16 +480,29 @@ def main(mode=None):
     bplots.plot_mse(user_count, ['Thompson Sampling'], mse_all_policies,
                     simulation_count, batch_size)'''
     
-    bplots.plot_coeff_ranking(user_count, 'Thompson Sampling',
+    bplots.plot_coeff_ranking(user_count, 'Thompson with Interaction',
                 beta_thompson_coeffs, hypo_params, simulation_count,
                 batch_size, save_fig=True)
 
-    bplots.plot_coeff_sign_error(user_count, 'Thompson Sampling', hypo_params,
+    bplots.plot_coeff_sign_error(user_count, 'Thompson with Interaction', hypo_params,
                 coeff_sign_error, simulation_count, batch_size, save_fig=True)
 
     
-    bplots.plot_bias_in_coeff(user_count, 'Thompson Sampling', hypo_params,
+    bplots.plot_bias_in_coeff(user_count, 'Thompson with Interaction', hypo_params,
                 bias_in_coeff, simulation_count, batch_size, save_fig=True)
+
+    # TODO create methods
+    if no_interaction_applied:
+        bplots.plot_coeff_ranking(user_count, 'Thompson without Interaction',
+                beta_thompson_coeffs_no_interaction, hypo_params_no_interaction, simulation_count,
+                batch_size, save_fig=True)
+
+        bplots.plot_coeff_sign_error(user_count, 'Thompson without Interaction', hypo_params_no_interaction,
+                coeff_sign_error_no_interaction, simulation_count, batch_size, save_fig=True)
+
+    
+        bplots.plot_bias_in_coeff(user_count, 'Thompson without Interaction', hypo_params_no_interaction,
+                bias_in_coeff_no_interaction, simulation_count, batch_size, save_fig=True)
     
     if(show_fig):
         #plt.show(block=False)
