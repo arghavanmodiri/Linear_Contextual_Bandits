@@ -15,7 +15,7 @@ from datetime import datetime
 TODAY = date.today()
 NOW = datetime.now()
 
-np.set_printoptions(threshold=np.nan)
+#np.set_printoptions(threshold=np.nan)
 
 def main(mode=None):
     """start the model"""
@@ -54,7 +54,7 @@ def main(mode=None):
 
     user_count = 1000
     batch_size = 10
-    simulation_count = 2
+    simulation_count = 100
     extensive = True
     rand_sampling_applied = True
     show_fig=True
@@ -173,7 +173,7 @@ def main(mode=None):
 
 
         #Hammad: Bias Correction
-        if len(true_params_in_hypo) == 3:
+        if len(true_params_in_hypo) >= 3:
             bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
 
         # Under specified model bias (Y = A0 + A1D)
@@ -369,27 +369,37 @@ def main(mode=None):
     '''
     if(rand_sampling_applied):
         regrets_all_policies = np.stack((regrets, regrets_rand))
+        #optimal_action_ratio_all_policies = np.stack((optimal_action_ratio,
+        #regrets_rand))
         optimal_action_ratio_all_policies = np.stack((optimal_action_ratio,
             optimal_action_ratio_rand))
         mse_all_policies = np.array([mse])
-
+        # suboptimal_ratio_all_policies = np.stack((x0_suboptimal_ratio, x1_suboptimal_ratio, x0_suboptimal_ratio_rand, x1_suboptimal_ratio_rand))
     else:
         regrets_all_policies = np.array([regrets])
         optimal_action_ratio_all_policies = np.array([optimal_action_ratio])
         mse_all_policies = np.array([mse])
+        # suboptimal_ratio_all_policies = np.stack((x0_suboptimal_ratio, x1_suboptimal_ratio))
 
-
-    fig, ax = plt.subplots(1,1,sharey=False)
-    bplots.plot_regret(ax,user_count, policies, regrets_all_policies,
+    
+    bplots.plot_regret(user_count, policies, regrets_all_policies,
                         simulation_count, batch_size)
 
 
+    '''if(rand_sampling_applied):
+         bplots.plot_suboptimal_action_ratio(user_count, ['Thompson Sampling X = 0','Thompson Sampling X = 1', 'Random Sampling X=0', 'Random Sampling X=1'],
+                suboptimal_ratio_all_policies, simulation_count, batch_size,
+                mode='per_user')'''
+
+    
+    
     bplots.plot_optimal_action_ratio(user_count, policies,
             optimal_action_ratio_all_policies, simulation_count, batch_size,
             mode='per_user')
-
+    '''
     bplots.plot_mse(user_count, ['Thompson Sampling'], mse_all_policies,
-                    simulation_count, batch_size)
+                    simulation_count, batch_size)'''
+    
     bplots.plot_coeff_ranking(user_count, 'Thompson Sampling',
                 beta_thompson_coeffs, hypo_params, simulation_count,
                 batch_size, save_fig=True)
@@ -397,10 +407,9 @@ def main(mode=None):
     bplots.plot_coeff_sign_error(user_count, 'Thompson Sampling', hypo_params,
                 coeff_sign_error, simulation_count, batch_size, save_fig=True)
 
-
+    
     bplots.plot_bias_in_coeff(user_count, 'Thompson Sampling', hypo_params,
                 bias_in_coeff, simulation_count, batch_size, save_fig=True)
-
     
     if(show_fig):
         #plt.show(block=False)

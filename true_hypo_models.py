@@ -24,11 +24,17 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
     context_vars = np.array(['republic'])
     experiment_vars = np.array(['ch2','ch3', 'matching'])'''
     true_coeff = {"intercept": 0,
-                    "d1": 0.3,
-                    "d1*x1": -0.6}
+                    "m1": 100,
+                    "m2": 150, 
+                    "f1": 100, 
+                    "f2": 200,
+                    "m1*f1": 250,
+                    "m1*f2": 0,
+                    "m2*f1": 0,
+                    "m2*f2": 50}
 
-    context_vars = np.array(['x1'])
-    experiment_vars = np.array(['d1'])
+    context_vars = np.array([])
+    experiment_vars = np.array([["m1", "m2"], ["f1", "f2"]])
 
     true_model_params = {'noise':noise,
                         'true_coeff': true_coeff,
@@ -48,7 +54,7 @@ def find_possible_actions(true_model_params_file='True_Model_Coefficients.csv'):
         list: List of all possible actions
     """
     #possible_actions =  [[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1]]
-    possible_actions =  [[0],[1]]
+    possible_actions =  [[None, None], [None, "f1"], [None, "f2"], ["m1", None], ["m1", "f1"], ["m1", "f2"], ["m2", None], ["m2", "f1"], ["m2", "f2"]]
     
     return possible_actions
 
@@ -65,7 +71,7 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
         list: containing the available parameters in hypothesized model
     """
     #hypo_model_params = ['bias', 'ch2','ch3', 'matching', 'republic']
-    hypo_model_params = ['intercept','d1', 'd1*x1']
+    hypo_model_params = ['intercept','m1', 'm2', 'f1', 'f2', 'm1*f1', 'm1*f2', 'm2*f1', 'm2*f2']
 
     '''hypo_model_params =["bias",
                         "ch2",
@@ -76,7 +82,7 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
     '''
     return hypo_model_params
 
-
+# TODO get list of coefficients (same as hypo_model_params) to use calculate_hypo_regressors
 def true_model_output(true_coeff, experiment_vars, user_context, applied_arm,
                         noise_stats):
     """
@@ -91,15 +97,28 @@ def true_model_output(true_coeff, experiment_vars, user_context, applied_arm,
     Returns:
         float: the true value of the dependant variable
     """
-    applied_arm_dict = {experiment_vars[i]:applied_arm[i] for i
-                        in range(0, len(applied_arm))}
-    user_params = {**user_context, **applied_arm_dict} 
-    dependant_var = 0
+    #applied_arm_dict = {experiment_vars[i]: applied_arm[i] for i in range(0, len(applied_arm))}
+    #user_params = {**user_context, **applied_arm_dict} 
+    dependant_var = true_coeff['intercept']
 
-    for coeff_name, coeff_value in true_coeff.items():
+    for arm in applied_arm:
+        if arm != None:
+            dependant_var += true_coeff[arm]
+            for i in range(applied_arm.index(arm) + 1, len(applied_arm)): # 2-way interactions
+                if applied_arm[i] != None:
+                    interaction = arm + "*" + applied_arm[i]
+                    dependant_var += true_coeff[interaction]
+            for cont in user_context: # 2-way interactions between action and context
+                # TODO continuous contexts
+                if cont != None:
+                    interaction = arm + "*" + cont
+                    dependant_var += true_coeff[interaction]
+
+    '''for coeff_name, coeff_value in true_coeff.items():
         temp = 0
         if(coeff_name == 'intercept'):
-            temp += coeff_value
+            #temp += coeff_value
+            pass
         elif('*' in coeff_name):
             interact_vars = coeff_name.split('*')
             temp = 1
@@ -108,7 +127,7 @@ def true_model_output(true_coeff, experiment_vars, user_context, applied_arm,
             temp = coeff_value * temp
         else:
             temp = coeff_value * user_params[coeff_name]
-        dependant_var += temp
+        dependant_var += temp'''
 
     added_noise = nprnd.normal(loc=noise_stats['noise_mean'], scale=noise_stats['noise_std'], size=1)[0]
     dependant_var = dependant_var + added_noise
@@ -117,10 +136,28 @@ def true_model_output(true_coeff, experiment_vars, user_context, applied_arm,
 
 def calculate_hypo_regressors(hypo_model_params, experiment_vars, user_context,
                                  applied_arm):
-    applied_arm_dict = {experiment_vars[i]:applied_arm[i] for i
-                        in range(0, len(applied_arm))}
-    user_params = {**user_context, **applied_arm_dict} 
-    X =[]
+    # applied_arm_dict = {experiment_vars[i]:applied_arm[i] for i in range(0, len(applied_arm))}
+    # user_params = {**user_context, **applied_arm_dict} 
+    X = np.zeros(len(hypo_model_params))
+    X[0] = 1
+
+    for arm in applied_arm:
+        if arm != None:
+            index = hypo_model_params.index(arm)
+            X[index] = 1
+            for i in range(applied_arm.index(arm) + 1, len(applied_arm)): # 2-way interactions between actions
+                if applied_arm[i] != None:
+                    interaction = arm + "*" + applied_arm[i]
+                    index = hypo_model_params.index(interaction)
+                    X[index] = 1
+            for cont in user_context: # 2-way interactions between action and context
+                # TODO continuous contexts
+                if cont != None:
+                    interaction = arm + "*" + cont
+                    index = hypo_model_params.index(interaction)
+                    X[index] = 1
+
+    '''X =[]
     for param in hypo_model_params:
         temp = 0
         if(param == 'intercept'):
@@ -132,11 +169,12 @@ def calculate_hypo_regressors(hypo_model_params, experiment_vars, user_context,
                 temp = temp * user_params[var]
         else:
             temp = user_params[param]
-        X.append(temp)
+        X.append(temp)'''
 
     return X
 
 
+# TODO get hypo_model_params to use calculate_hypo_regressors
 def hypo_model_output(estimated_coeff, experiment_vars, user_context,
                         applied_arm):
     """
@@ -151,15 +189,28 @@ def hypo_model_output(estimated_coeff, experiment_vars, user_context,
     Returns:
         float: the hypothesized donation
     """
-    applied_arm_dict = {experiment_vars[i]:applied_arm[i] for i
-                        in range(0, len(applied_arm))}
-    user_params = {**user_context, **applied_arm_dict}
-    dependant_var_estimate = 0
+    #applied_arm_dict = {experiment_vars[i]: applied_arm[i] for i in range(0, len(applied_arm))}
+    #user_params = {**user_context, **applied_arm_dict}
+    dependant_var_estimate = estimated_coeff['intercept']
 
-    for coeff_name, coeff_value in estimated_coeff.items():
+    for arm in applied_arm:
+        if arm != None:
+            dependant_var_estimate += estimated_coeff[arm]
+            for i in range(applied_arm.index(arm) + 1, len(applied_arm)): # 2-way interactions
+                if applied_arm[i] != None:
+                    interaction = arm + "*" + applied_arm[i]
+                    dependant_var_estimate += estimated_coeff[interaction]
+            for cont in user_context: # 2-way interactions between action and context
+                # TODO continuous contexts
+                if cont != None:
+                    interaction = arm + "*" + cont
+                    dependant_var_estimate += estimated_coeff[interaction]
+
+    '''for coeff_name, coeff_value in estimated_coeff.items():
         temp = 0
         if(coeff_name == 'intercept'):
-            temp += coeff_value
+            #temp += coeff_value
+            pass
         elif('*' in coeff_name):
             interact_vars = coeff_name.split('*')
             temp = 1
@@ -169,7 +220,7 @@ def hypo_model_output(estimated_coeff, experiment_vars, user_context,
         else:
             temp = coeff_value * user_params[coeff_name]
 
-        dependant_var_estimate = np.add(dependant_var_estimate, temp)
+        dependant_var_estimate = np.add(dependant_var_estimate, temp)'''
 
     return dependant_var_estimate
 
@@ -188,6 +239,7 @@ def generate_true_dataset(context_vars, user_count, user_dist=[],
     Returns:
         float: the true donation
     """
-    users_list = np.array([{context_vars[j]:nprnd.randint(2) for j in range(0,len(context_vars))} for i in range(0, user_count)])
+    #users_list = np.array([{context_vars[j]:nprnd.randint(2) for j in range(0,len(context_vars))} for i in range(0, user_count)])
 
-    return users_list
+    #return users_list
+    return np.array([[None]] * user_count)

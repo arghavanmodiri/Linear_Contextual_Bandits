@@ -104,7 +104,6 @@ def apply_thompson_sampling(user_context, experiment_vars, bandit_arms, hypo_mod
         list: calculated regret for each user
     """
     user_count = user_context.shape[0]
-    #print("in sampling,user_count: ", user_count)
     batch_count = int(user_count/batch_size)
     start_batch = 0
     end_batch = batch_size
@@ -179,7 +178,7 @@ def apply_thompson_sampling(user_context, experiment_vars, bandit_arms, hypo_mod
         start_batch = end_batch
         end_batch = end_batch+batch_size
 
-    return [true_optimal_action_all, hypo_optimal_action_all, regret_all, true_reward_all, hypo_reward_all, beta_thompson_all]
+    return [true_optimal_action_all, hypo_optimal_action_all, np.array(regret_all), true_reward_all, hypo_reward_all, beta_thompson_all]
 
 
 
