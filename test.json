@@ -19,7 +19,7 @@
         "possible_actions": [[0], [1]],
         "user_count": 1000,
         "batch_size": 10,
-        "simulation_count": 500,
+        "simulation_count": 5,
         "extensive": true,
         "rand_sampling_applied": false,
         "show_fig": true,
@@ -28,10 +28,11 @@
           "a": 1,
           "b": 1
         },
-        "dist_of_context":
+       "dist_of_context":
         {
-          "x1_0": 0.5,
-          "x1_1": 0.5
+          "x1": ["bin", 0.4, 0.6],
+          "x2": ["norm", 1, 0.2],
+          "x3": ["beta", 4, 5 ]
         },
         "output_path": "arbitrary_path",
         "num_cores": 8

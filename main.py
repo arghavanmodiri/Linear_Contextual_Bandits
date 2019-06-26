@@ -18,23 +18,6 @@ from datetime import datetime
 TODAY = date.today()
 NOW = datetime.now()
 
-def calculated_expected_values(hypo_vars, dist):
-    """
-    :param hypo_vars: list hypothesized parameters in the model
-    :param dist: distribution for each of the hypothesized parameters
-    :return: dictionary with the expected value for each hypothesized parameter
-    """
-    e_vals = {}
-    for var in hypo_vars:
-        if dist[var][0] == "bin":
-            e_vals[var] = dist[var][2]
-        elif dist[var][0] == "norm":
-            e_vals[var] = dist[var][1]
-        elif dist[var][0] == "beta":
-            e_vals[var] = dist[var][1] / (dist[var][1] + dist[var][2])
-        else:
-            e_vals[var] = 0.5
-    return e_vals
 
 
 def main(input_dict, mode=None):
@@ -117,8 +100,8 @@ def main(input_dict, mode=None):
 
     for sim in range(0, simulation_count):
         print("sim: ",sim)
-        a_pre = 0
-        b_pre = 0
+        a_pre = input_dict['NIG_priors']['a']
+        b_pre = input_dict['NIG_priors']['b']
         #Hammad: Bias Correction
         mean_pre = np.zeros(len(hypo_params))
         cov_pre = np.identity(len(hypo_params))
@@ -202,9 +185,9 @@ def main(input_dict, mode=None):
         else:
             # Bias(A1) = E(A1) - (B1 + B2/2)
             # shouldn't this just be done once? same with true_params_in_hypo?
-            # true_coeff_list_main = make_true_coeff_list()
+            #true_coeff_list_main = make_true_coeff_list(true_params_in_hypo, true_coeff, expected_vals)
             true_coeff_list_main = [true_coeff_list[0], true_coeff_list[1] + true_coeff_list[2]/2]
-            bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_coeff_list_main))
+
 
         bias_in_coeff += bias_in_coeff_per_sim
         bias_in_coeff_per_sim_df = pd.DataFrame(bias_in_coeff_per_sim)
