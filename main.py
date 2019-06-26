@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 import os
+import sys
+import json
+import argparse
 import numpy as np
 import pandas as pd
 import true_hypo_models as models
@@ -15,9 +18,9 @@ from datetime import datetime
 TODAY = date.today()
 NOW = datetime.now()
 
-np.set_printoptions(threshold=np.nan)
 
-def main(mode=None):
+
+def main(input_dict, mode=None):
     """start the model"""
 
 
@@ -42,22 +45,23 @@ def main(mode=None):
     Based on the variables, find the list of all bandit arms
     '''
  
-    #models.generate_true_dataset(np.array(['var1', 'var2']), user_count)
-    true_model_params = models.read_true_model()
-    hypo_params = models.read_hypo_model()
-    bandit_arms = models.find_possible_actions()
+    true_model_params = input_dict['true_model_params']
+    hypo_params = input_dict['hypo_model_params']
+    bandit_arms = input_dict['possible_actions']
     noise_stats = true_model_params['noise']
     true_coeff = true_model_params['true_coeff']
-    context_vars = true_model_params['context_vars']
-    experiment_vars = true_model_params['experiment_vars']
     true_coeff_list = list(true_coeff.values())
+    print(true_coeff_list)
+    context_vars = np.array(true_model_params['context_vars'])
+    experiment_vars = np.array(true_model_params['experiment_vars'])
 
-    user_count = 1000
-    batch_size = 10
-    simulation_count = 2
-    extensive = True
-    rand_sampling_applied = True
-    show_fig=True
+    # Simulation parameters
+    user_count = input_dict['user_count']
+    batch_size = input_dict['batch_size'] # 10
+    simulation_count = input_dict['simulation_count']  # 2500
+    extensive = input_dict['extensive']
+    rand_sampling_applied = input_dict['rand_sampling_applied']
+    show_fig = input_dict['show_fig']
 
     regrets = np.zeros(user_count)
     regrets_rand = np.zeros(user_count)
@@ -76,7 +80,7 @@ def main(mode=None):
     regression_d1x1_all_sim_random = []
     policies.append(['Thompson Sampling'])
 
-    save_output_folder = 'saved_output/raw_data/'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
+    save_output_folder = 'saved_output/raw_data'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
     if not os.path.exists(save_output_folder):
         os.mkdir(save_output_folder)
     save_optimal_action_ratio_thompson_df = pd.DataFrame()
@@ -96,8 +100,8 @@ def main(mode=None):
 
     for sim in range(0, simulation_count):
         print("sim: ",sim)
-        a_pre = 0
-        b_pre = 0
+        a_pre = input_dict['NIG_priors']['a']
+        b_pre = input_dict['NIG_priors']['b']
         #Hammad: Bias Correction
         mean_pre = np.zeros(len(hypo_params))
         cov_pre = np.identity(len(hypo_params))
@@ -146,7 +150,7 @@ def main(mode=None):
 
         beta_thompson_coeffs += np.array(thompson_output[5])
 
-        #for coeff_name, coeff_value in true_coeff.items():
+        #list is the true coefficients of parameters that exist in both hypo and true models
         true_params_in_hypo = []
         for  idx, hypo_param_name in enumerate(hypo_params):
             if(hypo_param_name in true_coeff):
@@ -173,14 +177,17 @@ def main(mode=None):
 
 
         #Hammad: Bias Correction
-        if len(true_params_in_hypo) == 3:
+        # Changed == 3 to == len(true_coeff), meaning the model is accurately specified
+        if len(true_params_in_hypo) == len(true_coeff):
             bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
 
         # Under specified model bias (Y = A0 + A1D)
         else:
             # Bias(A1) = E(A1) - (B1 + B2/2)
+            # shouldn't this just be done once? same with true_params_in_hypo?
+            #true_coeff_list_main = make_true_coeff_list(true_params_in_hypo, true_coeff, expected_vals)
             true_coeff_list_main = [true_coeff_list[0], true_coeff_list[1] + true_coeff_list[2]/2]
-            bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_coeff_list_main))
+
 
         bias_in_coeff += bias_in_coeff_per_sim
         bias_in_coeff_per_sim_df = pd.DataFrame(bias_in_coeff_per_sim)
@@ -407,4 +414,16 @@ def main(mode=None):
         plt.show()
 
 if __name__ == "__main__":
-    main()
+
+    parser = argparse.ArgumentParser(description='Process each .')
+    parser.add_argument('input_file', metavar='input_file', type=str, nargs=1,
+                        help='Name of the json config file')
+    args = parser.parse_args()
+
+    if (len(args.input_file) != 1) or (not args.input_file[0].endswith(".json")):
+        print( "Error: Function should have only one input, name of the JSON config file." )
+        sys.exit(1)
+
+    input_data = args.input_file[0]
+    input_data = json.load(open(input_data))
+    main(input_data)

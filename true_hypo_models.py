@@ -65,7 +65,8 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
         list: containing the available parameters in hypothesized model
     """
     #hypo_model_params = ['bias', 'ch2','ch3', 'matching', 'republic']
-    hypo_model_params = ['intercept','d1', 'd1*x1']
+    hypo_model_params = ['intercept','d1']
+        #, 'd1*x1']
 
     '''hypo_model_params =["bias",
                         "ch2",
@@ -174,7 +175,7 @@ def hypo_model_output(estimated_coeff, experiment_vars, user_context,
     return dependant_var_estimate
 
 
-def generate_true_dataset(context_vars, user_count, user_dist=[],
+def generate_true_dataset(context_vars, user_count, is_binary_context=[], user_dist=[],
                             write_to_file=True):
     """
     Generate the users dataset randomly.
@@ -188,6 +189,34 @@ def generate_true_dataset(context_vars, user_count, user_dist=[],
     Returns:
         float: the true donation
     """
-    users_list = np.array([{context_vars[j]:nprnd.randint(2) for j in range(0,len(context_vars))} for i in range(0, user_count)])
+    # users_list = np.array([{context_vars[j]:nprnd.randint(2) for j in range(0,len(context_vars))} for i in range(0, user_count)])
+    users_list = []
 
+    if not is_binary_context:
+        users_list = np.array(
+            [{context_vars[j]: nprnd.randint(2) for j in range(0, len(context_vars))} for i in range(0, user_count)])
+    else:
+        if len(is_binary_context) != len(context_vars):
+            print("Some contectual varaiables are not set as binary or not.")
+            print("len(is_binary_context) != len(context_vars)")
+        for idx in range(0, len(context_vars)):
+            if idx == 0:
+                if is_binary_context[idx]:
+                    users_list = np.array([
+                        {context_vars[idx]: nprnd.randint(2)} for i in range(0,
+                                                                             user_count)])
+                else:
+                    users_list = np.array([
+                        {context_vars[idx]: np.random.normal(0.7, 0.3)} for i in range(0, user_count)])
+
+            else:
+                if is_binary_context[idx]:
+                    for user in range(0, user_count):
+                        users_list[user].update({
+                            context_vars[idx]: nprnd.randint(2)})
+                else:
+                    for user in range(0, user_count):
+                        users_list[user].update(
+                            {context_vars[idx]: np.random.normal(0.7, 0.3)})
+    # test
     return users_list

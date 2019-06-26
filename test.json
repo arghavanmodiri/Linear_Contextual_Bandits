@@ -1,0 +1,39 @@
+{
+        "true_model_params":
+        {
+          "noise":
+              {
+                "noise_mean": 0,
+                "noise_std": 1
+              },
+          "true_coeff":
+              {
+                "intercept": 0,
+                "d1":0.3,
+                "d1*x1": -0.6
+              },
+          "context_vars": ["x1"],
+          "experiment_vars": ["d1"]
+        },
+        "hypo_model_params": ["intercept", "d1", "d1*x1"],
+        "possible_actions": [[0], [1]],
+        "user_count": 1000,
+        "batch_size": 10,
+        "simulation_count": 5,
+        "extensive": true,
+        "rand_sampling_applied": false,
+        "show_fig": true,
+        "NIG_priors":
+        {
+          "a": 1,
+          "b": 1
+        },
+       "dist_of_context":
+        {
+          "x1": ["bin", 0.4, 0.6],
+          "x2": ["norm", 1, 0.2],
+          "x3": ["beta", 4, 5 ]
+        },
+        "output_path": "arbitrary_path",
+        "num_cores": 8
+    }
