@@ -32,6 +32,16 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
                     "m1*f2": 0,
                     "m2*f1": 0,
                     "m2*f2": 50}
+    if true_model_params_file == "True_Model_No_Interaction.csv":
+        true_coeff = {"intercept": 0,
+                    "m1": 100,
+                    "m2": 150, 
+                    "f1": 100, 
+                    "f2": 200,
+                    "m1*f1": 0,
+                    "m1*f2": 0,
+                    "m2*f1": 0,
+                    "m2*f2": 0}
 
     context_vars = np.array([])
     experiment_vars = np.array([["m1", "m2"], ["f1", "f2"]])

@@ -11,6 +11,7 @@ import seaborn as sns
 import statsmodels.formula.api as sm
 from datetime import date
 from datetime import datetime
+from results import *
 
 TODAY = date.today()
 NOW = datetime.now()
@@ -55,26 +56,15 @@ def main(mode=None):
 
     user_count = 1000
     batch_size = 10
-    simulation_count = 100
+    simulation_count = 2
     extensive = True
-    rand_sampling_applied = True
+    rand_sampling_applied = False
     no_interaction_applied = True
     show_fig=True
 
-    regrets = np.zeros(user_count)
-    regrets_no_interaction = np.zeros(user_count)
     regrets_rand = np.zeros(user_count)
-    optimal_action_ratio = np.zeros(user_count)
-    optimal_action_ratio_no_interaction = np.zeros(user_count)
     optimal_action_ratio_rand = np.zeros(user_count)
-    mse = np.zeros((user_count, len(hypo_params)))
-    mse_no_interaction = np.zeros((user_count, len(hypo_params_no_interaction)))
-    beta_thompson_coeffs = np.zeros((user_count, len(hypo_params)))
-    beta_thompson_coeffs_no_interaction = np.zeros((user_count, len(hypo_params_no_interaction)))
-    coeff_sign_error = np.zeros((user_count, len(hypo_params)))
-    coeff_sign_error_no_interaction = np.zeros((user_count, len(hypo_params_no_interaction)))
-    bias_in_coeff = np.zeros((user_count, len(hypo_params)))
-    bias_in_coeff_no_interaction = np.zeros((user_count, len(hypo_params_no_interaction)))
+
     policies = []
     regression_intercept_all_sim = []
     regression_d1_all_sim = []
@@ -86,21 +76,11 @@ def main(mode=None):
 
     save_output_folder = 'saved_output/raw_data/'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
     if not os.path.exists(save_output_folder):
-        os.mkdir(save_output_folder)
-    save_optimal_action_ratio_thompson_df = pd.DataFrame()
-    save_mse_thompson_df = pd.DataFrame()
-    save_coeff_sign_err_thompson_df = pd.DataFrame()
-    save_bias_in_coeff_thompson_df = pd.DataFrame()
-    save_regret_thompson_df = pd.DataFrame()
-    save_suboptimal_action_ratio_group_thompson_df = pd.DataFrame()
-    save_optimal_action_ratio_random_df = pd.DataFrame()
-    save_mse_random_df = pd.DataFrame()
-    save_coeff_sign_err_random_df = pd.DataFrame()
-    save_bias_in_coeff_random_df = pd.DataFrame()
-    save_regret_random_df = pd.DataFrame()
-    save_suboptimal_action_ratio_group_random_df = pd.DataFrame()
-    save_context_action_thompson_df = pd.DataFrame()
-    save_context_action_random_df = pd.DataFrame()
+        os.makedirs(save_output_folder)
+
+    thompson_interaction_results = results(save_output_folder, "thompson_with_interaction", user_count, true_coeff, hypo_params)
+    thompson_no_interaction_results = results(save_output_folder, "thompson_without_interaction", user_count, true_coeff, hypo_params_no_interaction)
+    random_results = results(save_output_folder, "random", user_count, true_coeff, hypo_params)
 
     for sim in range(0, simulation_count):
         print("sim: ",sim)
@@ -139,67 +119,18 @@ def main(mode=None):
                                                     a_pre,
                                                     b_pre,
                                                     noise_stats)
-        #policies.append(['Thompson Sampling'])
-        regrets += thompson_output[2]
-        save_regret_thompson_df = pd.concat([save_regret_thompson_df,
-                                    pd.DataFrame(thompson_output[2])],
-                                    ignore_index=True, axis=1)
+        thompson_interaction_results.add_regret(thompson_output[2])
 
-        optimal_action_ratio_per_sim = np.array(list((thompson_output[1][i] in thompson_output[0][i]) for i in range(0,user_count))).astype(int)
-        optimal_action_ratio += optimal_action_ratio_per_sim
-        save_optimal_action_ratio_thompson_df = pd.concat([
-                                save_optimal_action_ratio_thompson_df,
-                                pd.DataFrame(optimal_action_ratio_per_sim)],
-                                ignore_index=True, axis=1)
+        thompson_interaction_results.add_optimal_action_ratio(thompson_output)
 
-        beta_thompson_coeffs += np.array(thompson_output[5])
+        thompson_interaction_results.add_beta_thompson_coeff(thompson_output[5])
 
-        #for coeff_name, coeff_value in true_coeff.items():
-        true_params_in_hypo = []
-        for  idx, hypo_param_name in enumerate(hypo_params):
-            if(hypo_param_name in true_coeff):
-                true_params_in_hypo.append(true_coeff[hypo_param_name])
+        thompson_interaction_results.add_mse(thompson_output[5], sim)
 
-        mse_per_sim = np.power(np.array(np.array(thompson_output[5]) -
-                                np.array(true_params_in_hypo)),2)
-        mse += mse_per_sim
-        mse_per_sim_df = pd.DataFrame(mse_per_sim)
-        mse_per_sim_df.columns = pd.MultiIndex.from_product([
-                [sim], hypo_params])
-        save_mse_thompson_df = pd.concat([save_mse_thompson_df,
-                                mse_per_sim_df], axis=1)
+        thompson_interaction_results.add_coeff_sign_err(thompson_output[5], sim)
 
-        coeff_sign_error_per_sim = np.sign(np.array(true_params_in_hypo)) - np.sign(np.array(thompson_output[5])) == np.zeros(len(hypo_params))
-        coeff_sign_error +=coeff_sign_error_per_sim
-        coeff_sign_error_per_sim_df = pd.DataFrame(
-            coeff_sign_error_per_sim.astype(int))
-        coeff_sign_error_per_sim_df.columns = pd.MultiIndex.from_product([
-                [sim], hypo_params])
-        save_coeff_sign_err_thompson_df = pd.concat([
-                                save_coeff_sign_err_thompson_df,
-                                coeff_sign_error_per_sim_df], axis=1)
+        thompson_interaction_results.add_bias_in_coeff(thompson_output[5], sim)
 
-
-        #Hammad: Bias Correction
-        if len(true_params_in_hypo) >= 3:
-            bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
-
-        # Under specified model bias (Y = A0 + A1D)
-        else:
-            # Bias(A1) = E(A1) - (B1 + B2/2)
-            true_coeff_list_main = [true_coeff_list[0], true_coeff_list[1] + true_coeff_list[2]/2]
-            bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_coeff_list_main))
-
-        bias_in_coeff += bias_in_coeff_per_sim
-        bias_in_coeff_per_sim_df = pd.DataFrame(bias_in_coeff_per_sim)
-        bias_in_coeff_per_sim_df.columns = pd.MultiIndex.from_product([
-                [sim], hypo_params])
-        save_bias_in_coeff_thompson_df = pd.concat([
-                                save_bias_in_coeff_thompson_df,
-                                bias_in_coeff_per_sim_df], axis=1)
-
-        # TODO create methods or objects
-        # TODO save to df
         if no_interaction_applied:
             a_pre = 0
             b_pre = 0
@@ -220,35 +151,18 @@ def main(mode=None):
                                                     b_pre,
                                                     noise_stats,
                                                     interaction=False)
-            regrets_no_interaction += no_interaction_outputs[2]
-            optimal_action_ratio_per_sim = np.array(list((no_interaction_outputs[1][i] in no_interaction_outputs[0][i]) for i in range(0,user_count))).astype(int)
-            optimal_action_ratio_no_interaction += optimal_action_ratio_per_sim
 
-            beta_thompson_coeffs_no_interaction += np.array(no_interaction_outputs[5])
+            thompson_no_interaction_results.add_regret(no_interaction_outputs[2])
 
-            true_params_in_hypo = []
-            for  idx, hypo_param_name in enumerate(hypo_params_no_interaction):
-                if(hypo_param_name in true_coeff):
-                    true_params_in_hypo.append(true_coeff[hypo_param_name])
+            thompson_no_interaction_results.add_optimal_action_ratio(no_interaction_outputs)
 
-            mse_per_sim = np.power(np.array(np.array(no_interaction_outputs[5]) -
-                                np.array(true_params_in_hypo)),2)
-            mse_no_interaction += mse_per_sim
+            thompson_no_interaction_results.add_beta_thompson_coeff(no_interaction_outputs[5])
 
-            coeff_sign_error_per_sim = np.sign(np.array(true_params_in_hypo)) - np.sign(np.array(no_interaction_outputs[5])) == np.zeros(len(hypo_params_no_interaction))
-            coeff_sign_error_no_interaction +=coeff_sign_error_per_sim
+            thompson_no_interaction_results.add_mse(no_interaction_outputs[5], sim)
 
-            #Hammad: Bias Correction
-            if len(true_params_in_hypo) >= 3:
-                bias_in_coeff_per_sim = np.array(np.array(no_interaction_outputs[5]) - np.array(true_params_in_hypo))
+            thompson_no_interaction_results.add_coeff_sign_err(no_interaction_outputs[5], sim)
 
-            # Under specified model bias (Y = A0 + A1D)
-            else:
-                # Bias(A1) = E(A1) - (B1 + B2/2)
-                true_coeff_list_main = [true_coeff_list[0], true_coeff_list[1] + true_coeff_list[2]/2]
-                bias_in_coeff_per_sim = np.array(np.array(no_interaction_outputs[5]) - np.array(true_coeff_list_main))
-
-            bias_in_coeff_no_interaction += bias_in_coeff_per_sim
+            thompson_no_interaction_results.add_bias_in_coeff(no_interaction_outputs[5], sim)
 
         if(rand_sampling_applied):
             rand_outputs= random.apply_random_sampling(users_context,
@@ -259,20 +173,9 @@ def main(mode=None):
                                                         batch_size,
                                                         extensive,
                                                         noise_stats)
-            regrets_rand += rand_outputs[2]
-            save_regret_random_df = pd.concat([save_regret_random_df,
-                                    pd.DataFrame(rand_outputs[2])],
-                                    ignore_index=True, axis=1)
+            random_results.add_regret(rand_outputs[2])
 
-            optimal_action_ratio_rand_per_sim = np.array(list((
-                    rand_outputs[1][i] in
-                    thompson_output[0][i]) for i in 
-                    range(0,user_count))).astype(int)
-            optimal_action_ratio_rand += optimal_action_ratio_rand_per_sim
-            save_optimal_action_ratio_random_df = pd.concat([
-                            save_optimal_action_ratio_random_df,
-                            pd.DataFrame(optimal_action_ratio_rand_per_sim)],
-                            ignore_index=True, axis=1)
+            random_results.add_optimal_action_ratio(rand_outputs)
 
         ################# OLS REGRESSION STARTS ########################
         '''
@@ -381,132 +284,72 @@ def main(mode=None):
                 simulation_count, batch_size, save_fig=True)'''
     ################# OLS REGRESSION ENDS ########################
 
-    save_regret_thompson_df.to_csv('{}thompson_regrets.csv'.format(
-                                save_output_folder), index_label='iteration')
-    save_optimal_action_ratio_thompson_df.to_csv(
-                                '{}thompson_optimal_action_ratio.csv'.format(
-                                save_output_folder), index_label='iteration')
-    save_mse_thompson_df.to_csv('{}thompson_mse.csv'.format(
-                                save_output_folder), index_label='iteration')
-    save_bias_in_coeff_thompson_df.to_csv(
-                                '{}thompson_bias_in_coeff.csv'.format(
-                                save_output_folder))
-    save_coeff_sign_err_thompson_df.to_csv(
-                                '{}thompson_coeff_sign_err.csv'.format(
-                                save_output_folder))
-    save_context_action_thompson_df.to_csv(
-                                '{}thompson_context_action.csv'.format(
-                                save_output_folder))
+    thompson_interaction_results.save_to_csv()
 
-    if(rand_sampling_applied):
-        save_regret_random_df.to_csv('{}random_regrets.csv'.format(
-                                    save_output_folder),
-                                    index_label='iteration')
-        save_optimal_action_ratio_random_df.to_csv(
-                                    '{}random_optimal_action_ratio.csv'.format(
-                                    save_output_folder),
-                                    index_label='iteration')
-        save_context_action_random_df.to_csv(
-                                    '{}random_context_action.csv'.format(
-                                    save_output_folder))
+    thompson_interaction_results.average_per_sim(simulation_count)
 
-    regrets = regrets / simulation_count
-    optimal_action_ratio = optimal_action_ratio /simulation_count
-    mse = mse / simulation_count
-    beta_thompson_coeffs = beta_thompson_coeffs / simulation_count
-    bias_in_coeff = bias_in_coeff / simulation_count
-    coeff_sign_error = coeff_sign_error / simulation_count
-
-    # TODO create methods
     if no_interaction_applied:
         policies.append(['Thompson without Interaction'])
-        regrets_no_interaction = regrets_no_interaction / simulation_count
-        optimal_action_ratio_no_interaction = optimal_action_ratio_no_interaction /simulation_count
-        mse_no_interaction = mse_no_interaction / simulation_count
-        beta_thompson_coeffs_no_interaction = beta_thompson_coeffs_no_interaction / simulation_count
-        bias_in_coeff_no_interaction = bias_in_coeff_no_interaction / simulation_count
-        coeff_sign_error_no_interaction = coeff_sign_error_no_interaction / simulation_count
+        thompson_no_interaction_results.save_to_csv()
+        thompson_no_interaction_results.average_per_sim(simulation_count)
 
     if(rand_sampling_applied):
         policies.append(['Random Sampling'])
-        regrets_rand = regrets_rand / simulation_count
-        optimal_action_ratio_rand = optimal_action_ratio_rand/simulation_count
+        random_results.save_to_csv()
+        random_results.average_per_sim(simulation_count)
 
     #Step 4: Plots
     '''
     Plots some basic figures. In "Extensive Mode", details will be saved so
     user can plots more figures if desired.
     '''
-    if(rand_sampling_applied):
-        if no_interaction_applied:
-            regrets_all_policies = np.stack((regrets, regrets_no_interaction, regrets_rand))
-            optimal_action_ratio_all_policies = np.stack((optimal_action_ratio, optimal_action_ratio_no_interaction,
-                optimal_action_ratio_rand))
-            # mse_all_policies = np.stack((mse, mse_no_interaction))
-        else:
-            regrets_all_policies = np.stack((regrets, regrets_rand))
-            #optimal_action_ratio_all_policies = np.stack((optimal_action_ratio,
-            #regrets_rand))
-            optimal_action_ratio_all_policies = np.stack((optimal_action_ratio,
-                optimal_action_ratio_rand))
-            # mse_all_policies = np.array([mse])
-            # suboptimal_ratio_all_policies = np.stack((x0_suboptimal_ratio, x1_suboptimal_ratio, x0_suboptimal_ratio_rand, x1_suboptimal_ratio_rand))
-    elif no_interaction_applied:
-        regrets_all_policies = np.stack((regrets, regrets_no_interaction))
-        optimal_action_ratio_all_policies = np.stack((optimal_action_ratio, optimal_action_ratio_no_interaction))
-        # mse_all_policies = np.stack((mse, mse_no_interaction))
-    else:
-        regrets_all_policies = np.array([regrets])
-        optimal_action_ratio_all_policies = np.array([optimal_action_ratio])
-        # mse_all_policies = np.array([mse])
-        # suboptimal_ratio_all_policies = np.stack((x0_suboptimal_ratio, x1_suboptimal_ratio))
 
+    regrets_all_policies = np.array([thompson_interaction_results.regrets])
+    optimal_action_ratio_all_policies = np.array([thompson_interaction_results.optimal_action_ratio])
+    if no_interaction_applied:
+        regrets_all_policies = np.append(regrets_all_policies, [thompson_no_interaction_results.regrets], axis=0)
+        optimal_action_ratio_all_policies = np.append(optimal_action_ratio_all_policies, 
+            [thompson_no_interaction_results.optimal_action_ratio], axis=0)
+    if rand_sampling_applied:
+        regrets_all_policies = np.append(regrets_all_policies, [random_results.regrets], axis=0)
+        optimal_action_ratio_all_policies = np.append(optimal_action_ratio_all_policies, 
+            [random_results.optimal_action_ratio], axis=0)
     
     bplots.plot_regret(user_count, policies, regrets_all_policies,
                         simulation_count, batch_size)
-
-
-    '''if(rand_sampling_applied):
-         bplots.plot_suboptimal_action_ratio(user_count, ['Thompson Sampling X = 0','Thompson Sampling X = 1', 'Random Sampling X=0', 'Random Sampling X=1'],
-                suboptimal_ratio_all_policies, simulation_count, batch_size,
-                mode='per_user')'''
-
-    
     
     bplots.plot_optimal_action_ratio(user_count, policies,
             optimal_action_ratio_all_policies, simulation_count, batch_size,
             mode='per_user')
-    '''
-    bplots.plot_mse(user_count, ['Thompson Sampling'], mse_all_policies,
-                    simulation_count, batch_size)'''
     
     bplots.plot_coeff_ranking(user_count, 'Thompson with Interaction',
-                beta_thompson_coeffs, hypo_params, simulation_count,
+                thompson_interaction_results.beta_thompson_coeffs, hypo_params, simulation_count,
                 batch_size, save_fig=True)
 
     bplots.plot_coeff_sign_error(user_count, 'Thompson with Interaction', hypo_params,
-                coeff_sign_error, simulation_count, batch_size, save_fig=True)
+                thompson_interaction_results.coeff_sign_error, simulation_count, batch_size, save_fig=True)
 
     
     bplots.plot_bias_in_coeff(user_count, 'Thompson with Interaction', hypo_params,
-                bias_in_coeff, simulation_count, batch_size, save_fig=True)
+                thompson_interaction_results.bias_in_coeff, simulation_count, batch_size, save_fig=True)
 
     # TODO create methods
     if no_interaction_applied:
         bplots.plot_coeff_ranking(user_count, 'Thompson without Interaction',
-                beta_thompson_coeffs_no_interaction, hypo_params_no_interaction, simulation_count,
+                thompson_no_interaction_results.beta_thompson_coeffs, hypo_params_no_interaction, simulation_count,
                 batch_size, save_fig=True)
 
         bplots.plot_coeff_sign_error(user_count, 'Thompson without Interaction', hypo_params_no_interaction,
-                coeff_sign_error_no_interaction, simulation_count, batch_size, save_fig=True)
-
+                thompson_no_interaction_results.coeff_sign_error, simulation_count, batch_size, save_fig=True)
     
         bplots.plot_bias_in_coeff(user_count, 'Thompson without Interaction', hypo_params_no_interaction,
-                bias_in_coeff_no_interaction, simulation_count, batch_size, save_fig=True)
+                thompson_no_interaction_results.bias_in_coeff, simulation_count, batch_size, save_fig=True)
     
     if(show_fig):
         #plt.show(block=False)
         plt.show()
+
+    return
 
 if __name__ == "__main__":
     main()
