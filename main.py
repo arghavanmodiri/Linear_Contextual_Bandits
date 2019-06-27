@@ -121,7 +121,7 @@ def main(input_dict, mode=None):
         by the user in command line (default: Calls thompson sampling)
             default priors: 0 unless it is specified by the user
         '''
-        users_context = models.generate_true_dataset(context_vars, user_count)
+        users_context = models.generate_true_dataset(context_vars, user_count, input_dict['dist_of_context'])
 
         thompson_output = thompson.apply_thompson_sampling(users_context,
                                                     experiment_vars,
