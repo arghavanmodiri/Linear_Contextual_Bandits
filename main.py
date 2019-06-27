@@ -15,7 +15,7 @@ from datetime import datetime
 TODAY = date.today()
 NOW = datetime.now()
 
-np.set_printoptions(threshold=np.nan)
+#np.set_printoptions(threshold=np.nan)
 
 def main(mode=None):
     """start the model"""
@@ -52,9 +52,9 @@ def main(mode=None):
     experiment_vars = true_model_params['experiment_vars']
     true_coeff_list = list(true_coeff.values())
 
-    user_count = 1000
-    batch_size = 10
-    simulation_count = 2
+    user_count = 2000
+    batch_size = 100
+    simulation_count = 100
     extensive = True
     rand_sampling_applied = True
     show_fig=True
@@ -76,7 +76,7 @@ def main(mode=None):
     regression_d1x1_all_sim_random = []
     policies.append(['Thompson Sampling'])
 
-    save_output_folder = 'saved_output/raw_data/'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
+    save_output_folder = 'saved_output/raw_data'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
     if not os.path.exists(save_output_folder):
         os.mkdir(save_output_folder)
     save_optimal_action_ratio_thompson_df = pd.DataFrame()
@@ -117,7 +117,7 @@ def main(mode=None):
         by the user in command line (default: Calls thompson sampling)
             default priors: 0 unless it is specified by the user
         '''
-        users_context = models.generate_true_dataset(context_vars, user_count)
+        users_context = models.generate_true_dataset(context_vars, user_count, is_binary_context=[True, False])
 
         thompson_output = thompson.apply_thompson_sampling(users_context,
                                                     experiment_vars,
