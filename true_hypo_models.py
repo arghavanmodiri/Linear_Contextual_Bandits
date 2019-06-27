@@ -202,7 +202,7 @@ def generate_true_dataset(context_vars, user_count, dist_of_context, write_to_fi
             context_array = np.random.choice(2, user_count)
         for i in range(0, user_count):
             users_list[i].update({context: context_array[i]})
-    return users_list
+    return np.asarray(users_list)
 
 
 # def generate_true_dataset(context_vars, user_count, is_binary_context=[], user_dist=[],
