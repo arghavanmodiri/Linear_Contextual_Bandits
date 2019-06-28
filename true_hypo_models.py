@@ -37,7 +37,7 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
     return true_model_params
 
 
-def find_possible_actions(true_model_params_file='True_Model_Coefficients.csv'):
+def find_possible_actions(experiment_vars):
     """
     Read the csv file containing the true model coefficients for all variables
 
@@ -47,10 +47,60 @@ def find_possible_actions(true_model_params_file='True_Model_Coefficients.csv'):
     Returns:
         list: List of all possible actions
     """
+    action_space = {var : [0, 1] for var in experiment_vars}
+    all_possible_actions = [{}]
+
+    for cur in sorted(action_space):
+
+      # Store set values corresponding to action labels
+      cur_options = action_space[cur]
+
+      # Initialize list of feasible actions
+      new_possible = []
+
+      # Itterate over action set
+      for a in all_possible_actions:
+
+        # Itterate over value sets correspdong to action labels
+        for cur_a in cur_options:
+          new_a = a.copy()
+          new_a[cur] = cur_a
+
+          # Check if action assignment is feasible
+          if is_valid_action(new_a):
+
+            # Append feasible action to list
+            new_possible.append(new_a)
+            all_possible_actions = new_possible
+
+    n_actions = len(all_possible_actions)
+
+    possible_actions = [list(all_possible_actions[i].values()) for i in range(0, n_actions)]
+    
     #possible_actions =  [[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1]]
-    possible_actions =  [[0],[1]]
+    #possible_actions =  [[0],[1]]
     
     return possible_actions
+
+def is_valid_action(action):
+    '''
+    checks whether an action is valid, meaning, no more than one vars under same category are assigned 1
+    '''
+
+    keys = action.keys()
+
+    for cur_key in keys:
+        if '_' not in cur_key:
+            continue
+        value = 0
+        prefix = cur_key.rsplit('_', 1)[0] + '_'
+        for key in keys:
+            if key.startswith(prefix):
+                value += action[key]
+        if value > 1:
+            return False
+
+    return True
 
 
 def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):

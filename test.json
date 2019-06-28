@@ -9,13 +9,16 @@
           "true_coeff":
               {
                 "intercept": 0,
-                "d1":0.3,
-                "d1*x1": -0.6
+                "d_1":0.3,
+                "d_2":0,
+                "m":0,
+                "d_1*x1": -0.6,
+                "d_2*x1": 0
               },
           "context_vars": ["x1", "x2", "x3"],
-          "experiment_vars": ["d1"]
+          "experiment_vars": ["d_1", "d_2", "m"]
         },
-        "hypo_model_params": ["intercept", "d1", "d1*x1"],
+        "hypo_model_params": ["intercept", "d_1", "d_2", "m", "d_1*x1", "d_2*x1"],
         "possible_actions": [[0], [1]],
         "user_count": 1000,
         "batch_size": 10,

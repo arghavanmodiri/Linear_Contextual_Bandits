@@ -47,13 +47,14 @@ def main(input_dict, mode=None):
  
     true_model_params = input_dict['true_model_params']
     hypo_params = input_dict['hypo_model_params']
-    bandit_arms = input_dict['possible_actions']
+    #bandit_arms = input_dict['possible_actions']
     noise_stats = true_model_params['noise']
     true_coeff = true_model_params['true_coeff']
     true_coeff_list = list(true_coeff.values())
     print(true_coeff_list)
     context_vars = np.array(true_model_params['context_vars'])
     experiment_vars = np.array(true_model_params['experiment_vars'])
+    bandit_arms = models.find_possible_actions(experiment_vars)
 
     # Simulation parameters
     user_count = input_dict['user_count']
