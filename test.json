@@ -19,7 +19,6 @@
           "experiment_vars": ["d_1", "d_2", "m"]
         },
         "hypo_model_params": ["intercept", "d_1", "d_2", "m", "d_1*x1", "d_2*x1"],
-        "possible_actions": [[0], [1]],
         "user_count": 1000,
         "batch_size": 10,
         "simulation_count": 5,
