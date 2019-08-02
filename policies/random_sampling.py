@@ -17,6 +17,8 @@ def apply_random_sampling(user_context, experiment_vars, bandit_arms,
 
     # Save actions over time
     applied_action_all = []
+    true_optimal_action_all = []
+    received_reward_no_noise_all = []
 
     # Loop over all users
     for user in range(0, user_count):
@@ -44,7 +46,8 @@ def apply_random_sampling(user_context, experiment_vars, bandit_arms,
                                                         bandit_arms)
         # Update outcomes list
         received_reward_all.append(received_reward)
-
+        true_optimal_action_all.append(true_optimal_action[0])
+        received_reward_no_noise_all.append(received_reward_no_noise)
 
         # Compute regret
         rand_regret = making_decision.calculate_regret(true_optimal_action[1], 
@@ -55,4 +58,4 @@ def apply_random_sampling(user_context, experiment_vars, bandit_arms,
         applied_action_all.append(bandit_arms[action_index])
         #print("X = ",user_context[user]['x1'], "D = ",rand_action, rand_regret)
 
-    return [received_reward_all,applied_action_all,rand_regret_all]
+    return [true_optimal_action_all, applied_action_all, rand_regret_all, received_reward_no_noise_all, received_reward_all]
