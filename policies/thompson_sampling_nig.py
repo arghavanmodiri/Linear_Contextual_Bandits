@@ -84,7 +84,7 @@ def draw_posterior_sample(hypo_model_params, mean, cov, a, b):
 
 def apply_thompson_sampling(user_context, experiment_vars, bandit_arms, hypo_model_params, true_coeff,
                             batch_size, extensive, mean_pre, cov_pre,
-                            a_pre,b_pre, noise_stats, interaction=True):
+                            a_pre,b_pre, noise_stats):
     """
     Apply thompson sampling on the input dataset at each batch and calculate
     regret/reward of the selected option.
@@ -137,8 +137,7 @@ def apply_thompson_sampling(user_context, experiment_vars, bandit_arms, hypo_mod
                                                         beta_thompson,
                                                         user_context[user],
                                                         experiment_vars,
-                                                        bandit_arms, 
-                                                        interaction)
+                                                        bandit_arms)
             received_reward = models.true_model_output(true_coeff,
                                                         experiment_vars,
                                                         user_context[user],
@@ -160,8 +159,7 @@ def apply_thompson_sampling(user_context, experiment_vars, bandit_arms, hypo_mod
             X = models.calculate_hypo_regressors(hypo_model_params,
                                                 experiment_vars,
                                                 user_context[user],
-                                                hypo_optimal_action[0],
-                                                interaction)
+                                                hypo_optimal_action[0])
 
             X_batch.append(X)
             y_batch.append(received_reward)

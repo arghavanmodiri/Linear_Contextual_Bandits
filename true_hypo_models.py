@@ -24,27 +24,11 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
     context_vars = np.array(['republic'])
     experiment_vars = np.array(['ch2','ch3', 'matching'])'''
     true_coeff = {"intercept": 0,
-                    "m1": 100,
-                    "m2": 150, 
-                    "f1": 100, 
-                    "f2": 200,
-                    "m1*f1": 250,
-                    "m1*f2": 0,
-                    "m2*f1": 0,
-                    "m2*f2": 50}
-    if true_model_params_file == "True_Model_No_Interaction.csv":
-        true_coeff = {"intercept": 0,
-                    "m1": 100,
-                    "m2": 150, 
-                    "f1": 100, 
-                    "f2": 200,
-                    "m1*f1": 0,
-                    "m1*f2": 0,
-                    "m2*f1": 0,
-                    "m2*f2": 0}
+                    "d1": 0.3,
+                    "d1*x1": -0.6}
 
-    context_vars = np.array([])
-    experiment_vars = np.array([["m1", "m2"], ["f1", "f2"]])
+    context_vars = np.array(['x1'])
+    experiment_vars = np.array(['d1'])
 
     true_model_params = {'noise':noise,
                         'true_coeff': true_coeff,
@@ -53,7 +37,7 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
     return true_model_params
 
 
-def find_possible_actions(true_model_params_file='True_Model_Coefficients.csv'):
+def find_possible_actions(experiment_vars):
     """
     Read the csv file containing the true model coefficients for all variables
 
@@ -63,10 +47,57 @@ def find_possible_actions(true_model_params_file='True_Model_Coefficients.csv'):
     Returns:
         list: List of all possible actions
     """
-    #possible_actions =  [[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1]]
-    possible_actions =  [[None, None], [None, "f1"], [None, "f2"], ["m1", None], ["m1", "f1"], ["m1", "f2"], ["m2", None], ["m2", "f1"], ["m2", "f2"]]
+    action_space = {var : [0, 1] for var in experiment_vars}
+    all_possible_actions = [{}]
+
+    for cur in sorted(action_space):
+
+      # Store set values corresponding to action labels
+      cur_options = action_space[cur]
+
+      # Initialize list of feasible actions
+      new_possible = []
+
+      # Itterate over action set
+      for a in all_possible_actions:
+
+        # Itterate over value sets correspdong to action labels
+        for cur_a in cur_options:
+          new_a = a.copy()
+          new_a[cur] = cur_a
+
+          # Check if action assignment is feasible
+          if is_valid_action(new_a):
+
+            # Append feasible action to list
+            new_possible.append(new_a)
+            all_possible_actions = new_possible
+
+    n_actions = len(all_possible_actions)
+
+    possible_actions = [list(all_possible_actions[i].values()) for i in range(0, n_actions)]
     
     return possible_actions
+
+def is_valid_action(action):
+    '''
+    checks whether an action is valid, meaning, no more than one vars under same category are assigned 1
+    '''
+
+    keys = action.keys()
+
+    for cur_key in keys:
+        if '_' not in cur_key:
+            continue
+        value = 0
+        prefix = cur_key.rsplit('_', 1)[0] + '_'
+        for key in keys:
+            if key.startswith(prefix):
+                value += action[key]
+        if value > 1:
+            return False
+
+    return True
 
 
 def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
@@ -81,10 +112,8 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
         list: containing the available parameters in hypothesized model
     """
     #hypo_model_params = ['bias', 'ch2','ch3', 'matching', 'republic']
-    hypo_model_params = ['intercept','m1', 'm2', 'f1', 'f2', 'm1*f1', 'm1*f2', 'm2*f1', 'm2*f2']
-    # TODO read from csv
-    if hypo_model_params_file == "Hypo_Model_No_Interection.csv":
-        hypo_model_params = ['intercept','m1', 'm2', 'f1', 'f2']
+    hypo_model_params = ['intercept','d1']
+        #, 'd1*x1']
 
     '''hypo_model_params =["bias",
                         "ch2",
@@ -95,7 +124,7 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
     '''
     return hypo_model_params
 
-# TODO get list of coefficients (same as hypo_model_params) to use calculate_hypo_regressors
+
 def true_model_output(true_coeff, experiment_vars, user_context, applied_arm,
                         noise_stats):
     """
@@ -110,28 +139,15 @@ def true_model_output(true_coeff, experiment_vars, user_context, applied_arm,
     Returns:
         float: the true value of the dependant variable
     """
-    #applied_arm_dict = {experiment_vars[i]: applied_arm[i] for i in range(0, len(applied_arm))}
-    #user_params = {**user_context, **applied_arm_dict} 
-    dependant_var = true_coeff['intercept']
+    applied_arm_dict = {experiment_vars[i]:applied_arm[i] for i
+                        in range(0, len(applied_arm))}
+    user_params = {**user_context, **applied_arm_dict} 
+    dependant_var = 0
 
-    for arm in applied_arm:
-        if arm != None:
-            dependant_var += true_coeff[arm]
-            for i in range(applied_arm.index(arm) + 1, len(applied_arm)): # 2-way interactions
-                if applied_arm[i] != None:
-                    interaction = arm + "*" + applied_arm[i]
-                    dependant_var += true_coeff[interaction]
-            for cont in user_context: # 2-way interactions between action and context
-                # TODO continuous contexts
-                if cont != None:
-                    interaction = arm + "*" + cont
-                    dependant_var += true_coeff[interaction]
-
-    '''for coeff_name, coeff_value in true_coeff.items():
+    for coeff_name, coeff_value in true_coeff.items():
         temp = 0
         if(coeff_name == 'intercept'):
-            #temp += coeff_value
-            pass
+            temp += coeff_value
         elif('*' in coeff_name):
             interact_vars = coeff_name.split('*')
             temp = 1
@@ -140,7 +156,7 @@ def true_model_output(true_coeff, experiment_vars, user_context, applied_arm,
             temp = coeff_value * temp
         else:
             temp = coeff_value * user_params[coeff_name]
-        dependant_var += temp'''
+        dependant_var += temp
 
     added_noise = nprnd.normal(loc=noise_stats['noise_mean'], scale=noise_stats['noise_std'], size=1)[0]
     dependant_var = dependant_var + added_noise
@@ -148,30 +164,11 @@ def true_model_output(true_coeff, experiment_vars, user_context, applied_arm,
 
 
 def calculate_hypo_regressors(hypo_model_params, experiment_vars, user_context,
-                                 applied_arm, interaction=True):
-    # applied_arm_dict = {experiment_vars[i]:applied_arm[i] for i in range(0, len(applied_arm))}
-    # user_params = {**user_context, **applied_arm_dict} 
-    X = np.zeros(len(hypo_model_params))
-    X[0] = 1
-
-    for arm in applied_arm:
-        if arm != None:
-            index = hypo_model_params.index(arm)
-            X[index] = 1
-            if interaction:
-                for i in range(applied_arm.index(arm) + 1, len(applied_arm)): # 2-way interactions between actions
-                    if applied_arm[i] != None:
-                        interaction_term = arm + "*" + applied_arm[i]
-                        index = hypo_model_params.index(interaction_term)
-                        X[index] = 1
-                for cont in user_context: # 2-way interactions between action and context
-                    # TODO continuous contexts
-                    if cont != None:
-                        interaction_term = arm + "*" + cont
-                        index = hypo_model_params.index(interaction_term)
-                        X[index] = 1
-
-    '''X =[]
+                                 applied_arm):
+    applied_arm_dict = {experiment_vars[i]:applied_arm[i] for i
+                        in range(0, len(applied_arm))}
+    user_params = {**user_context, **applied_arm_dict} 
+    X =[]
     for param in hypo_model_params:
         temp = 0
         if(param == 'intercept'):
@@ -183,14 +180,12 @@ def calculate_hypo_regressors(hypo_model_params, experiment_vars, user_context,
                 temp = temp * user_params[var]
         else:
             temp = user_params[param]
-        X.append(temp)'''
+        X.append(temp)
 
     return X
 
-
-# TODO get hypo_model_params to use calculate_hypo_regressors
 def hypo_model_output(estimated_coeff, experiment_vars, user_context,
-                        applied_arm, interaction=True):
+                        applied_arm):
     """
     Calculates the estimated donation for the specified user and arm
 
@@ -203,29 +198,15 @@ def hypo_model_output(estimated_coeff, experiment_vars, user_context,
     Returns:
         float: the hypothesized donation
     """
-    #applied_arm_dict = {experiment_vars[i]: applied_arm[i] for i in range(0, len(applied_arm))}
-    #user_params = {**user_context, **applied_arm_dict}
-    dependant_var_estimate = estimated_coeff['intercept']
+    applied_arm_dict = {experiment_vars[i]:applied_arm[i] for i
+                        in range(0, len(applied_arm))}
+    user_params = {**user_context, **applied_arm_dict}
+    dependant_var_estimate = 0
 
-    for arm in applied_arm:
-        if arm != None:
-            dependant_var_estimate += estimated_coeff[arm]
-            if interaction:
-                for i in range(applied_arm.index(arm) + 1, len(applied_arm)): # 2-way interactions
-                    if applied_arm[i] != None:
-                        interaction_term = arm + "*" + applied_arm[i]
-                        dependant_var_estimate += estimated_coeff[interaction_term]
-                for cont in user_context: # 2-way interactions between action and context
-                    # TODO continuous contexts
-                    if cont != None:
-                        interaction_term = arm + "*" + cont
-                        dependant_var_estimate += estimated_coeff[interaction_term]
-
-    '''for coeff_name, coeff_value in estimated_coeff.items():
+    for coeff_name, coeff_value in estimated_coeff.items():
         temp = 0
         if(coeff_name == 'intercept'):
-            #temp += coeff_value
-            pass
+            temp += coeff_value
         elif('*' in coeff_name):
             interact_vars = coeff_name.split('*')
             temp = 1
@@ -235,26 +216,36 @@ def hypo_model_output(estimated_coeff, experiment_vars, user_context,
         else:
             temp = coeff_value * user_params[coeff_name]
 
-        dependant_var_estimate = np.add(dependant_var_estimate, temp)'''
+        dependant_var_estimate = np.add(dependant_var_estimate, temp)
 
     return dependant_var_estimate
 
 
-def generate_true_dataset(context_vars, user_count, user_dist=[],
-                            write_to_file=True):
+def generate_true_dataset(context_vars, user_count, dist_of_context, write_to_file=True):
     """
     Generate the users dataset randomly.
 
     Args:
-        user_context (ndarray): 1D array containing user contextual values
+        context_vars (ndarray): 1D array containing context variables
         user_count (int): number of users to be generated
-        user_dist (ndarray): probability of generating 1 for each contextual variable. If not especified, the probability is 0.5
+        dist_of_context (dict): each key is a context variable and each value specifies its distribution
         write_to_file (bool): If True, the dataset will be stored in a file
 
     Returns:
-        float: the true donation
+        #TODO: WRITE THIS DESCRIPTION
+        users_list (ndarray): 1D array of dictionaries
     """
-    #users_list = np.array([{context_vars[j]:nprnd.randint(2) for j in range(0,len(context_vars))} for i in range(0, user_count)])
-
-    #return users_list
-    return np.array([[None]] * user_count)
+    users_list = [{} for i in range(user_count)]
+    for context in context_vars:
+        dist = dist_of_context[context]  # Gets the distribution associated with a given context variable
+        if dist[0] == 'bin':
+            context_array = np.random.choice(2, user_count, p=[dist[1], dist[2]] )  # Sample binary outcomes with specified probabilities
+        elif dist[0] == 'norm':
+            context_array = np.random.normal(loc=dist[1], scale=dist[2], size=user_count)
+        elif dist[0] == "beta":
+            context_array = np.random.beta(a=dist[1], b=dist[2], size=user_count)
+        else:   # Default to binary with 50/50 dist
+            context_array = np.random.choice(2, user_count)
+        for i in range(0, user_count):
+            users_list[i].update({context: context_array[i]})
+    return np.asarray(users_list)
