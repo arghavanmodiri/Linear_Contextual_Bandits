@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 import os
+import sys
+import json
+import argparse
 import numpy as np
 import pandas as pd
 import true_hypo_models as models
@@ -7,7 +10,7 @@ import policies.thompson_sampling_nig as thompson
 import policies.random_sampling as random
 import plots.plot_basics as bplots
 import matplotlib.pyplot as plt
-import seaborn as sns
+#import seaborn as sns
 import statsmodels.formula.api as sm
 from datetime import date
 from datetime import datetime
@@ -16,9 +19,7 @@ from results import *
 TODAY = date.today()
 NOW = datetime.now()
 
-#np.set_printoptions(threshold=np.nan)
-
-def main(mode=None):
+def main(input_dict, mode=None):
     """start the model"""
 
 
@@ -43,35 +44,28 @@ def main(mode=None):
     Based on the variables, find the list of all bandit arms
     '''
  
-    #models.generate_true_dataset(np.array(['var1', 'var2']), user_count)
-    true_model_params = models.read_true_model()
-    hypo_params = models.read_hypo_model()
-    hypo_params_no_interaction = models.read_hypo_model("Hypo_Model_No_Interection.csv")
-    bandit_arms = models.find_possible_actions()
+    true_model_params = input_dict['true_model_params']
+    hypo_params = input_dict['hypo_model_params']
+    hypo_params_no_interaction = input_dict['hypo_params_no_interaction']
     noise_stats = true_model_params['noise']
     true_coeff = true_model_params['true_coeff']
     context_vars = true_model_params['context_vars']
     experiment_vars = true_model_params['experiment_vars']
     true_coeff_list = list(true_coeff.values())
+    bandit_arms = models.find_possible_actions(experiment_vars)
 
-    user_count = 1000
-    batch_size = 10
-    simulation_count = 2
-    extensive = True
-    rand_sampling_applied = False
-    no_interaction_applied = True
-    show_fig=True
+    user_count = input_dict['user_count']
+    batch_size = input_dict['batch_size'] # 10
+    simulation_count = input_dict['simulation_count']  # 2500
+    extensive = input_dict['extensive']
+    rand_sampling_applied = input_dict['rand_sampling_applied']
+    no_interaction_applied = input_dict['no_interaction_applied']
+    show_fig = input_dict['show_fig']
 
     regrets_rand = np.zeros(user_count)
     optimal_action_ratio_rand = np.zeros(user_count)
 
     policies = []
-    regression_intercept_all_sim = []
-    regression_d1_all_sim = []
-    regression_d1x1_all_sim = []
-    regression_intercept_all_sim_random = []
-    regression_d1_all_sim_random = []
-    regression_d1x1_all_sim_random = []
     policies.append(['Thompson with Interaction'])
 
     save_output_folder = 'saved_output/raw_data/'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
@@ -84,19 +78,11 @@ def main(mode=None):
 
     for sim in range(0, simulation_count):
         print("sim: ",sim)
-        a_pre = 0
-        b_pre = 0
+        a_pre = input_dict['NIG_priors']['a']
+        b_pre = input_dict['NIG_priors']['b']
         #Hammad: Bias Correction
         mean_pre = np.zeros(len(hypo_params))
         cov_pre = np.identity(len(hypo_params))
-
-        regression_intercept = []
-        regression_d1 = []
-        regression_d1x1 = []
-        regression_intercept_random = []
-        regression_d1_random = []
-        regression_d1x1_random = []
-
 
         #Step 3: Calls the right policy
         '''
@@ -105,7 +91,7 @@ def main(mode=None):
         by the user in command line (default: Calls thompson sampling)
             default priors: 0 unless it is specified by the user
         '''
-        users_context = models.generate_true_dataset(context_vars, user_count)
+        users_context = models.generate_true_dataset(context_vars, user_count, input_dict['dist_of_context'])
 
         thompson_output = thompson.apply_thompson_sampling(users_context,
                                                     experiment_vars,
@@ -129,11 +115,11 @@ def main(mode=None):
 
         thompson_interaction_results.add_coeff_sign_err(thompson_output[5], sim)
 
-        thompson_interaction_results.add_bias_in_coeff(thompson_output[5], sim)
+        thompson_interaction_results.add_bias_in_coeff(thompson_output, sim, experiment_vars)
 
         if no_interaction_applied:
-            a_pre = 0
-            b_pre = 0
+            a_pre = input_dict['NIG_priors']['a']
+            b_pre = input_dict['NIG_priors']['b']
             #Hammad: Bias Correction
             mean_pre = np.zeros(len(hypo_params_no_interaction))
             cov_pre = np.identity(len(hypo_params_no_interaction))
@@ -149,8 +135,7 @@ def main(mode=None):
                                                     cov_pre,
                                                     a_pre,
                                                     b_pre,
-                                                    noise_stats,
-                                                    interaction=False)
+                                                    noise_stats)
 
             thompson_no_interaction_results.add_regret(no_interaction_outputs[2])
 
@@ -162,7 +147,7 @@ def main(mode=None):
 
             thompson_no_interaction_results.add_coeff_sign_err(no_interaction_outputs[5], sim)
 
-            thompson_no_interaction_results.add_bias_in_coeff(no_interaction_outputs[5], sim)
+            thompson_no_interaction_results.add_bias_in_coeff(no_interaction_outputs, sim, experiment_vars)
 
         if(rand_sampling_applied):
             rand_outputs= random.apply_random_sampling(users_context,
@@ -352,4 +337,15 @@ def main(mode=None):
     return
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='Process each .')
+    parser.add_argument('input_file', metavar='input_file', type=str, nargs=1,
+                        help='Name of the json config file')
+    args = parser.parse_args()
+
+    if (len(args.input_file) != 1) or (not args.input_file[0].endswith(".json")):
+        print( "Error: Function should have only one input, name of the JSON config file." )
+        sys.exit(1)
+
+    input_data = args.input_file[0]
+    input_data = json.load(open(input_data))
+    main(input_data)

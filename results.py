@@ -57,15 +57,20 @@ class results:
         self.coeff_sign_err_df = pd.concat([self.coeff_sign_err_df, 
             coeff_sign_error_per_sim_df], axis=1)
 
-    def add_bias_in_coeff(self, beta_thompson_coeff, sim):
-        if len(self.true_params_in_hypo) >= 3:
-            bias_in_coeff_per_sim = np.array(np.array(beta_thompson_coeff) - np.array(self.true_params_in_hypo))
+    def add_bias_in_coeff(self, thompson_output, sim, experiment_vars):
+        if len(self.true_params_in_hypo) == len(self.true_coeff_list):
+            bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(self.true_params_in_hypo))
 
         # Under specified model bias (Y = A0 + A1D)
         else:
-            # Bias(A1) = E(A1) - (B1 + B2/2)
-            true_coeff_list_main = [self.true_coeff_list[0], self.true_coeff_list[1] + self.true_coeff_list[2]/2]
-            bias_in_coeff_per_sim = np.array(np.array(beta_thompson_coeff) - np.array(true_coeff_list_main))
+            bias_in_coeff_per_sim = np.array(thompson_output[5])[:, 0] - self.true_coeff_list[0]
+            for act in range(len(experiment_vars)):
+                act_taken = np.array(thompson_output[1])[:, act]
+                true_reward_act = np.array(thompson_output[3])[act_taken == 1]
+                true_reward_other = np.array(thompson_output[3])[act_taken == 0]
+                bias_in_coeff_per_sim = np.column_stack((
+                    bias_in_coeff_per_sim, np.array(
+                        thompson_output[5])[:, act+1] - (np.mean(true_reward_act) - np.mean(true_reward_other))))
 
         self.bias_in_coeff += bias_in_coeff_per_sim
         bias_in_coeff_per_sim_df = pd.DataFrame(bias_in_coeff_per_sim)
