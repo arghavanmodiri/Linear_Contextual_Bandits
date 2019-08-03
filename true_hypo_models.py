@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.random as nprnd
+from collections import OrderedDict
 
 def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
     """
@@ -128,7 +129,7 @@ def read_independent_model(experiment_vars):
     prefix = []
     for var in experiment_vars:
         prefix.append(var.rsplit('_', 1)[0])
-    prefix = set(prefix)
+    prefix = list(OrderedDict.fromkeys(prefix))
 
     hypo_params_independent = []
     for pre in prefix:
