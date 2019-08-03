@@ -45,20 +45,22 @@ def main(input_dict, mode=None):
     '''
  
     true_model_params = input_dict['true_model_params']
-    hypo_params = input_dict['hypo_model_params']
-    hypo_params_no_interaction = input_dict['hypo_params_no_interaction']
+    hypo_params = [input_dict['hypo_model_params']]
+    hypo_params_no_interaction = [input_dict['hypo_params_no_interaction']]
     noise_stats = true_model_params['noise']
     true_coeff = true_model_params['true_coeff']
     context_vars = true_model_params['context_vars']
     experiment_vars = true_model_params['experiment_vars']
     true_coeff_list = list(true_coeff.values())
     bandit_arms = models.find_possible_actions(experiment_vars)
+    hypo_params_independent = models.read_independent_model(experiment_vars)
 
     user_count = input_dict['user_count']
     batch_size = input_dict['batch_size'] # 10
     simulation_count = input_dict['simulation_count']  # 2500
     extensive = input_dict['extensive']
     rand_sampling_applied = input_dict['rand_sampling_applied']
+    independent_applied = input_dict['independent_applied']
     no_interaction_applied = input_dict['no_interaction_applied']
     show_fig = input_dict['show_fig']
 
@@ -73,7 +75,9 @@ def main(input_dict, mode=None):
         os.makedirs(save_output_folder)
 
     thompson_interaction_results = results(save_output_folder, "thompson_with_interaction", user_count, true_coeff, hypo_params)
-    thompson_no_interaction_results = results(save_output_folder, "thompson_without_interaction", user_count, true_coeff, hypo_params_no_interaction)
+    thompson_no_interaction_results = results(
+        save_output_folder, "thompson_without_interaction", user_count, true_coeff, hypo_params_no_interaction)
+    independent_results = results(save_output_folder, "independent_bandit", user_count, true_coeff, hypo_params_independent)
     random_results = results(save_output_folder, "random", user_count, true_coeff, hypo_params)
 
     for sim in range(0, simulation_count):
@@ -81,8 +85,8 @@ def main(input_dict, mode=None):
         a_pre = input_dict['NIG_priors']['a']
         b_pre = input_dict['NIG_priors']['b']
         #Hammad: Bias Correction
-        mean_pre = np.zeros(len(hypo_params))
-        cov_pre = np.identity(len(hypo_params))
+        mean_pre = np.zeros(sum(len(x) for x in hypo_params))
+        cov_pre = np.identity(sum(len(x) for x in hypo_params))
 
         #Step 3: Calls the right policy
         '''
@@ -117,12 +121,44 @@ def main(input_dict, mode=None):
 
         thompson_interaction_results.add_bias_in_coeff(thompson_output, sim, experiment_vars)
 
-        if no_interaction_applied:
+        if independent_applied:
             a_pre = input_dict['NIG_priors']['a']
             b_pre = input_dict['NIG_priors']['b']
             #Hammad: Bias Correction
-            mean_pre = np.zeros(len(hypo_params_no_interaction))
-            cov_pre = np.identity(len(hypo_params_no_interaction))
+            mean_pre = np.zeros(sum(len(x) for x in hypo_params_independent))
+            cov_pre = np.identity(sum(len(x) for x in hypo_params_independent))
+
+            independent_outputs = thompson.apply_thompson_sampling(users_context,
+                                                    experiment_vars,
+                                                    bandit_arms,
+                                                    hypo_params_independent,
+                                                    true_coeff,
+                                                    batch_size,
+                                                    extensive,
+                                                    mean_pre,
+                                                    cov_pre,
+                                                    a_pre,
+                                                    b_pre,
+                                                    noise_stats)
+
+            independent_results.add_regret(independent_outputs[2])
+
+            independent_results.add_optimal_action_ratio(independent_outputs)
+
+            independent_results.add_beta_thompson_coeff(independent_outputs[5])
+
+            independent_results.add_mse(independent_outputs[5], sim)
+
+            independent_results.add_coeff_sign_err(independent_outputs[5], sim)
+
+            independent_results.add_bias_in_coeff(independent_outputs, sim, experiment_vars)
+
+        if independent_applied:
+            a_pre = input_dict['NIG_priors']['a']
+            b_pre = input_dict['NIG_priors']['b']
+            #Hammad: Bias Correction
+            mean_pre = np.zeros(sum(len(x) for x in hypo_params_no_interaction))
+            cov_pre = np.identity(sum(len(x) for x in hypo_params_no_interaction))
 
             no_interaction_outputs = thompson.apply_thompson_sampling(users_context,
                                                     experiment_vars,
@@ -278,6 +314,11 @@ def main(input_dict, mode=None):
         thompson_no_interaction_results.save_to_csv()
         thompson_no_interaction_results.average_per_sim(simulation_count)
 
+    if independent_applied:
+        policies.append(['Independent Bandits'])
+        independent_results.save_to_csv()
+        independent_results.average_per_sim(simulation_count)
+
     if(rand_sampling_applied):
         policies.append(['Random Sampling'])
         random_results.save_to_csv()
@@ -295,6 +336,10 @@ def main(input_dict, mode=None):
         regrets_all_policies = np.append(regrets_all_policies, [thompson_no_interaction_results.regrets], axis=0)
         optimal_action_ratio_all_policies = np.append(optimal_action_ratio_all_policies, 
             [thompson_no_interaction_results.optimal_action_ratio], axis=0)
+    if independent_applied:
+        regrets_all_policies = np.append(regrets_all_policies, [independent_results.regrets], axis=0)
+        optimal_action_ratio_all_policies = np.append(optimal_action_ratio_all_policies, 
+            [independent_results.optimal_action_ratio], axis=0)
     if rand_sampling_applied:
         regrets_all_policies = np.append(regrets_all_policies, [random_results.regrets], axis=0)
         optimal_action_ratio_all_policies = np.append(optimal_action_ratio_all_policies, 
@@ -308,26 +353,26 @@ def main(input_dict, mode=None):
             mode='per_user')
     
     bplots.plot_coeff_ranking(user_count, 'Thompson with Interaction',
-                thompson_interaction_results.beta_thompson_coeffs, hypo_params, simulation_count,
+                thompson_interaction_results.beta_thompson_coeffs, hypo_params[0], simulation_count,
                 batch_size, save_fig=True)
 
-    bplots.plot_coeff_sign_error(user_count, 'Thompson with Interaction', hypo_params,
+    bplots.plot_coeff_sign_error(user_count, 'Thompson with Interaction', hypo_params[0],
                 thompson_interaction_results.coeff_sign_error, simulation_count, batch_size, save_fig=True)
 
     
-    bplots.plot_bias_in_coeff(user_count, 'Thompson with Interaction', hypo_params,
+    bplots.plot_bias_in_coeff(user_count, 'Thompson with Interaction', hypo_params[0],
                 thompson_interaction_results.bias_in_coeff, simulation_count, batch_size, save_fig=True)
 
     # TODO create methods
     if no_interaction_applied:
         bplots.plot_coeff_ranking(user_count, 'Thompson without Interaction',
-                thompson_no_interaction_results.beta_thompson_coeffs, hypo_params_no_interaction, simulation_count,
+                thompson_no_interaction_results.beta_thompson_coeffs, hypo_params_no_interaction[0], simulation_count,
                 batch_size, save_fig=True)
 
-        bplots.plot_coeff_sign_error(user_count, 'Thompson without Interaction', hypo_params_no_interaction,
+        bplots.plot_coeff_sign_error(user_count, 'Thompson without Interaction', hypo_params_no_interaction[0],
                 thompson_no_interaction_results.coeff_sign_error, simulation_count, batch_size, save_fig=True)
     
-        bplots.plot_bias_in_coeff(user_count, 'Thompson without Interaction', hypo_params_no_interaction,
+        bplots.plot_bias_in_coeff(user_count, 'Thompson without Interaction', hypo_params_no_interaction[0],
                 thompson_no_interaction_results.bias_in_coeff, simulation_count, batch_size, save_fig=True)
     
     if(show_fig):
@@ -337,6 +382,7 @@ def main(input_dict, mode=None):
     return
 
 if __name__ == "__main__":
+    '''
     parser = argparse.ArgumentParser(description='Process each .')
     parser.add_argument('input_file', metavar='input_file', type=str, nargs=1,
                         help='Name of the json config file')
@@ -348,4 +394,6 @@ if __name__ == "__main__":
 
     input_data = args.input_file[0]
     input_data = json.load(open(input_data))
+    '''
+    input_data = json.load(open("test.json"))
     main(input_data)

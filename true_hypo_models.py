@@ -124,6 +124,29 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
     '''
     return hypo_model_params
 
+def read_independent_model(experiment_vars):
+    prefix = []
+    for var in experiment_vars:
+        prefix.append(var.rsplit('_', 1)[0])
+    prefix = set(prefix)
+
+    hypo_params_independent = []
+    for pre in prefix:
+        sub_list = ['intercept']
+        if pre == "intercept":
+            continue
+        i = 1
+        multi_levels = pre + '_' + str(i)
+        if multi_levels not in experiment_vars:
+            sub_list.append(pre)
+        while multi_levels in experiment_vars:
+            sub_list.append(multi_levels)
+            i += 1
+            multi_levels = pre + '_' + str(i)
+        hypo_params_independent.append(sub_list)
+
+    return hypo_params_independent
+
 
 def true_model_output(true_coeff, experiment_vars, user_context, applied_arm,
                         noise_stats):

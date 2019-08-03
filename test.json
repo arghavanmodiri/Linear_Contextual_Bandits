@@ -1,0 +1,45 @@
+{
+        "true_model_params":
+        {
+          "noise":
+              {
+                "noise_mean": 0,
+                "noise_std": 200
+              },
+          "true_coeff":
+              {
+                "intercept": 0,
+                "f_1":100,
+                "f_2":200,
+                "m_1":50,
+                "m_2":150,
+                "f_1*m_1": 400,
+                "f_1*m_2": 50,
+                "f_2*m_1": 50,
+                "f_2*m_2": 150
+              },
+          "context_vars": [],
+          "experiment_vars": ["f_1", "f_2", "m_1", "m_2"]
+        },
+        "hypo_model_params": ["intercept", "f_1", "f_2", "m_1", "m_2",
+          "f_1*m_1", "f_1*m_2", "f_2*m_1", "f_2*m_2"],
+        "hypo_params_no_interaction": ["intercept", "f_1", "f_2", "m_1", "m_2"],
+        "user_count": 1000,
+        "batch_size": 10,
+        "simulation_count": 5,
+        "extensive": true,
+        "rand_sampling_applied": true,
+        "independent_applied": true,
+        "no_interaction_applied": true,
+        "show_fig": true,
+        "NIG_priors":
+        {
+          "a": 1,
+          "b": 1
+        },
+       "dist_of_context":
+        {
+        },
+        "output_path": "arbitrary_path",
+        "num_cores": 8
+    }

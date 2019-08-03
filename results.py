@@ -7,12 +7,13 @@ class results:
         self.algo = algo
         self.user_count = user_count
         self.hypo_params = hypo_params
+        self.flat_hypo_params = list(set(item for bandit in hypo_params for item in bandit))
         self.regrets = np.zeros(user_count)
         self.optimal_action_ratio = np.zeros(user_count)
-        self.mse = np.zeros((user_count, len(hypo_params)))
-        self.beta_thompson_coeffs = np.zeros((user_count, len(hypo_params)))
-        self.coeff_sign_error = np.zeros((user_count, len(hypo_params)))
-        self.bias_in_coeff = np.zeros((user_count, len(hypo_params)))
+        self.mse = np.zeros((user_count, len(self.flat_hypo_params)))
+        self.beta_thompson_coeffs = np.zeros((user_count, len(self.flat_hypo_params)))
+        self.coeff_sign_error = np.zeros((user_count, len(self.flat_hypo_params)))
+        self.bias_in_coeff = np.zeros((user_count, len(self.flat_hypo_params)))
         self.optimal_action_ratio_df = pd.DataFrame()
         self.mse_df = pd.DataFrame()
         self.coeff_sign_err_df = pd.DataFrame()
@@ -23,7 +24,7 @@ class results:
         self.true_coeff_list = list(true_coeff.values())
 
         self.true_params_in_hypo = []
-        for  idx, hypo_param_name in enumerate(hypo_params):
+        for idx, hypo_param_name in enumerate(self.flat_hypo_params):
             if(hypo_param_name in true_coeff):
                 self.true_params_in_hypo.append(true_coeff[hypo_param_name])
 
@@ -45,15 +46,15 @@ class results:
                                 np.array(self.true_params_in_hypo)),2)
         self.mse += mse_per_sim
         mse_per_sim_df = pd.DataFrame(mse_per_sim)
-        mse_per_sim_df.columns = pd.MultiIndex.from_product([[sim], self.hypo_params])
+        mse_per_sim_df.columns = pd.MultiIndex.from_product([[sim], self.flat_hypo_params])
         self.mse_df = pd.concat([self.mse_df, mse_per_sim_df], axis=1)
 
     def add_coeff_sign_err(self, beta_thompson_coeff, sim):
         coeff_sign_error_per_sim = np.sign(
-            np.array(self.true_params_in_hypo)) - np.sign(np.array(beta_thompson_coeff)) == np.zeros(len(self.hypo_params))
+            np.array(self.true_params_in_hypo)) - np.sign(np.array(beta_thompson_coeff)) == np.zeros(len(self.flat_hypo_params))
         self.coeff_sign_error +=coeff_sign_error_per_sim
         coeff_sign_error_per_sim_df = pd.DataFrame(coeff_sign_error_per_sim.astype(int))
-        coeff_sign_error_per_sim_df.columns = pd.MultiIndex.from_product([[sim], self.hypo_params])
+        coeff_sign_error_per_sim_df.columns = pd.MultiIndex.from_product([[sim], self.flat_hypo_params])
         self.coeff_sign_err_df = pd.concat([self.coeff_sign_err_df, 
             coeff_sign_error_per_sim_df], axis=1)
 
@@ -74,7 +75,7 @@ class results:
 
         self.bias_in_coeff += bias_in_coeff_per_sim
         bias_in_coeff_per_sim_df = pd.DataFrame(bias_in_coeff_per_sim)
-        bias_in_coeff_per_sim_df.columns = pd.MultiIndex.from_product([[sim], self.hypo_params])
+        bias_in_coeff_per_sim_df.columns = pd.MultiIndex.from_product([[sim], self.flat_hypo_params])
         self.bias_in_coeff_df = pd.concat([self.bias_in_coeff_df, 
             bias_in_coeff_per_sim_df], axis=1)
 

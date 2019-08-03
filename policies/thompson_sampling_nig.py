@@ -77,7 +77,7 @@ def draw_posterior_sample(hypo_model_params, mean, cov, a, b):
 
     # Coeffecients from multivariate normal 
     beta_draw = np.random.multivariate_normal(mean, var_draw*cov)
-    beta_draw = {hypo_model_params[i]:beta_draw[i] for i in range(0,len(hypo_model_params))}
+    # beta_draw = {hypo_model_params[i]:beta_draw[i] for i in range(0, len(hypo_model_params))}
 
     return beta_draw
 
@@ -108,7 +108,7 @@ def apply_thompson_sampling(user_context, experiment_vars, bandit_arms, hypo_mod
     start_batch = 0
     end_batch = batch_size
     dependant_var = np.zeros(batch_size)
-    X_pre = np.zeros([batch_size,len(hypo_model_params)])
+    X_pre = np.zeros([batch_size, sum(len(x) for x in hypo_model_params)])
 
     regret_all = []
     true_optimal_action_all = []
@@ -130,14 +130,36 @@ def apply_thompson_sampling(user_context, experiment_vars, bandit_arms, hypo_mod
         b = thompson_dist[1]
 
         for user in range(start_batch, end_batch):
-            beta_thompson = draw_posterior_sample(hypo_model_params,mean, cov, a, b)
-            beta_thompson_all.append([beta_thompson[i] for i in beta_thompson.keys()])
+            hypo_optimal_action = []
+            hypo_estimated_reward = 0
+            beta_thompson = {"intercept": 0}
+            cur_var = 0
+            cur_index = 0
+            for bandit in hypo_model_params:
+                if len(bandit) < len(experiment_vars):
+                    nex = cur_var + len(bandit) - 1
+                else:
+                    nex = len(experiment_vars)
 
-            hypo_optimal_action = making_decision.pick_hypo_optimal_arm(
-                                                        beta_thompson,
+                beta_thompson_per_bandit = draw_posterior_sample(bandit, mean, cov, a, b)[cur_index:cur_index+len(bandit)]
+                beta_thompson_per_bandit = {bandit[i]: beta_thompson_per_bandit[i] for i in range(0, len(bandit))}
+                beta_thompson['intercept'] += beta_thompson_per_bandit['intercept']
+                beta_thompson_per_bandit.pop('intercept')
+                beta_thompson.update(beta_thompson_per_bandit)
+
+                hypo_optimal_action_per_bandit = making_decision.pick_hypo_optimal_arm(
+                                                        beta_thompson_per_bandit,
                                                         user_context[user],
-                                                        experiment_vars,
-                                                        bandit_arms)
+                                                        experiment_vars[cur_var:nex],
+                                                        np.array(bandit_arms)[:, cur_var:nex])
+                hypo_optimal_action.extend(hypo_optimal_action_per_bandit[0])
+                hypo_estimated_reward += hypo_optimal_action_per_bandit[1]
+
+                cur_var = nex
+                cur_index += len(bandit)
+            beta_thompson_all.append([beta_thompson[i] for i in beta_thompson.keys()])
+            hypo_optimal_action = [hypo_optimal_action, hypo_estimated_reward]
+
             received_reward = models.true_model_output(true_coeff,
                                                         experiment_vars,
                                                         user_context[user],
@@ -156,7 +178,7 @@ def apply_thompson_sampling(user_context, experiment_vars, bandit_arms, hypo_mod
                                                         bandit_arms)
             regret = making_decision.calculate_regret(true_optimal_action[1], 
                                                     received_reward_no_noise)
-            X = models.calculate_hypo_regressors(hypo_model_params,
+            X = models.calculate_hypo_regressors([item for bandit in hypo_model_params for item in bandit],
                                                 experiment_vars,
                                                 user_context[user],
                                                 hypo_optimal_action[0])
