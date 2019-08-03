@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from collections import OrderedDict
 
 class results:
     def __init__(self, save_output_folder, algo, user_count: int, true_coeff: dict, hypo_params: list):
@@ -7,7 +8,7 @@ class results:
         self.algo = algo
         self.user_count = user_count
         self.hypo_params = hypo_params
-        self.flat_hypo_params = list(set(item for bandit in hypo_params for item in bandit))
+        self.flat_hypo_params = list(OrderedDict.fromkeys([item for bandit in hypo_params for item in bandit]))
         self.regrets = np.zeros(user_count)
         self.optimal_action_ratio = np.zeros(user_count)
         self.mse = np.zeros((user_count, len(self.flat_hypo_params)))
