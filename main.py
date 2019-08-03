@@ -374,6 +374,17 @@ def main(input_dict, mode=None):
     
         bplots.plot_bias_in_coeff(user_count, 'Thompson without Interaction', hypo_params_no_interaction[0],
                 thompson_no_interaction_results.bias_in_coeff, simulation_count, batch_size, save_fig=True)
+
+    if independent_applied:
+        bplots.plot_coeff_ranking(user_count, 'Independent bandits',
+                independent_results.beta_thompson_coeffs, independent_results.flat_hypo_params, simulation_count,
+                batch_size, save_fig=True)
+
+        bplots.plot_coeff_sign_error(user_count, 'Independent bandits', independent_results.flat_hypo_params,
+                independent_results.coeff_sign_error, simulation_count, batch_size, save_fig=True)
+    
+        bplots.plot_bias_in_coeff(user_count, 'Independent bandits', independent_results.flat_hypo_params,
+                independent_results.bias_in_coeff, simulation_count, batch_size, save_fig=True)
     
     if(show_fig):
         #plt.show(block=False)
