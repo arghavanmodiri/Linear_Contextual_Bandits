@@ -72,6 +72,7 @@ def main(input_dict, mode=None):
 	independent_applied = input_dict['independent_applied']
 	no_interaction_applied = input_dict['no_interaction_applied']
 	show_fig = input_dict['show_fig']
+	regret_top = input_dict['regret_top']
 
 	regrets_rand = np.zeros(user_count)
 	optimal_action_ratio_rand = np.zeros(user_count)
@@ -355,7 +356,7 @@ def main(input_dict, mode=None):
 			[random_results.optimal_action_ratio], axis=0)
 	
 	bplots.plot_regret(user_count, policies, regrets_all_policies,
-						simulation_count, batch_size)
+						simulation_count, batch_size, top=regret_top)
 	
 	bplots.plot_optimal_action_ratio(user_count, policies,
 			optimal_action_ratio_all_policies, simulation_count, batch_size,

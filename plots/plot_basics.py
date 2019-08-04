@@ -8,10 +8,13 @@ TODAY = date.today()
 
 
 def plot_regret(user_count, policy_names, regrets_all_policies,
-                simulation_count, batch_size, save_fig=True):
+                simulation_count, batch_size, save_fig=True, top=0):
     plt.figure()
     UserItter = range(1,user_count+1)
     #plt.plot(UserItter, prop_best_sim_itter, label = "Contextual Policy")
+
+    if top != 0:
+        plt.ylim(top=top)
 
     for idx, policy in enumerate(policy_names):
         plt.plot(UserItter, np.cumsum(regrets_all_policies[idx]),

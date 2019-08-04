@@ -28,9 +28,9 @@
         "batch_size": 10,
         "simulation_count": 5,
         "extensive": true,
-        "rand_sampling_applied": true,
+        "rand_sampling_applied": false,
         "independent_applied": true,
-        "no_interaction_applied": true,
+        "no_interaction_applied": false,
         "show_fig": true,
         "NIG_priors":
         {
@@ -41,5 +41,6 @@
         {
         },
         "output_path": "arbitrary_path",
-        "num_cores": 8
+        "num_cores": 8,
+        "regret_top": 50000
     }
