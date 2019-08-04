@@ -1,4 +1,5 @@
 {
+        "sim_name": "test",
         "true_model_params":
         {
           "noise":

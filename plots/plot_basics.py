@@ -8,7 +8,7 @@ TODAY = date.today()
 
 
 def plot_regret(user_count, policy_names, regrets_all_policies,
-                simulation_count, batch_size, save_fig=True, top=0):
+                simulation_count, batch_size, save_fig=True, top=0, sim_name=''):
     plt.figure()
     UserItter = range(1,user_count+1)
     #plt.plot(UserItter, prop_best_sim_itter, label = "Contextual Policy")
@@ -28,8 +28,8 @@ def plot_regret(user_count, policy_names, regrets_all_policies,
                 'Size={batches})'.format(sims=simulation_count,
                 batches=batch_size),fontsize = 12)
     if(save_fig):
-        plt.savefig('saved_output//{date}_{i}iterations_{sim}sims_regrets.png'.
-            format(date=TODAY, i=user_count, sim=simulation_count))
+        plt.savefig('saved_output//{date}_{i}iterations_{sim}sims_regrets_{name}.png'.
+            format(date=TODAY, i=user_count, sim=simulation_count, name=sim_name))
 
 
 
@@ -75,7 +75,7 @@ def plot_regression(user_count, regression_params_dict, regression_params_std_di
 def plot_optimal_action_ratio(user_count, policy_names,
                                 optimal_action_ratio_all_policies,
                                 simulation_count, batch_size, mode='per_user',
-                                save_fig=True):
+                                save_fig=True, sim_name=''):
     plt.figure()
 
     if(mode == 'per_user'):
@@ -104,8 +104,8 @@ def plot_optimal_action_ratio(user_count, policy_names,
                 simulation_count, batches=batch_size),fontsize = 12)
     if(save_fig):
         plt.savefig('saved_output//{date}_{i}iterations_{sim} '
-                    'sims_optimal_action_ratio.png'.format(date=TODAY,
-                    i=user_count, sim=simulation_count))
+                    'sims_optimal_action_ratio_{name}.png'.format(date=TODAY,
+                    i=user_count, sim=simulation_count, name=sim_name))
 
 def plot_suboptimal_action_ratio(user_count, policy_names,
                                 optimal_action_ratio_all_policies,
@@ -167,7 +167,7 @@ def plot_mse(user_count, policy_names, mse_all_policies,
 
 
 def plot_coeff_ranking(user_count, policy_name, beta_thompson_coeffs,
-                    hypo_params, simulation_count, batch_size, save_fig=True):
+                    hypo_params, simulation_count, batch_size, save_fig=True, sim_name=''):
     plt.figure()
     UserItter = range(1,user_count+1)
 
@@ -184,13 +184,13 @@ def plot_coeff_ranking(user_count, policy_name, beta_thompson_coeffs,
 
     if(save_fig):
         plt.savefig('saved_output//{date}_{i}iterations_{sim} '
-                    'sims_coeff_ranking.png'.format(date=TODAY, i=user_count,
-                    sim=simulation_count))
+                    'sims_coeff_ranking_{policy}_{name}.png'.format(date=TODAY, i=user_count,
+                    sim=simulation_count, policy=policy_name, name=sim_name))
 
 
 def plot_coeff_sign_error(user_count, policy_name, hypo_params,
                         coeff_sign_error, simulation_count, batch_size,
-                        save_fig=True):
+                        save_fig=True, sim_name=''):
     plt.figure()
     UserItter = range(1,user_count+1)
     #plt.plot(UserItter, prop_best_sim_itter, label = "Contextual Policy")
@@ -209,14 +209,14 @@ def plot_coeff_sign_error(user_count, policy_name, hypo_params,
     #plt.show()
     if(save_fig):
         plt.savefig('saved_output//{date}_{i}iterations_{sim} '
-                    'sims_coeff_sign_err.png'.format(date=TODAY, i=user_count,
-                    sim=simulation_count))
+                    'sims_coeff_sign_err_{policy}_{name}.png'.format(date=TODAY, i=user_count,
+                    sim=simulation_count, policy=policy_name, name=sim_name))
 
 
 
 def plot_bias_in_coeff(user_count, policy_name, hypo_params,
                         bias_in_coeff, simulation_count, batch_size,
-                        save_fig=True):
+                        save_fig=True, sim_name=''):
     plt.figure()
     UserItter = range(1,user_count+1)
     #plt.plot(UserItter, prop_best_sim_itter, label = "Contextual Policy")
@@ -235,5 +235,5 @@ def plot_bias_in_coeff(user_count, policy_name, hypo_params,
     #plt.show()
     if(save_fig):
         plt.savefig('saved_output//{date}_{i}iterations_{sim} '
-                    'sims_bias_in_coeff.png'.format(date=TODAY, i=user_count,
-                    sim=simulation_count))
+                    'sims_bias_in_coeff_{policy}_{name}.png'.format(date=TODAY, i=user_count,
+                    sim=simulation_count, policy=policy_name, name=sim_name))

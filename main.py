@@ -73,6 +73,7 @@ def main(input_dict, mode=None):
 	no_interaction_applied = input_dict['no_interaction_applied']
 	show_fig = input_dict['show_fig']
 	regret_top = input_dict['regret_top']
+	sim_name = input_dict['sim_name']
 
 	regrets_rand = np.zeros(user_count)
 	optimal_action_ratio_rand = np.zeros(user_count)
@@ -356,45 +357,45 @@ def main(input_dict, mode=None):
 			[random_results.optimal_action_ratio], axis=0)
 	
 	bplots.plot_regret(user_count, policies, regrets_all_policies,
-						simulation_count, batch_size, top=regret_top)
+						simulation_count, batch_size, top=regret_top, sim_name=sim_name)
 	
 	bplots.plot_optimal_action_ratio(user_count, policies,
 			optimal_action_ratio_all_policies, simulation_count, batch_size,
-			mode='per_user')
+			mode='per_user', sim_name=sim_name)
 	
 	bplots.plot_coeff_ranking(user_count, 'Thompson with Interaction',
 				thompson_interaction_results.beta_thompson_coeffs, hypo_params[0], simulation_count,
-				batch_size, save_fig=True)
+				batch_size, save_fig=True, sim_name=sim_name)
 
 	bplots.plot_coeff_sign_error(user_count, 'Thompson with Interaction', hypo_params[0],
-				thompson_interaction_results.coeff_sign_error, simulation_count, batch_size, save_fig=True)
+				thompson_interaction_results.coeff_sign_error, simulation_count, batch_size, save_fig=True, sim_name=sim_name)
 
 	
 	bplots.plot_bias_in_coeff(user_count, 'Thompson with Interaction', hypo_params[0],
-				thompson_interaction_results.bias_in_coeff, simulation_count, batch_size, save_fig=True)
+				thompson_interaction_results.bias_in_coeff, simulation_count, batch_size, save_fig=True, sim_name=sim_name)
 
 	# TODO create methods
 	if no_interaction_applied:
 		bplots.plot_coeff_ranking(user_count, 'Thompson without Interaction',
 				thompson_no_interaction_results.beta_thompson_coeffs, hypo_params_no_interaction[0], simulation_count,
-				batch_size, save_fig=True)
+				batch_size, save_fig=True, sim_name=sim_name)
 
 		bplots.plot_coeff_sign_error(user_count, 'Thompson without Interaction', hypo_params_no_interaction[0],
-				thompson_no_interaction_results.coeff_sign_error, simulation_count, batch_size, save_fig=True)
+				thompson_no_interaction_results.coeff_sign_error, simulation_count, batch_size, save_fig=True, sim_name=sim_name)
 	
 		bplots.plot_bias_in_coeff(user_count, 'Thompson without Interaction', hypo_params_no_interaction[0],
-				thompson_no_interaction_results.bias_in_coeff, simulation_count, batch_size, save_fig=True)
+				thompson_no_interaction_results.bias_in_coeff, simulation_count, batch_size, save_fig=True, sim_name=sim_name)
 
 	if independent_applied:
 		bplots.plot_coeff_ranking(user_count, 'Independent bandits',
 				independent_results.beta_thompson_coeffs, independent_results.flat_hypo_params, simulation_count,
-				batch_size, save_fig=True)
+				batch_size, save_fig=True, sim_name=sim_name)
 
 		bplots.plot_coeff_sign_error(user_count, 'Independent bandits', independent_results.flat_hypo_params,
-				independent_results.coeff_sign_error, simulation_count, batch_size, save_fig=True)
+				independent_results.coeff_sign_error, simulation_count, batch_size, save_fig=True, sim_name=sim_name)
 	
 		bplots.plot_bias_in_coeff(user_count, 'Independent bandits', independent_results.flat_hypo_params,
-				independent_results.bias_in_coeff, simulation_count, batch_size, save_fig=True)
+				independent_results.bias_in_coeff, simulation_count, batch_size, save_fig=True, sim_name=sim_name)
 	
 	if(show_fig):
 		#plt.show(block=False)
