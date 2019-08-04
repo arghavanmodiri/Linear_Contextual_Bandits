@@ -1,5 +1,5 @@
 {
-        "sim_name": "crossover_against_two",
+        "sim_name": "noncrossover_two_main_one_optimum",
         "true_model_params":
         {
           "noise":
@@ -10,14 +10,14 @@
           "true_coeff":
               {
                 "intercept": 0,
-                "f_1":100,
-                "f_2":200,
-                "m_1":50,
-                "m_2":150,
-                "f_1*m_1": 400,
-                "f_1*m_2": 50,
+                "f_1":150,
+                "f_2":100,
+                "m_1":150,
+                "m_2":100,
+                "f_1*m_1": 150,
+                "f_1*m_2": 100,
                 "f_2*m_1": 50,
-                "f_2*m_2": 150
+                "f_2*m_2": 50
               },
           "context_vars": [],
           "experiment_vars": ["f_1", "f_2", "m_1", "m_2"]
