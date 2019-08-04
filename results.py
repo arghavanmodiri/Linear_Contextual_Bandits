@@ -100,7 +100,7 @@ class results:
 
     def average_per_sim(self, simulation_count):
         self.regrets = self.regrets / simulation_count
-        self.optimal_action_ratio = self.optimal_action_ratio /simulation_count
+        self.optimal_action_ratio = self.optimal_action_ratio / simulation_count
         self.mse = self.mse / simulation_count
         self.beta_thompson_coeffs = self.beta_thompson_coeffs / simulation_count
         self.bias_in_coeff = self.bias_in_coeff / simulation_count
