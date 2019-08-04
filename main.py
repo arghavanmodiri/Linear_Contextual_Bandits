@@ -153,7 +153,7 @@ def main(input_dict, mode=None):
 
             independent_results.add_bias_in_coeff(independent_outputs, sim, experiment_vars)
 
-        if independent_applied:
+        if no_interaction_applied:
             a_pre = input_dict['NIG_priors']['a']
             b_pre = input_dict['NIG_priors']['b']
             #Hammad: Bias Correction
@@ -393,7 +393,7 @@ def main(input_dict, mode=None):
     return
 
 if __name__ == "__main__":
-    '''
+    
     parser = argparse.ArgumentParser(description='Process each .')
     parser.add_argument('input_file', metavar='input_file', type=str, nargs=1,
                         help='Name of the json config file')
@@ -405,6 +405,5 @@ if __name__ == "__main__":
 
     input_data = args.input_file[0]
     input_data = json.load(open(input_data))
-    '''
-    input_data = json.load(open("test.json"))
+
     main(input_data)
