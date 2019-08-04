@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.random as nprnd
 from collections import OrderedDict
+import itertools
 
 def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
     """
@@ -40,14 +41,15 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
 
 def find_possible_actions(experiment_vars):
     """
-    Read the csv file containing the true model coefficients for all variables
+    Create a list of all possible action vactors from action variables
 
     Args:
-        true_model_params_file (str): name of the file
+        experiment_vars (list): names of the action variables
 
     Returns:
         list: List of all possible actions
     """
+    '''
     action_space = {var : [0, 1] for var in experiment_vars}
     all_possible_actions = [{}]
 
@@ -77,6 +79,32 @@ def find_possible_actions(experiment_vars):
     n_actions = len(all_possible_actions)
 
     possible_actions = [list(all_possible_actions[i].values()) for i in range(0, n_actions)]
+    '''
+
+    # Count the number of levels for each factor
+    prefix = {}
+    for var in experiment_vars:
+        pre = var.rsplit('_', 1)[0]
+        if pre in prefix:
+            prefix[pre] += 1
+        else:
+            prefix[pre] = 1
+
+    # Create an action space for each factor assuming levels are categorical
+    factors = []
+    for prefix_name, prefix_num in prefix.items():
+        level = np.identity(prefix_num)
+        level = np.append(level, [[0]*prefix_num], axis=0)
+        factors.append(level.astype(int).tolist())
+
+    # Generate all possible actions
+    combination = list(itertools.product(*factors))
+    possible_actions = []
+    for act in combination:
+        action = []
+        for factor in act:
+            action.extend(factor)
+        possible_actions.append(action)
     
     return possible_actions
 

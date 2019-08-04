@@ -151,7 +151,7 @@ def main(input_dict, mode=None):
 													noise_stats)
 
 			independent_results.add_regret(independent_outputs[2])
-			
+
 			independent_results.add_optimal_action_ratio(independent_outputs)
 
 			independent_results.add_beta_thompson_coeff(independent_outputs[5])
@@ -402,6 +402,7 @@ def main(input_dict, mode=None):
 	return
 
 if __name__ == "__main__":
+	
 	parser = argparse.ArgumentParser(description='Process each .')
 	parser.add_argument('input_file', metavar='input_file', type=str, nargs=1,
 						help='Name of the json config file')
@@ -413,5 +414,5 @@ if __name__ == "__main__":
 
 	input_data = args.input_file[0]
 	input_data = json.load(open(input_data))
-	
+
 	main(input_data)
