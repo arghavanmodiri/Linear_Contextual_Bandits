@@ -119,7 +119,9 @@ def main(input_dict, mode=None):
 													cov_pre,
 													a_pre,
 													b_pre,
-													noise_stats)
+													noise_stats,
+													thompson_interaction_results.flat_hypo_params)
+													
 		thompson_interaction_results.add_regret(thompson_output[2])
 
 		thompson_interaction_results.add_optimal_action_ratio(thompson_output)
@@ -150,7 +152,8 @@ def main(input_dict, mode=None):
 													cov_pre,
 													a_pre,
 													b_pre,
-													noise_stats)
+													noise_stats,
+													independent_results.flat_hypo_params)
 
 			independent_results.add_regret(independent_outputs[2])
 
@@ -182,7 +185,8 @@ def main(input_dict, mode=None):
 													cov_pre,
 													a_pre,
 													b_pre,
-													noise_stats)
+													noise_stats,
+													thompson_no_interaction_results.flat_hypo_params)
 
 			thompson_no_interaction_results.add_regret(no_interaction_outputs[2])
 
