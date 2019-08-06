@@ -238,42 +238,44 @@ def main(input_dict, mode=None):
 	
 	regrets_all_policies = np.array([])
 	optimal_action_ratio_all_policies = np.array([])
-	for policy_name, result in policies.items():
+	for policy_name in sorted(list(policies.keys())):
 		# Save results to csv and average over simulations
-		result.save_to_csv()
-		result.average_per_sim(simulation_count)
+		policies[policy_name].save_to_csv()
+		policies[policy_name].average_per_sim(simulation_count)
 
 		# Capture all regrets and optimal action ratio
 		if regrets_all_policies.size == 0:
-			regrets_all_policies = np.array([result.regrets])
-			optimal_action_ratio_all_policies = np.array([result.optimal_action_ratio])
+			regrets_all_policies = np.array([policies[policy_name].regrets])
+			optimal_action_ratio_all_policies = np.array([policies[policy_name].optimal_action_ratio])
 		else:
 			regrets_all_policies = np.append(
-				regrets_all_policies, [result.regrets], axis=0)
+				regrets_all_policies, [policies[policy_name].regrets], axis=0)
 			optimal_action_ratio_all_policies = np.append(
-				optimal_action_ratio_all_policies, [result.optimal_action_ratio], axis=0)
+				optimal_action_ratio_all_policies, [policies[policy_name].optimal_action_ratio], axis=0)
 
 		# Plot figures relevant only to MAB
 		if policy_name == 'Random Sampling':
 			continue
 		bplots.plot_coeff_ranking(
-			user_count, policy_name, result.beta_thompson_coeffs, result.flat_hypo_params, 
-				simulation_count, batch_size, save_fig=True, sim_name=sim_name)
+			user_count, policy_name, policies[policy_name].beta_thompson_coeffs, 
+				policies[policy_name].flat_hypo_params, simulation_count, batch_size, 
+					save_fig=True, sim_name=sim_name)
 		bplots.plot_coeff_sign_error(
-			user_count, policy_name, result.flat_hypo_params, result.coeff_sign_error, 
-				simulation_count, batch_size, save_fig=True, sim_name=sim_name)
+			user_count, policy_name, policies[policy_name].flat_hypo_params, 
+				policies[policy_name].coeff_sign_error, simulation_count, batch_size, 
+					save_fig=True, sim_name=sim_name)
 		bplots.plot_bias_in_coeff(
-			user_count, policy_name, result.flat_hypo_params, result.bias_in_coeff, 
+			user_count, policy_name, policies[policy_name].flat_hypo_params, policies[policy_name].bias_in_coeff, 
 				simulation_count, batch_size, save_fig=True, sim_name=sim_name)
 		bplots.plot_action_ratio(
-			user_count, policy_name, experiment_vars, result.action_ratio, 
+			user_count, policy_name, experiment_vars, policies[policy_name].action_ratio, 
 				simulation_count, batch_size, save_fig=True, sim_name=sim_name)
 
 	# Plot regrets and optimal action ratio
-	bplots.plot_regret(user_count, list(policies.keys()), regrets_all_policies,
+	bplots.plot_regret(user_count, sorted(list(policies.keys())), regrets_all_policies,
 						simulation_count, batch_size, top=regret_top, sim_name=sim_name)
 	
-	bplots.plot_optimal_action_ratio(user_count, list(policies.keys()),
+	bplots.plot_optimal_action_ratio(user_count, sorted(list(policies.keys())),
 			optimal_action_ratio_all_policies, simulation_count, batch_size,
 			mode='per_user', sim_name=sim_name)
 	
