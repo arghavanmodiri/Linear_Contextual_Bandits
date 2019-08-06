@@ -242,6 +242,7 @@ def plot_action_ratio(user_count, policy_name, experiment_vars, action_ratio,
                         simulation_count, batch_size, save_fig=True, sim_name=''):
     plt.figure()
     UserItter = range(1,user_count+1)
+    plt.ylim(top=1.0)
 
     for experiment_var in range(0,len(experiment_vars)):
         plt.plot(
