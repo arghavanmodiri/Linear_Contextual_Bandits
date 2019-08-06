@@ -22,7 +22,7 @@ def plot_regret(user_count, policy_names, regrets_all_policies,
 
 
     plt.legend(loc='upper left', fontsize = 12)
-    plt.xlabel('User Itterations', fontsize = 18)
+    plt.xlabel('User Iterations', fontsize = 18)
     plt.ylabel('Regret', fontsize = 12)
     plt.title('Calculated Regret for Each User\n(Simulations = {sims}, Batch '
                 'Size={batches})'.format(sims=simulation_count,
@@ -84,7 +84,7 @@ def plot_optimal_action_ratio(user_count, policy_names,
         for idx, policy in enumerate(policy_names):
             plt.plot(UserItter, optimal_action_ratio_all_policies[idx], label =
                 policy)
-        plt.xlabel('User Itterations', fontsize = 18)
+        plt.xlabel('User Iterations', fontsize = 18)
     elif(mode == 'per_batch'):
         batchItter = range(1,int(user_count/batch_size)+1)
         #plt.plot(UserItter, prop_best_sim_itter, label = "Contextual Policy")
@@ -95,11 +95,11 @@ def plot_optimal_action_ratio(user_count, policy_names,
                 len(optimal_action_ratio_all_policies[idx]),
                 batch_size))
             plt.plot(batchItter, optimal_action_ratio_batch, label = policy)
-        plt.xlabel('Batch Itterations', fontsize = 18)
+        plt.xlabel('Batch Iterations', fontsize = 18)
 
     plt.legend(loc='upper left', fontsize = 12)
     plt.ylabel('Proportion of Optimal Action Assignment', fontsize = 12)
-    plt.title('Proportion of Optimal Action at Each Itteration\n '
+    plt.title('Proportion of Optimal Action at Each Iteration\n '
                 '(Simulations = {sims}, Batch Size={batches})'.format(sims=
                 simulation_count, batches=batch_size),fontsize = 12)
     if(save_fig):
@@ -119,7 +119,7 @@ def plot_suboptimal_action_ratio(user_count, policy_names,
         for idx, policy in enumerate(policy_names):
             plt.plot(UserItter, optimal_action_ratio_all_policies[idx], label =
                 policy)
-        plt.xlabel('User Itterations', fontsize = 18)
+        plt.xlabel('User Iterations', fontsize = 18)
     elif(mode == 'per_batch'):
         batchItter = range(1,int(user_count/batch_size)+1)
         #plt.plot(UserItter, prop_best_sim_itter, label = "Contextual Policy")
@@ -130,11 +130,11 @@ def plot_suboptimal_action_ratio(user_count, policy_names,
                 len(optimal_action_ratio_all_policies[idx]),
                 batch_size))
             plt.plot(batchItter, optimal_action_ratio_batch, label = policy)
-        plt.xlabel('Batch Itterations', fontsize = 18)
+        plt.xlabel('Batch Iterations', fontsize = 18)
 
     plt.legend(loc='upper left', fontsize = 12)
     plt.ylabel('Proportion of Sub-optimal Action Assignment', fontsize = 12)
-    plt.title('Proportion of Sub-optimal Action at Each Itteration per User Context\n '
+    plt.title('Proportion of Sub-optimal Action at Each Iteration per User Context\n '
                 '(Simulations = {sims}, Batch Size={batches})'.format(sims=
                 simulation_count, batches=batch_size),fontsize = 12)
     if(save_fig):
@@ -154,9 +154,9 @@ def plot_mse(user_count, policy_names, mse_all_policies,
         plt.plot(UserItter, mse_all_policies[idx], label = policy)
 
     plt.legend(loc='upper left', fontsize = 12)
-    plt.xlabel('User Itterations', fontsize = 18)
+    plt.xlabel('User Iterations', fontsize = 18)
     plt.ylabel('MSE', fontsize = 12)
-    plt.title('MSE at Each Itteration\n(Simulations = {sims}, '
+    plt.title('MSE at Each Iteration\n(Simulations = {sims}, '
                 'Batch Size={batches})'.format(sims=simulation_count,
                 batches=batch_size), fontsize = 12)
 
@@ -176,9 +176,9 @@ def plot_coeff_ranking(user_count, policy_name, beta_thompson_coeffs,
                 label = hypo_params[param])
 
     plt.legend(loc='upper left', fontsize = 12)
-    plt.xlabel('User Itterations', fontsize = 18)
+    plt.xlabel('User Iterations', fontsize = 18)
     plt.ylabel('Hypo Coeff', fontsize = 12)
-    plt.title('Coeff at Each Itteration for {policy}\n(Simulations = {sims},'
+    plt.title('Coeff at Each Iteration for {policy}\n(Simulations = {sims},'
                 'Batch Size={batches})'.format(policy=policy_name, sims=
                 simulation_count, batches=batch_size),fontsize = 12)
 
@@ -200,9 +200,9 @@ def plot_coeff_sign_error(user_count, policy_name, hypo_params,
                 param])
 
     plt.legend(loc='upper right', fontsize = 12)
-    plt.xlabel('User Itterations', fontsize = 18)
+    plt.xlabel('User Iterations', fontsize = 18)
     plt.ylabel('Coeff Sign Error', fontsize = 12)
-    plt.title('Coeff Sign Error at Each Itteration for {policy}\n '
+    plt.title('Coeff Sign Error at Each Iteration for {policy}\n '
                 '(Simulations= {sims}, Batch Size={batches})'.
                 format(policy=policy_name,sims= simulation_count,
                 batches=batch_size),fontsize = 12)
@@ -226,9 +226,9 @@ def plot_bias_in_coeff(user_count, policy_name, hypo_params,
                 param])
 
     plt.legend(loc='upper right', fontsize = 12)
-    plt.xlabel('User Itterations', fontsize = 18)
+    plt.xlabel('User Iterations', fontsize = 18)
     plt.ylabel('Bias in Coeff', fontsize = 12)
-    plt.title('Bias in Coeff at Each Itteration for {policy}\n '
+    plt.title('Bias in Coeff at Each Iteration for {policy}\n '
                 '(Simulations= {sims}, Batch Size={batches})'.
                 format(policy=policy_name,sims= simulation_count,
                 batches=batch_size),fontsize = 12)
@@ -236,4 +236,26 @@ def plot_bias_in_coeff(user_count, policy_name, hypo_params,
     if(save_fig):
         plt.savefig('saved_output//{date}_{i}iterations_{sim} '
                     'sims_bias_in_coeff_{policy}_{name}.png'.format(date=TODAY, i=user_count,
+                    sim=simulation_count, policy=policy_name, name=sim_name))
+
+def plot_action_ratio(user_count, policy_name, experiment_vars, action_ratio,
+                        simulation_count, batch_size, save_fig=True, sim_name=''):
+    plt.figure()
+    UserItter = range(1,user_count+1)
+
+    for experiment_var in range(0,len(experiment_vars)):
+        plt.plot(
+            UserItter, action_ratio[:,experiment_var], label = experiment_vars[experiment_var])
+
+    plt.legend(loc='upper right', fontsize = 12)
+    plt.xlabel('User Iterations', fontsize = 18)
+    plt.ylabel('Ratio of Actions', fontsize = 12)
+    plt.title('Ratio of Actions at Each Iteration for {policy}\n '
+                '(Simulations= {sims}, Batch Size={batches})'.
+                format(policy=policy_name,sims= simulation_count,
+                batches=batch_size),fontsize = 12)
+    #plt.show()
+    if(save_fig):
+        plt.savefig('saved_output//{date}_{i}iterations_{sim} '
+                    'sims_action_ratio_{policy}_{name}.png'.format(date=TODAY, i=user_count,
                     sim=simulation_count, policy=policy_name, name=sim_name))

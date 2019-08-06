@@ -54,14 +54,6 @@ def main(input_dict, mode=None):
 	true_coeff_list = list(true_coeff.values())
 	bandit_arms = models.find_possible_actions(experiment_vars)
 	print(experiment_vars)
-	print(bandit_arms)
-	for arm in bandit_arms:
-		action = {}
-		for i in range(len(experiment_vars)):
-			if arm[i] == 1:
-				action[experiment_vars[i]] = 1
-		if not models.is_valid_action(action):
-			raise AssertionError('The arm is not valid' + str(arm))
 	hypo_params_independent = models.read_independent_model(experiment_vars)
 
 	user_count = input_dict['user_count']
@@ -78,18 +70,28 @@ def main(input_dict, mode=None):
 	regrets_rand = np.zeros(user_count)
 	optimal_action_ratio_rand = np.zeros(user_count)
 
-	policies = []
-	policies.append(['Thompson with Interaction'])
-
 	save_output_folder = 'saved_output/raw_data/'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
 	if not os.path.exists(save_output_folder):
 		os.makedirs(save_output_folder)
-
-	thompson_interaction_results = results(save_output_folder, "thompson_with_interaction", user_count, true_coeff, hypo_params)
-	thompson_no_interaction_results = results(
-		save_output_folder, "thompson_without_interaction", user_count, true_coeff, hypo_params_no_interaction)
-	independent_results = results(save_output_folder, "independent_bandit", user_count, true_coeff, hypo_params_independent)
-	random_results = results(save_output_folder, "random", user_count, true_coeff, hypo_params)
+		
+	policies = {}
+	thompson_interaction_results = results(
+		save_output_folder, "thompson_with_interaction", user_count, true_coeff, hypo_params, experiment_vars)
+	policies['Thompson with Interaction'] = thompson_interaction_results
+	if no_interaction_applied:
+		thompson_no_interaction_results = results(
+			save_output_folder, "thompson_without_interaction", user_count, true_coeff, 
+			hypo_params_no_interaction, experiment_vars)
+		policies['Thompson without Interaction'] = thompson_no_interaction_results
+	if independent_applied:
+		independent_results = results(
+			save_output_folder, "independent_bandit", user_count, true_coeff, 
+			hypo_params_independent, experiment_vars)
+		policies['Independent Bandits'] = independent_results
+	if rand_sampling_applied:
+		random_results = results(
+			save_output_folder, "random", user_count, true_coeff, hypo_params, experiment_vars)
+		policies['Random Sampling'] = random_results
 
 	for sim in range(0, simulation_count):
 		print("sim: ",sim)
@@ -121,18 +123,8 @@ def main(input_dict, mode=None):
 													b_pre,
 													noise_stats,
 													thompson_interaction_results.flat_hypo_params)
-													
-		thompson_interaction_results.add_regret(thompson_output[2])
 
-		thompson_interaction_results.add_optimal_action_ratio(thompson_output)
-
-		thompson_interaction_results.add_beta_thompson_coeff(thompson_output[5])
-
-		thompson_interaction_results.add_mse(thompson_output[5], sim)
-
-		thompson_interaction_results.add_coeff_sign_err(thompson_output[5], sim)
-
-		thompson_interaction_results.add_bias_in_coeff(thompson_output, sim, experiment_vars)
+		thompson_interaction_results.add_all_thompson(thompson_output, sim)
 
 		if independent_applied:
 			a_pre = input_dict['NIG_priors']['a']
@@ -155,17 +147,7 @@ def main(input_dict, mode=None):
 													noise_stats,
 													independent_results.flat_hypo_params)
 
-			independent_results.add_regret(independent_outputs[2])
-
-			independent_results.add_optimal_action_ratio(independent_outputs)
-
-			independent_results.add_beta_thompson_coeff(independent_outputs[5])
-
-			independent_results.add_mse(independent_outputs[5], sim)
-
-			independent_results.add_coeff_sign_err(independent_outputs[5], sim)
-
-			independent_results.add_bias_in_coeff(independent_outputs, sim, experiment_vars)
+			independent_results.add_all_thompson(independent_outputs, sim)
 
 		if no_interaction_applied:
 			a_pre = input_dict['NIG_priors']['a']
@@ -188,17 +170,7 @@ def main(input_dict, mode=None):
 													noise_stats,
 													thompson_no_interaction_results.flat_hypo_params)
 
-			thompson_no_interaction_results.add_regret(no_interaction_outputs[2])
-
-			thompson_no_interaction_results.add_optimal_action_ratio(no_interaction_outputs)
-
-			thompson_no_interaction_results.add_beta_thompson_coeff(no_interaction_outputs[5])
-
-			thompson_no_interaction_results.add_mse(no_interaction_outputs[5], sim)
-
-			thompson_no_interaction_results.add_coeff_sign_err(no_interaction_outputs[5], sim)
-
-			thompson_no_interaction_results.add_bias_in_coeff(no_interaction_outputs, sim, experiment_vars)
+			thompson_no_interaction_results.add_all_thompson(no_interaction_outputs, sim)
 
 		if(rand_sampling_applied):
 			rand_outputs= random.apply_random_sampling(users_context,
@@ -325,17 +297,14 @@ def main(input_dict, mode=None):
 	thompson_interaction_results.average_per_sim(simulation_count)
 
 	if no_interaction_applied:
-		policies.append(['Thompson without Interaction'])
 		thompson_no_interaction_results.save_to_csv()
 		thompson_no_interaction_results.average_per_sim(simulation_count)
 
 	if independent_applied:
-		policies.append(['Independent Bandits'])
 		independent_results.save_to_csv()
 		independent_results.average_per_sim(simulation_count)
 
 	if(rand_sampling_applied):
-		policies.append(['Random Sampling'])
 		random_results.save_to_csv()
 		random_results.average_per_sim(simulation_count)
 
@@ -360,46 +329,28 @@ def main(input_dict, mode=None):
 		optimal_action_ratio_all_policies = np.append(optimal_action_ratio_all_policies, 
 			[random_results.optimal_action_ratio], axis=0)
 	
-	bplots.plot_regret(user_count, policies, regrets_all_policies,
+	bplots.plot_regret(user_count, list(policies.keys()), regrets_all_policies,
 						simulation_count, batch_size, top=regret_top, sim_name=sim_name)
 	
-	bplots.plot_optimal_action_ratio(user_count, policies,
+	bplots.plot_optimal_action_ratio(user_count, list(policies.keys()),
 			optimal_action_ratio_all_policies, simulation_count, batch_size,
 			mode='per_user', sim_name=sim_name)
 	
-	bplots.plot_coeff_ranking(user_count, 'Thompson with Interaction',
-				thompson_interaction_results.beta_thompson_coeffs, hypo_params[0], simulation_count,
-				batch_size, save_fig=True, sim_name=sim_name)
-
-	bplots.plot_coeff_sign_error(user_count, 'Thompson with Interaction', hypo_params[0],
-				thompson_interaction_results.coeff_sign_error, simulation_count, batch_size, save_fig=True, sim_name=sim_name)
-
-	
-	bplots.plot_bias_in_coeff(user_count, 'Thompson with Interaction', hypo_params[0],
-				thompson_interaction_results.bias_in_coeff, simulation_count, batch_size, save_fig=True, sim_name=sim_name)
-
-	# TODO create methods
-	if no_interaction_applied:
-		bplots.plot_coeff_ranking(user_count, 'Thompson without Interaction',
-				thompson_no_interaction_results.beta_thompson_coeffs, hypo_params_no_interaction[0], simulation_count,
-				batch_size, save_fig=True, sim_name=sim_name)
-
-		bplots.plot_coeff_sign_error(user_count, 'Thompson without Interaction', hypo_params_no_interaction[0],
-				thompson_no_interaction_results.coeff_sign_error, simulation_count, batch_size, save_fig=True, sim_name=sim_name)
-	
-		bplots.plot_bias_in_coeff(user_count, 'Thompson without Interaction', hypo_params_no_interaction[0],
-				thompson_no_interaction_results.bias_in_coeff, simulation_count, batch_size, save_fig=True, sim_name=sim_name)
-
-	if independent_applied:
-		bplots.plot_coeff_ranking(user_count, 'Independent bandits',
-				independent_results.beta_thompson_coeffs, independent_results.flat_hypo_params, simulation_count,
-				batch_size, save_fig=True, sim_name=sim_name)
-
-		bplots.plot_coeff_sign_error(user_count, 'Independent bandits', independent_results.flat_hypo_params,
-				independent_results.coeff_sign_error, simulation_count, batch_size, save_fig=True, sim_name=sim_name)
-	
-		bplots.plot_bias_in_coeff(user_count, 'Independent bandits', independent_results.flat_hypo_params,
-				independent_results.bias_in_coeff, simulation_count, batch_size, save_fig=True, sim_name=sim_name)
+	for policy_name, result in policies.items():
+		if policy_name == 'Random Sampling':
+			continue
+		bplots.plot_coeff_ranking(
+			user_count, policy_name, result.beta_thompson_coeffs, result.flat_hypo_params, 
+				simulation_count, batch_size, save_fig=True, sim_name=sim_name)
+		bplots.plot_coeff_sign_error(
+			user_count, policy_name, result.flat_hypo_params, result.coeff_sign_error, 
+				simulation_count, batch_size, save_fig=True, sim_name=sim_name)
+		bplots.plot_bias_in_coeff(
+			user_count, policy_name, result.flat_hypo_params, result.bias_in_coeff, 
+				simulation_count, batch_size, save_fig=True, sim_name=sim_name)
+		bplots.plot_action_ratio(
+			user_count, policy_name, experiment_vars, result.action_ratio, 
+				simulation_count, batch_size, save_fig=True, sim_name=sim_name)
 	
 	if(show_fig):
 		#plt.show(block=False)

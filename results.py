@@ -3,7 +3,7 @@ import numpy as np
 from collections import OrderedDict
 
 class results:
-    def __init__(self, save_output_folder, algo, user_count: int, true_coeff: dict, hypo_params: list):
+    def __init__(self, save_output_folder, algo, user_count: int, true_coeff: dict, hypo_params: list, experiment_vars: list):
         self.save_output_folder = save_output_folder
         self.algo = algo
         self.user_count = user_count
@@ -23,6 +23,9 @@ class results:
         self.suboptimal_action_ratio_group_df = pd.DataFrame()
         self.context_action_df = pd.DataFrame()
         self.true_coeff_list = list(true_coeff.values())
+        self.experiment_vars = experiment_vars
+        self.action_ratio = np.zeros((user_count, len(experiment_vars)))
+        self.action_df = pd.DataFrame()
 
         self.true_params_in_hypo = []
         for idx, hypo_param_name in enumerate(self.flat_hypo_params):
@@ -38,6 +41,12 @@ class results:
         self.optimal_action_ratio += optimal_action_ratio_per_sim
         self.optimal_action_ratio_df = pd.concat([self.optimal_action_ratio_df, 
             pd.DataFrame(optimal_action_ratio_per_sim)], ignore_index=True, axis=1)
+
+    def add_action(self, hypo_optimal_action_all, sim):
+        self.action_ratio += np.array(hypo_optimal_action_all)
+        action_per_sim_df = pd.DataFrame(hypo_optimal_action_all)
+        action_per_sim_df.columns = pd.MultiIndex.from_product([[sim], self.experiment_vars])
+        self.action_df = pd.concat([self.action_df, action_per_sim_df], axis=1)
 
     def add_beta_thompson_coeff(self, beta_thompson_coeff):
         self.beta_thompson_coeffs += beta_thompson_coeff
@@ -59,14 +68,14 @@ class results:
         self.coeff_sign_err_df = pd.concat([self.coeff_sign_err_df, 
             coeff_sign_error_per_sim_df], axis=1)
 
-    def add_bias_in_coeff(self, thompson_output, sim, experiment_vars):
+    def add_bias_in_coeff(self, thompson_output, sim):
         if len(self.true_params_in_hypo) == len(self.true_coeff_list):
             bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(self.true_params_in_hypo))
 
         # Under specified model bias (Y = A0 + A1D)
         else:
             bias_in_coeff_per_sim = np.array(thompson_output[5])[:, 0] - self.true_coeff_list[0]
-            for act in range(len(experiment_vars)):
+            for act in range(len(self.experiment_vars)):
                 act_taken = np.array(thompson_output[1])[:, act]
                 true_reward_act = np.array(thompson_output[3])[act_taken == 1]
                 true_reward_other = np.array(thompson_output[3])[act_taken == 0]
@@ -79,6 +88,15 @@ class results:
         bias_in_coeff_per_sim_df.columns = pd.MultiIndex.from_product([[sim], self.flat_hypo_params])
         self.bias_in_coeff_df = pd.concat([self.bias_in_coeff_df, 
             bias_in_coeff_per_sim_df], axis=1)
+
+    def add_all_thompson(self, thompson_output, sim):
+        self.add_regret(thompson_output[2])
+        self.add_optimal_action_ratio(thompson_output)
+        self.add_beta_thompson_coeff(thompson_output[5])
+        self.add_mse(thompson_output[5], sim)
+        self.add_coeff_sign_err(thompson_output[5], sim)
+        self.add_bias_in_coeff(thompson_output, sim)
+        self.add_action(thompson_output[1], sim)
 
     def save_to_csv(self):
         self.regret_df.to_csv('{}{}_regrets.csv'.format(
@@ -97,6 +115,8 @@ class results:
         self.context_action_df.to_csv(
                                 '{}{}_context_action.csv'.format(
                                 self.save_output_folder, self.algo))
+        self.action_df.to_csv('{}{}_action.csv'.format(
+                                self.save_output_folder, self.algo))
 
     def average_per_sim(self, simulation_count):
         self.regrets = self.regrets / simulation_count
@@ -105,3 +125,4 @@ class results:
         self.beta_thompson_coeffs = self.beta_thompson_coeffs / simulation_count
         self.bias_in_coeff = self.bias_in_coeff / simulation_count
         self.coeff_sign_error = self.coeff_sign_error / simulation_count
+        self.action_ratio = self.action_ratio / simulation_count
