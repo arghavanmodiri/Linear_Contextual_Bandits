@@ -51,7 +51,6 @@ def main(input_dict, mode=None):
 	true_coeff = true_model_params['true_coeff']
 	context_vars = true_model_params['context_vars']
 	experiment_vars = true_model_params['experiment_vars']
-	true_coeff_list = list(true_coeff.values())
 	bandit_arms = models.find_possible_actions(experiment_vars)
 	print(experiment_vars)
 	hypo_params_independent = models.read_independent_model(experiment_vars)
@@ -67,13 +66,10 @@ def main(input_dict, mode=None):
 	regret_top = input_dict['regret_top']
 	sim_name = input_dict['sim_name']
 
-	regrets_rand = np.zeros(user_count)
-	optimal_action_ratio_rand = np.zeros(user_count)
-
 	save_output_folder = 'saved_output/raw_data/'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
 	if not os.path.exists(save_output_folder):
 		os.makedirs(save_output_folder)
-		
+
 	policies = {}
 	thompson_interaction_results = results(
 		save_output_folder, "thompson_with_interaction", user_count, true_coeff, hypo_params, experiment_vars)
@@ -95,95 +91,37 @@ def main(input_dict, mode=None):
 
 	for sim in range(0, simulation_count):
 		print("sim: ",sim)
-		a_pre = input_dict['NIG_priors']['a']
-		b_pre = input_dict['NIG_priors']['b']
-		#Hammad: Bias Correction
-		mean_pre = np.zeros(sum(len(x) for x in hypo_params))
-		cov_pre = np.identity(sum(len(x) for x in hypo_params))
-
-		#Step 3: Calls the right policy
-		'''
-		Calls thompson sampling, random sampling, or any others which is
-		specified
-		by the user in command line (default: Calls thompson sampling)
-			default priors: 0 unless it is specified by the user
-		'''
 		users_context = models.generate_true_dataset(context_vars, user_count, input_dict['dist_of_context'])
 
-		thompson_output = thompson.apply_thompson_sampling(users_context,
-													experiment_vars,
-													bandit_arms,
-													hypo_params,
-													true_coeff,
-													batch_size,
-													extensive,
-													mean_pre,
-													cov_pre,
-													a_pre,
-													b_pre,
-													noise_stats,
-													thompson_interaction_results.flat_hypo_params)
+		for policy_name, result in policies.items():
+			#Step 3: Calls the right policy
+			'''
+			Calls thompson sampling, random sampling, or any others which is
+			specified by the user in the input json file.
+			default priors: 0 unless it is specified by the user
+			'''
 
-		thompson_interaction_results.add_all_thompson(thompson_output, sim)
+			if policy_name == 'Random Sampling':
+				rand_outputs= random.apply_random_sampling(
+					users_context, experiment_vars, bandit_arms, hypo_params, true_coeff,
+						batch_size, extensive, noise_stats)
 
-		if independent_applied:
-			a_pre = input_dict['NIG_priors']['a']
-			b_pre = input_dict['NIG_priors']['b']
-			#Hammad: Bias Correction
-			mean_pre = np.zeros(sum(len(x) for x in hypo_params_independent))
-			cov_pre = np.identity(sum(len(x) for x in hypo_params_independent))
+				result.add_regret(rand_outputs[2])
+				result.add_optimal_action_ratio(rand_outputs)
+			else:
+				a_pre = input_dict['NIG_priors']['a']
+				b_pre = input_dict['NIG_priors']['b']
+				#Hammad: Bias Correction
+				mean_pre = np.zeros(sum(len(x) for x in result.hypo_params))
+				cov_pre = np.identity(sum(len(x) for x in result.hypo_params))
 
-			independent_outputs = thompson.apply_thompson_sampling(users_context,
-													experiment_vars,
-													bandit_arms,
-													hypo_params_independent,
-													true_coeff,
-													batch_size,
-													extensive,
-													mean_pre,
-													cov_pre,
-													a_pre,
-													b_pre,
-													noise_stats,
-													independent_results.flat_hypo_params)
+				thompson_output = thompson.apply_thompson_sampling(
+					users_context, experiment_vars, bandit_arms, result.hypo_params, true_coeff, 
+						batch_size, extensive, mean_pre, cov_pre, a_pre, b_pre,
+							noise_stats, result.flat_hypo_params)
 
-			independent_results.add_all_thompson(independent_outputs, sim)
+				result.add_all_thompson(thompson_output, sim)
 
-		if no_interaction_applied:
-			a_pre = input_dict['NIG_priors']['a']
-			b_pre = input_dict['NIG_priors']['b']
-			#Hammad: Bias Correction
-			mean_pre = np.zeros(sum(len(x) for x in hypo_params_no_interaction))
-			cov_pre = np.identity(sum(len(x) for x in hypo_params_no_interaction))
-
-			no_interaction_outputs = thompson.apply_thompson_sampling(users_context,
-													experiment_vars,
-													bandit_arms,
-													hypo_params_no_interaction,
-													true_coeff,
-													batch_size,
-													extensive,
-													mean_pre,
-													cov_pre,
-													a_pre,
-													b_pre,
-													noise_stats,
-													thompson_no_interaction_results.flat_hypo_params)
-
-			thompson_no_interaction_results.add_all_thompson(no_interaction_outputs, sim)
-
-		if(rand_sampling_applied):
-			rand_outputs= random.apply_random_sampling(users_context,
-														experiment_vars,
-														bandit_arms,
-														hypo_params,
-														true_coeff,
-														batch_size,
-														extensive,
-														noise_stats)
-			random_results.add_regret(rand_outputs[2])
-
-			random_results.add_optimal_action_ratio(rand_outputs)
 
 		################# OLS REGRESSION STARTS ########################
 		'''
@@ -292,51 +230,30 @@ def main(input_dict, mode=None):
 				simulation_count, batch_size, save_fig=True)'''
 	################# OLS REGRESSION ENDS ########################
 
-	thompson_interaction_results.save_to_csv()
-
-	thompson_interaction_results.average_per_sim(simulation_count)
-
-	if no_interaction_applied:
-		thompson_no_interaction_results.save_to_csv()
-		thompson_no_interaction_results.average_per_sim(simulation_count)
-
-	if independent_applied:
-		independent_results.save_to_csv()
-		independent_results.average_per_sim(simulation_count)
-
-	if(rand_sampling_applied):
-		random_results.save_to_csv()
-		random_results.average_per_sim(simulation_count)
-
 	#Step 4: Plots
 	'''
 	Plots some basic figures. In "Extensive Mode", details will be saved so
 	user can plots more figures if desired.
 	'''
-
-	regrets_all_policies = np.array([thompson_interaction_results.regrets])
-	optimal_action_ratio_all_policies = np.array([thompson_interaction_results.optimal_action_ratio])
-	if no_interaction_applied:
-		regrets_all_policies = np.append(regrets_all_policies, [thompson_no_interaction_results.regrets], axis=0)
-		optimal_action_ratio_all_policies = np.append(optimal_action_ratio_all_policies, 
-			[thompson_no_interaction_results.optimal_action_ratio], axis=0)
-	if independent_applied:
-		regrets_all_policies = np.append(regrets_all_policies, [independent_results.regrets], axis=0)
-		optimal_action_ratio_all_policies = np.append(optimal_action_ratio_all_policies, 
-			[independent_results.optimal_action_ratio], axis=0)
-	if rand_sampling_applied:
-		regrets_all_policies = np.append(regrets_all_policies, [random_results.regrets], axis=0)
-		optimal_action_ratio_all_policies = np.append(optimal_action_ratio_all_policies, 
-			[random_results.optimal_action_ratio], axis=0)
 	
-	bplots.plot_regret(user_count, list(policies.keys()), regrets_all_policies,
-						simulation_count, batch_size, top=regret_top, sim_name=sim_name)
-	
-	bplots.plot_optimal_action_ratio(user_count, list(policies.keys()),
-			optimal_action_ratio_all_policies, simulation_count, batch_size,
-			mode='per_user', sim_name=sim_name)
-	
+	regrets_all_policies = np.array([])
+	optimal_action_ratio_all_policies = np.array([])
 	for policy_name, result in policies.items():
+		# Save results to csv and average over simulations
+		result.save_to_csv()
+		result.average_per_sim(simulation_count)
+
+		# Capture all regrets and optimal action ratio
+		if regrets_all_policies.size == 0:
+			regrets_all_policies = np.array([result.regrets])
+			optimal_action_ratio_all_policies = np.array([result.optimal_action_ratio])
+		else:
+			regrets_all_policies = np.append(
+				regrets_all_policies, [result.regrets], axis=0)
+			optimal_action_ratio_all_policies = np.append(
+				optimal_action_ratio_all_policies, [result.optimal_action_ratio], axis=0)
+
+		# Plot figures relevant only to MAB
 		if policy_name == 'Random Sampling':
 			continue
 		bplots.plot_coeff_ranking(
@@ -351,6 +268,14 @@ def main(input_dict, mode=None):
 		bplots.plot_action_ratio(
 			user_count, policy_name, experiment_vars, result.action_ratio, 
 				simulation_count, batch_size, save_fig=True, sim_name=sim_name)
+
+	# Plot regrets and optimal action ratio
+	bplots.plot_regret(user_count, list(policies.keys()), regrets_all_policies,
+						simulation_count, batch_size, top=regret_top, sim_name=sim_name)
+	
+	bplots.plot_optimal_action_ratio(user_count, list(policies.keys()),
+			optimal_action_ratio_all_policies, simulation_count, batch_size,
+			mode='per_user', sim_name=sim_name)
 	
 	if(show_fig):
 		#plt.show(block=False)
