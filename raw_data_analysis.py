@@ -12,6 +12,7 @@ from statsmodels.formula.api import ols
 import itertools
 import math
 import subprocess
+import os
 
 #%%
 def print_mean_stdev(metric: dict, user_range: tuple):
@@ -74,15 +75,19 @@ def cohens_d(metric: dict, user_range: tuple):
     return df.set_index('Policies')
 
 #%%
-def export_tex(df: pd.DataFrame, filename: str):
-    with open('./tables/' + filename, 'wb') as f:
+def export_tex(df: pd.DataFrame, file_name: str, file_loc: str):
+    loc = file_loc + 'tables/'
+    if not os.path.exists(loc):
+        os.makedirs(loc)
+        
+    with open(loc + file_name, 'wb') as f:
         f.write(bytes(template.format(df.to_latex(column_format='ccc', escape=False)),'UTF-8'))
-    subprocess.call(['pdflatex', filename], cwd='./tables/')
+    subprocess.call(['pdflatex', file_name], cwd=loc)
 
 #%%
-#file_loc = './saved_output/Aug_6/crossover_against_two/raw_data/2019-08-06_192359/'
+file_loc = './saved_output/Aug_6/crossover_against_two/raw_data/2019-08-06_192359/'
 #file_loc = './saved_output/Aug_6/crossover_for_two/raw_data/2019-08-06_202047/'
-file_loc = './saved_output/Aug_6/partial_crossover_against_one/raw_data/2019-08-07_8345/'
+#file_loc = './saved_output/Aug_6/partial_crossover_against_one/raw_data/2019-08-07_8345/'
 #file_loc = './saved_output/Aug_6/noncrossover_two_main_one_optimum/raw_data/2019-08-07_101150/'
 user_range = (1000, 1500)
 regrets = {}
@@ -111,21 +116,21 @@ for policy, df in optimal_ratio.items():
 
 #%%
 df = print_mean_stdev(regrets, user_range)
-export_tex(df, 'regret_mean.tex')
+export_tex(df, 'regret_mean.tex', file_loc)
 
 df_test = ttest(regrets, user_range)
 df_d = cohens_d(regrets, user_range)
 df_combined = pd.concat([df_test, df_d], axis=1)
-export_tex(df_combined, 'regret_effect.tex')
+export_tex(df_combined, 'regret_effect.tex', file_loc)
 
 #%%
 df = print_mean_stdev(optimal_ratio, user_range)
-export_tex(df, 'optimal_ratio_mean.tex')
+export_tex(df, 'optimal_ratio_mean.tex', file_loc)
 
 df_test = ttest(optimal_ratio, user_range)
 df_d = cohens_d(optimal_ratio, user_range)
 df_combined = pd.concat([df_test, df_d], axis=1)
-export_tex(df_combined, 'optimal_ratio_effect.tex')
+export_tex(df_combined, 'optimal_ratio_effect.tex', file_loc)
 
 #%%
 

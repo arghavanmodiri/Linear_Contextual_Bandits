@@ -29,7 +29,7 @@
         "batch_size": 10,
         "simulation_count": 5,
         "extensive": true,
-        "rand_sampling_applied": false,
+        "rand_sampling_applied": true,
         "independent_applied": true,
         "no_interaction_applied": false,
         "show_fig": true,
