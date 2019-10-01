@@ -15,6 +15,8 @@ Input Data
 - random_regrets.csv
 
 Notes:
+- SimC is B0 = 0.3, B1 = -0.6
+- SimD is B0 = 0.3, B1 = -1.2
 
 '''
 
@@ -41,20 +43,26 @@ import numpy as np
 # Simulations C and D (ran seperately)
 
 #sim_list = ["SimCCorrectMABFitCorrect", "SimCUnderMABFitCorrect", "SimCRandomCorrect",  "SimCUniformPolicy"]
-sim_list = ["SimDCorrectMABFitCorrect", "SimDUnderMABFitCorrect", "SimDRandomCorrect", "SimDUniformPolicy"]
+#sim_list = ["SimDCorrectMABFitCorrect", "SimDUnderMABFitCorrect", "SimDRandomCorrect", "SimDUniformPolicy"]
 #sim_list = ["SimCCorrectMABFitCorrect"]
 #sim_names = ["_CSCC"]
 #sim_names = ["_CSUC"]
 #sim_names = ["_CSCC", "_CSUC", "_CSRC", "_CSR"]
-sim_names = ["_DLCC", "_DLUC", "_DLRC", "_DLR"]
+#sim_names = ["_DLCC", "_DLUC", "_DLRC", "_DLR"]
+#sim_list = ["RerunSimDCorrectMAB"]
+#sim_names = ["_RDLCC"]
 #sim_list = ["SimCRandomCorrect"]
 #sim_names = ["_CCSR"]
 sim_count = 0
 #true_fit_d1 = 0.25
 #true_fit_d1x1 = [-0.6, -0.6, -0.6, -0.6, -0.6, -0.6, -0.6]
 true_fit_d1 = 0.3
-true_fit_d1x1 = [-1.2, -1.2, -1.2, -1.2, -1.2, -1.2, -1.2]
+true_fit_d1x1 = [-0.6, -0.6, -0.6, -0.6, -0.6, -0.6, -0.6]
+#true_fit_d1x1 = [-1.2, -1.2, -1.2, -1.2, -1.2, -1.2, -1.2]
 #true_fit_d1x1 = [-0.4, -0.4, -0.8, -0.8, -0.4, -0.8, -0.4, -0.8, -0.4, -0.8]
+sim_list = ["SimCCorrectMABFitCorrect"]
+#sim_names = ["_DLCCR"]
+sim_names = ["_CLCCR"]
 
 # Loop over simulations
 for sim_type in sim_list:
@@ -64,7 +72,7 @@ for sim_type in sim_list:
     # print('/Users/hammadshaikh/linear_contextual_bandits/saved_output/' + sim_list[sim_count])
 
     # Define parameters
-    n_sim = 2500
+    n_sim = 500
     n_user = 1000
     n_q1 = 250
     n_q2 = 500

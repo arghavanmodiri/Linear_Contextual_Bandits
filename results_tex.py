@@ -32,7 +32,7 @@ import numpy as np
 # Load results data set
 
 # Read TeX template file into a string
-temp_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableTemplateTest.tex"
+temp_path = "/Users/hammadshaikh/Documents/University of Toronto/2018 RA/Hetroscedastic model/No Theta Hetro model/MMP2VarCompTemplate.tex"
 
 # Simulations
 '''sim_list = ["SmallMABCorrectFitCorrect", "SmallMABUnderFitCorrect", "LargeMABCorrectFitCorrect", "LargeMABUnderFitCorrect",
@@ -44,20 +44,35 @@ sim_names = ["_SCC", "_SUC", "_LCC", "_LUC", "_SUU", "_LUU", "_SRC", "_LRC", "_S
 #sim_names = ["_CSCC", "_CSUC", "_CSRC", "_CSR"]
 
 # Simulations C and D
+'''
 sim_list = ["SimCCorrectMABFitCorrect", "SimCUnderMABFitCorrect", "SimCRandomCorrect",  "SimCUniformPolicy",
-            "SimDCorrectMABFitCorrect", "SimDUnderMABFitCorrect", "SimDRandomCorrect", "SimDUniformPolicy"]
-sim_names = ["_CSCC", "_CSUC", "_CSRC", "_CSR","_DLCC", "_DLUC", "_DLRC", "_DLR"]
+            "SimDCorrectMABFitCorrect", "SimDUnderMABFitCorrect", "SimDRandomCorrect", "SimDUniformPolicy",
+            "SimCCorrectMABFitCorrect", "SimCUnderMABFitCorrect", "SimCRandomCorrect",
+            "SimDCorrectMABFitCorrect", "SimDUnderMABFitCorrect", "SimDRandomCorrect"]
+sim_names = ["_CSCC", "_CSUC", "_CSRC", "_CSR","_DLCC", "_DLUC", "_DLRC", "_DLR",
+             "_CSCC", "_CSUC", "_CSRC", "_DLCC", "_DLUC", "_DLRC"]'''
+
+sim_list = ["MMP2VC_(-1,0,1,9)", "MMP2VC_(-1,0,2,9)", "MMP2VC_(-1,0,1,11)", "MMP2VC_(-1,0,9,11)", "MMP2VC_(-1,0,1,2,9)", "MMP2VC_(-1,0,1,9,11)", "MMP2VC_(-1,1,9,11,13)",
+            "MMP2VC_(-1,0,1,2,3)", "MMP2VC_(-1,9,11,13)", "MMP2VC_(1,9,11,13)"]
+#sim_list = ["MMP2VC_(-1,0,1,9)"]
+count = 0
 
 # Loop over simulations
-for sim_count in range(len(sim_names)):
+for sim_count in range(len(sim_list)):
 
     # Read template as string
     with open (temp_path, "r") as tpl_file:
         tpl_lines = tpl_file.read()
 
     # Open data set with results
-    result_path = "/Users/hammadshaikh/linear_contextual_bandits/saved_output/" + str(sim_list[sim_count]) + "/"
-    df_results = pd.read_csv(result_path + "BanditSimResults" + str(sim_names[sim_count]) + ".csv")
+    result_path = "/Users/hammadshaikh/Documents/University of Toronto/2018 RA/Hetroscedastic model/No Theta Hetro model/" + str(sim_list[sim_count]) 
+
+    '''if count < 8:
+        df_results = pd.read_csv(result_path + "BanditSimResults" + str(sim_names[sim_count]) + ".csv")
+    else:
+        df_results = pd.read_csv(result_path + "PropOLSOptimal" + str(sim_names[sim_count]) + ".csv")'''
+
+    df_results = pd.read_csv(result_path + ".csv")
 
     # Replace TeX parameters with data
     col_names = list(df_results)
@@ -67,12 +82,15 @@ for sim_count in range(len(sim_names)):
         tpl_lines = tpl_lines.replace(col, " " + str(np.round(df_results[col][0], 4)))
 
     # Output TeX file with results
-    write_path = "/Users/hammadshaikh/Documents/University of Toronto/CSC Education Group/Contextual Bandit/BanditTableResultsBiasUpdated.tex"
+    write_path = "/Users/hammadshaikh/Documents/University of Toronto/2018 RA/Hetroscedastic model/No Theta Hetro model/MMP2VarCompResults.tex"
     with open (write_path, "w") as output_file:
         output_file.write(tpl_lines)
 
     # Update template path
     temp_path = write_path
+
+    # Increment counter
+    count += 1
 
     
 

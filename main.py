@@ -96,6 +96,7 @@ def main(mode=None):
     # Make raw_data folder to save data
     save_output_folder = 'saved_output/raw_data' +str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
     if not os.path.exists(save_output_folder):
+        # Creates folder if it already doesn't exist
         os.mkdir(save_output_folder)
 
     # Data frames for saving quantities of interest
@@ -352,7 +353,7 @@ def main(mode=None):
         ################# OLS REGRESSION STARTS ########################
 
         
-        # Construct context vector
+        # Construct context vector (convert to list)
         x1 = np.empty((0,len(users_context[0].keys())))
         for i in range(0,len(users_context)):
             user_context_list = np.array([])
@@ -368,6 +369,7 @@ def main(mode=None):
         #d1 = [rand_outputs[1][i][0] for i in range(0,len(rand_outputs[1]))]
         
         # Get values for interaction term
+        # thomposon_output[1] is hypo. optimal action for a given simulation across all users
         d1 = [thompson_output[1][i][0] for i in range(0,len(thompson_output[1]))]
         d1_x1 = [a*b for a,b in zip(d1,x1)]
         df = pd.DataFrame({'d1':d1, 'd1x1':d1_x1, 'y':thompson_output[3]})

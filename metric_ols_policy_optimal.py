@@ -10,10 +10,12 @@ import seaborn as sns
 import numpy.random as nprnd
 
 # Simulations
-sim_list = ["SimCCorrectMABFitCorrect", "SimCUnderMABFitCorrect", "SimCRandomCorrect"]
-#sim_list = ["SimDCorrectMABFitCorrect", "SimDUnderMABFitCorrect", "SimDRandomCorrect"]
-sim_names = ["_CSCC", "_CSUC", "_CSRC"]
-#sim_names = ["_DLCC", "_DLUC", "_DLRC"]
+#sim_list = ["SimCCorrectMABFitCorrect", "SimCUnderMABFitCorrect", "SimCRandomCorrect",
+            #"SimDCorrectMABFitCorrect", "SimDUnderMABFitCorrect", "SimDRandomCorrect"]
+#sim_names = ["_CSCC", "_CSUC", "_CSRC", "_DLCC", "_DLUC", "_DLRC"]
+sim_list = ["SimDCorrectMABFitCorrectRep15"]
+sim_names = ["_DLCCR15"]
+#sim_names = ["_CSCCR15"]
 sim_count = 0
 
 # Itterate over simulation
@@ -26,8 +28,11 @@ for simulation in sim_names:
     if simulation[3] != "R":
         # Load OLS fitted coefficients data
         intercept_csv = pd.read_csv("thompson_ols_intercept.csv")
+        #intercept_csv = intercept_csv.drop(columns = ["iteration"])
         d1_csv = pd.read_csv("thompson_ols_d1.csv")
+        #d1_csv = d1_csv.drop(columns = ["iteration"])
         d1x1_csv = pd.read_csv("thompson_ols_d1x1.csv")
+        #d1x1_csv = d1x1_csv.drop(columns = ["iteration"])
     # RCT
     else:
         # Load OLS fitted coefficients data
@@ -95,7 +100,7 @@ for simulation in sim_names:
 
     # Save data
     data_list = [prop_ols_optimal_250, prop_ols_optimal_1000]
-    cols = ["prop_ols_optimal_250", "prop_ols_optimal_1000"]
+    cols = ["prop_ols_optimal_q1", "prop_ols_optimal_q4"]
     cols = [cols[i] + sim_names[sim_count] for i in range(len(cols))]
     results_df = pd.DataFrame([data_list], columns=cols)
     results_df.to_csv("PropOLSOptimal" + sim_names[sim_count] +".csv")

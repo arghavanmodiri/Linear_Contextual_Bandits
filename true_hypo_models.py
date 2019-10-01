@@ -30,9 +30,13 @@ def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
     true_coeff = {"intercept": 0,
                   "d1":0.3,
                   "d1*x1": -1.2,
-                  "d1*x2":0}
+                  "d1*x2":0,
+                  "d1*x3":0,
+                  "d1*x4":0,
+                  "d1*x5":0,
+                  "d1*x6":0}
     #true_coeff = {"intercept": 0, "d1":0.50}
-    context_vars = np.array(['x1','x2'])
+    context_vars = np.array(['x1','x2', 'x3','x4','x5','x6'])
     experiment_vars = np.array(['d1'])
 
     true_model_params = {'noise':noise,
@@ -73,7 +77,7 @@ def read_hypo_model(hypo_model_params_file='Hypo_Model_Design.csv'):
     #hypo_model_params = ['bias', 'ch2','ch3', 'matching', 'republic']
 
     # Contextual MAB
-    hypo_model_params = ['intercept','d1','d1*x1', 'd1*x2']
+    hypo_model_params = ['intercept','d1','d1*x1', 'd1*x2', 'd1*x3', 'd1*x4', 'd1*x5', 'd1*x6']
 
     # Typical MAB
     #hypo_model_params = ['intercept','d1']
