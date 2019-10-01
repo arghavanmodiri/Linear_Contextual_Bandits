@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import argparse
+import logging
 import numpy as np
 import pandas as pd
 import true_hypo_models as models
@@ -44,14 +45,17 @@ def main(input_dict, mode=None):
     Calls true_hypo_models.read_hypo_model to parse Hypo_Model_Design.csv
     Based on the variables, find the list of all bandit arms
     '''
- 
+
+    logging.getLogger().setLevel(logging.INFO)
+    logging.basicConfig(format='%(message)s')
+
     true_model_params = input_dict['true_model_params']
     hypo_params = input_dict['hypo_model_params']
     bandit_arms = input_dict['possible_actions']
     noise_stats = true_model_params['noise']
     true_coeff = true_model_params['true_coeff']
     true_coeff_list = list(true_coeff.values())
-    print(true_coeff_list)
+    logging.info(true_coeff_list)
     context_vars = np.array(true_model_params['context_vars'])
     experiment_vars = np.array(true_model_params['experiment_vars'])
 
@@ -99,7 +103,7 @@ def main(input_dict, mode=None):
     save_context_action_random_df = pd.DataFrame()
 
     for sim in range(0, simulation_count):
-        print("sim: ",sim)
+        logging.info("sim: {}".format(sim))
         a_pre = input_dict['NIG_priors']['a']
         b_pre = input_dict['NIG_priors']['b']
         #Hammad: Bias Correction
