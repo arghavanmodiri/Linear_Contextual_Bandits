@@ -84,7 +84,7 @@ def main(input_dict, mode=None):
     regression_d1x1_all_sim_random = []
     policies.append(['Thompson Sampling'])
 
-    save_output_folder = 'saved_output/raw_data'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
+    save_output_folder = 'saved_output/raw_data_'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
     if not os.path.exists(save_output_folder):
         os.mkdir(save_output_folder)
     save_optimal_action_ratio_thompson_df = pd.DataFrame()
@@ -431,3 +431,4 @@ if __name__ == "__main__":
     input_data = args.input_file[0]
     input_data = json.load(open(input_data))
     main(input_data)
+
