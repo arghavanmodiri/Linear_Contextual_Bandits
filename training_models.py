@@ -22,9 +22,10 @@ class training_bandit_model(object):
 
         self.save_regret_thompson_df = pd.DataFrame()
         self.save_optimal_action_ratio_thompson_df = pd.DataFrame()
+        self.beta_thompson_coeffs = np.zeros((user_count, len(hypo_params)))
 
 
-    def apply_policy(self, users_context, mean_pre, cov_pre, a_pre, b_pre, noise_stats):
+    def apply_thompson(self, users_context, mean_pre, cov_pre, a_pre, b_pre, noise_stats):
         thompson_output = thompson.apply_thompson_sampling(
                                                     users_context,
                                                     self.experiment_vars,
@@ -41,7 +42,7 @@ class training_bandit_model(object):
 
         self.save_regret(thompson_output[2])
         self.save_optimal_action_ratio(thompson_output[1], thompson_output[0])
-        self.save_beta_thompson_coeffs()
+        self.save_beta_thompson_coeffs_sum(thompson_output[5])
 
     def regret_cumulative():
         return True
@@ -66,9 +67,17 @@ class training_bandit_model(object):
                                 pd.DataFrame(optimal_action_ratio_per_sim)],
                                 ignore_index=True, axis=1)
 
+    def save_beta_thompson_coeffs_sum(self, new_beta_coeff):
+        self.beta_thompson_coeffs += np.array(new_beta_coeff)
 
-    def save_beta_thompson_coeffs(self):
-        return True
+    def get_regret(self):
+        return self.save_regret_thompson_df
+
+    def get_optimal_action_ratio(self):
+        return self.save_optimal_action_ratio_thompson_df
+
+    def get_beta_thompson_coeffs_sum(self):
+        return self.beta_thompson_coeffs
 
     def save_coeff_sign_err_thompson_df(self):
         return True

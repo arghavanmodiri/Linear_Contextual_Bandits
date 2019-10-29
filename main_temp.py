@@ -15,6 +15,7 @@ import seaborn as sns
 import statsmodels.formula.api as sm
 from datetime import date
 from datetime import datetime
+from training_models import training_bandit_model as tbm
 
 TODAY = date.today()
 NOW = datetime.now()
@@ -39,7 +40,6 @@ def main(input_dict, mode=None):
 
     ## Setting the training mode (hypo model) parameters
     hypo_params = input_dict['hypo_model_params']
-
 
     ## Setting the simulation parameters
     user_count = input_dict['user_count']
@@ -85,6 +85,9 @@ def main(input_dict, mode=None):
     save_context_action_thompson_df = pd.DataFrame()
     save_context_action_random_df = pd.DataFrame()
 
+    bandit_model1 = tbm(hypo_params, user_count, batch_size,
+                        experiment_vars, bandit_arms, true_coeff, extensive)
+
     for sim in range(0, simulation_count):
         logging.info("sim: {}".format(sim))
         a_pre = input_dict['NIG_priors']['a']
@@ -110,32 +113,16 @@ def main(input_dict, mode=None):
         '''
         users_context = models.generate_true_dataset(context_vars, user_count, input_dict['dist_of_context'])
 
-        thompson_output = thompson.apply_thompson_sampling(users_context,
-                                                    experiment_vars,
-                                                    bandit_arms,
-                                                    hypo_params,
-                                                    true_coeff,
-                                                    batch_size,
-                                                    extensive,
-                                                    mean_pre,
-                                                    cov_pre,
-                                                    a_pre,
-                                                    b_pre,
-                                                    noise_stats)
-        #policies.append(['Thompson Sampling'])
-        regrets += thompson_output[2]
-        save_regret_thompson_df = pd.concat([save_regret_thompson_df,
-                                    pd.DataFrame(thompson_output[2])],
-                                    ignore_index=True, axis=1)
+        bandit_model1.apply_thompson(users_context, mean_pre, cov_pre, a_pre, b_pre, noise_stats)
 
-        optimal_action_ratio_per_sim = np.array(list((thompson_output[1][i] in thompson_output[0][i]) for i in range(0,user_count))).astype(int)
-        optimal_action_ratio += optimal_action_ratio_per_sim
-        save_optimal_action_ratio_thompson_df = pd.concat([
-                                save_optimal_action_ratio_thompson_df,
-                                pd.DataFrame(optimal_action_ratio_per_sim)],
-                                ignore_index=True, axis=1)
+        regrets = bandit_model1.get_regret()
 
+        
+        print("in")
+        print(thompson_output[5])
         beta_thompson_coeffs += np.array(thompson_output[5])
+        print("oon")
+        print(beta_thompson_coeffs)
 
         #list is the true coefficients of parameters that exist in both hypo and true models
         true_params_in_hypo = []
