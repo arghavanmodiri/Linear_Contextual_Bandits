@@ -2,7 +2,10 @@ import numpy as np
 import true_hypo_models as models
 import making_decision
 from scipy.stats import invgamma
+import logging
 
+logging.getLogger().setLevel(logging.INFO)
+logging.basicConfig(format='%(message)s')
 
 def calculate_posteriors_nig(dependant_var, regressors, mean_pre, cov_pre,
                                 a_pre,b_pre):
@@ -42,10 +45,11 @@ def calculate_posteriors_nig(dependant_var, regressors, mean_pre, cov_pre,
     mean_post = np.dot(np.linalg.inv(np.add(np.linalg.inv(cov_pre), np.dot(
         regressors_trans,regressors))), np.add(np.dot(np.linalg.inv(cov_pre),
         mean_pre), np.dot(regressors_trans,dependant_var)))
-
+    #logging.info("mean_post: \n{}".format(mean_post))
     # Update covariance matrix: (V^{-1} + X'X)^{-1}
     cov_post = np.linalg.inv(np.add(np.linalg.inv(cov_pre), np.dot(
             regressors_trans,regressors)))
+    #logging.info("cov_post: \n{}".format(cov_post))
 
     ## Update precesion prior
 
@@ -73,6 +77,7 @@ def draw_posterior_sample(hypo_model_params, mean, cov, a, b):
         list: containing samples from multivariant NIG distribution
     """
     #sample from inverse gamma (shape, loc, scale, draws)
+    #np.random.seed(123)
     var_draw = invgamma.rvs(a, 0, b, size = 1)
 
     # Coeffecients from multivariate normal 

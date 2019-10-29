@@ -8,18 +8,27 @@
               },
           "true_coeff":
               {
-                "intercept": 0,
-                "d1":0.3,
-                "d1*x1": -0.6
+                "intercept": 0.1,
+                "gender": 0,
+                "percentageGoal": 0,
+                "motivationMsg1": 0.5,
+                "motivationMsg2": 0,
+                "motivationMsg3": 0,
+                "motivationMsg1*percentageGoal": 0,
+                "motivationMsg1*gender": 0,
+                "motivationMsg2*percentageGoal": 0,
+                "motivationMsg2*gender": 0,
+                "motivationMsg3*percentageGoal": 0,
+                "motivationMsg3*gender": 0
               },
-          "context_vars": ["x1", "x2", "x3"],
-          "experiment_vars": ["d1"]
+          "context_vars": ["gender", "percentageGoal"],
+          "experiment_vars": ["motivationMsg1", "motivationMsg2", "motivationMsg3"]
         },
-        "hypo_model_params": ["intercept", "d1", "d1*x1"],
-        "possible_actions": [[0], [1]],
+        "hypo_model_params": ["intercept", "gender", "percentageGoal", "motivationMsg1", "motivationMsg2", "motivationMsg3", "motivationMsg1*gender", "motivationMsg2*gender", "motivationMsg3*gender", "motivationMsg1*percentageGoal", "motivationMsg2*percentageGoal", "motivationMsg3*percentageGoal"],
+        "possible_actions": [[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]],
         "user_count": 1000,
         "batch_size": 10,
-        "simulation_count": 5,
+        "simulation_count": 500,
         "extensive": true,
         "rand_sampling_applied": false,
         "show_fig": true,
@@ -30,9 +39,8 @@
         },
        "dist_of_context":
         {
-          "x1": ["bin", 0.4, 0.6],
-          "x2": ["norm", 1, 0.2],
-          "x3": ["beta", 2, 100 ]
+          "gender": ["bin", 0.5, 0.5],
+          "percentageGoal": ["bin", 0.5, 0.5]
         },
         "output_path": "arbitrary_path",
         "num_cores": 8

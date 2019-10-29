@@ -15,7 +15,6 @@ import seaborn as sns
 import statsmodels.formula.api as sm
 from datetime import date
 from datetime import datetime
-from training_models import training_bandit_model as tbm
 
 TODAY = date.today()
 NOW = datetime.now()
@@ -40,6 +39,7 @@ def main(input_dict, mode=None):
 
     ## Setting the training mode (hypo model) parameters
     hypo_params = input_dict['hypo_model_params']
+
 
     ## Setting the simulation parameters
     user_count = input_dict['user_count']
@@ -85,9 +85,6 @@ def main(input_dict, mode=None):
     save_context_action_thompson_df = pd.DataFrame()
     save_context_action_random_df = pd.DataFrame()
 
-    bandit_model1 = tbm(hypo_params, user_count, batch_size,
-                        experiment_vars, bandit_arms, true_coeff, extensive)
-
     for sim in range(0, simulation_count):
         logging.info("sim: {}".format(sim))
         a_pre = input_dict['NIG_priors']['a']
@@ -113,9 +110,6 @@ def main(input_dict, mode=None):
         '''
         users_context = models.generate_true_dataset(context_vars, user_count, input_dict['dist_of_context'])
 
-        #bandit_model1.apply_policy(users_context, mean_pre, cov_pre, a_pre, b_pre, noise_stats)
-
-
         thompson_output = thompson.apply_thompson_sampling(users_context,
                                                     experiment_vars,
                                                     bandit_arms,
@@ -130,7 +124,6 @@ def main(input_dict, mode=None):
                                                     noise_stats)
         #policies.append(['Thompson Sampling'])
         regrets += thompson_output[2]
-        
         save_regret_thompson_df = pd.concat([save_regret_thompson_df,
                                     pd.DataFrame(thompson_output[2])],
                                     ignore_index=True, axis=1)
