@@ -39,7 +39,7 @@ def main(input_dict, mode=None):
     logging.info(true_coeff_list)
 
     ## Setting the training mode (hypo model) parameters
-    policies = ['contextual-mab' , 'non-contextual-mab']
+    policies = ['all main effect and contex-action interaction' , 'just gender main effect', 'just motivationMsg1 main effect']
     hypo_params_all_models = input_dict['hypo_model_params']
     print(len(hypo_params_all_models))
     ## Setting the simulation parameters

@@ -214,6 +214,7 @@ def plot_hypo_regression_param(user_count, policy_names, param_name,
     for policy_idx in range(len(policy_names)):
         plt.plot(UserItter, hypo_param_all_models[policy_idx],
                 label = policy_names[policy_idx])
+    plt.plot(UserItter, [true_param]*user_count, label = "True value of coefficient")
 
     plt.legend(loc='upper left', fontsize = 12)
     plt.xlabel('User Iterations', fontsize = 18)

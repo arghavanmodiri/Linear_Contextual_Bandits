@@ -27,12 +27,13 @@
         "hypo_model_params":
         [
           ["intercept", "gender", "percentageGoal", "motivationMsg1", "motivationMsg2", "motivationMsg3", "motivationMsg1*gender", "motivationMsg2*gender", "motivationMsg3*gender", "motivationMsg1*percentageGoal", "motivationMsg2*percentageGoal", "motivationMsg3*percentageGoal"],
-          ["intercept", "gender"]
+          ["intercept", "gender"],
+          ["intercept", "motivationMsg1"]
         ],
         "possible_actions": [[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]],
         "user_count": 1000,
         "batch_size": 10,
-        "simulation_count": 20,
+        "simulation_count": 1000,
         "extensive": true,
         "rand_sampling_applied": false,
         "show_fig": true,
