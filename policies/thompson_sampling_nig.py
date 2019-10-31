@@ -137,7 +137,8 @@ def apply_thompson_sampling(user_context, experiment_vars, bandit_arms, hypo_mod
 
         for user in range(start_batch, end_batch):
             beta_thompson = draw_posterior_sample(hypo_model_params,mean, cov, a, b)
-            beta_thompson_all.append([beta_thompson[i] for i in beta_thompson.keys()])
+            #beta_thompson_all.append([beta_thompson[i] for i in beta_thompson.keys()])
+            beta_thompson_all.append(beta_thompson)
 
             hypo_optimal_action = making_decision.pick_hypo_optimal_arm(
                                                         beta_thompson,

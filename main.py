@@ -152,6 +152,8 @@ def main(input_dict, mode=None):
 
         mse_per_sim = np.power(np.array(np.array(thompson_output[5]) -
                                 np.array(true_params_in_hypo)),2)
+        print(len(mse_per_sim))
+        print("-------------------------------------")
         mse += mse_per_sim
         mse_per_sim_df = pd.DataFrame(mse_per_sim)
         mse_per_sim_df.columns = pd.MultiIndex.from_product([

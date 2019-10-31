@@ -2,7 +2,10 @@ from datetime import date
 import matplotlib.pyplot as plt
 import numpy as np
 from statistics import mean
+import logging
 
+logging.getLogger().setLevel(logging.INFO)
+logging.basicConfig(format='%(message)s')
 
 TODAY = date.today()
 plt.rc('font', family='serif')
@@ -194,6 +197,29 @@ def plot_coeff_ranking(user_count, policy_name, beta_thompson_coeffs,
     plt.ylabel('Hypo Coeff', fontsize = 12)
     plt.title('Coeff at Each Itteration for {policy}\n(Simulations = {sims},'
                 'Batch Size={batches})'.format(policy=policy_name, sims=
+                simulation_count, batches=batch_size),fontsize = 12)
+
+    if(save_fig):
+        plt.savefig('saved_output//{date}_{i}iterations_{sim} '
+                    'sims_coeff_ranking.png'.format(date=TODAY, i=user_count,
+                    sim=simulation_count))
+
+def plot_hypo_regression_param(user_count, policy_names, param_name,
+                    hypo_param_all_models, true_param, simulation_count,
+                    batch_size, save_fig=True):
+    plt.figure()
+    UserItter = range(1,user_count+1)
+    logging.info(param_name)
+
+    for policy_idx in range(len(policy_names)):
+        plt.plot(UserItter, hypo_param_all_models[policy_idx],
+                label = policy_names[policy_idx])
+
+    plt.legend(loc='upper left', fontsize = 12)
+    plt.xlabel('User Iterations', fontsize = 18)
+    plt.ylabel('Hypo Coeff', fontsize = 12)
+    plt.title('Coeff of {param_name}\n(Simulations = {sims},'
+                'Batch Size={batches})'.format(param_name=param_name, sims=
                 simulation_count, batches=batch_size),fontsize = 12)
 
     if(save_fig):
