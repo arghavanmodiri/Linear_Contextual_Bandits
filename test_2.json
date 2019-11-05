@@ -30,7 +30,7 @@
                 "motivationMsg3*social_relation": 0
                 },
           "context_vars": ["gender", "percentageGoal", "neighbourhood", "social_relation"],
-          "experiment_vars": ["motivationMsg1", "motivationMsg2", "motivationMsg3"]
+          "experiment_vars": ["motivationMsg1", "motivationMsg2", "motivationMsg3", "feedbackMsg1", "feedbackMsg2", "feedbackMsg3", "feedbackMsg4"]
         },
         "hypo_model_params":
         [
@@ -42,10 +42,32 @@
           ["intercept", "gender", "neighbourhood", "percentageGoal", "social_relation"],
           ["intercept", "gender", "neighbourhood", "percentageGoal", "social_relation", "motivationMsg1", "motivationMsg2", "motivationMsg3"]
         ],
-        "possible_actions": [[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]],
+        "possible_actions": [ [1, 0, 0, 0, 0, 0, 0],
+                              [1, 0, 0, 1, 0, 0, 0],
+                              [1, 0, 0, 0, 1, 0, 0],
+                              [1, 0, 0, 0, 0, 1, 0],
+                              [1, 0, 0, 0, 0, 0, 1],
+
+                              [0, 1, 0, 0, 0, 0, 0],
+                              [0, 1, 0, 1, 0, 0, 0],
+                              [0, 1, 0, 0, 1, 0, 0],
+                              [0, 1, 0, 0, 0, 1, 0],
+                              [0, 1, 0, 0, 0, 0, 1],
+
+                              [0, 0, 1, 0, 0, 0, 0],
+                              [0, 0, 1, 1, 0, 0, 0],
+                              [0, 0, 1, 0, 1, 0, 0],
+                              [0, 0, 1, 0, 0, 1, 0],
+                              [0, 0, 1, 0, 0, 0, 1],
+
+                              [0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 1, 0, 0, 0],
+                              [0, 0, 0, 0, 1, 0, 0],
+                              [0, 0, 0, 0, 0, 1, 0],
+                              [0, 0, 0, 0, 0, 0, 1]],
         "user_count": 1000,
-        "batch_size": 1,
-        "simulation_count": 4,
+        "batch_size": 10,
+        "simulation_count": 400,
         "extensive": true,
         "rand_sampling_applied": false,
         "show_fig": true,

@@ -26,10 +26,10 @@ def plot_regret(ax, user_count, policy_names, regrets_all_policies,
     #ax.set_ylim(0, 300)
     UserItter = range(1,user_count+1)
     #plt.plot(UserItter, prop_best_sim_itter, label = "Contextual Policy")
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+    #colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
     for idx, policy in enumerate(policy_names):
         ax.plot(UserItter, np.cumsum(regrets_all_policies[idx]),
-                label = policy, color=colors[idx])
+                label = policy)#, color=colors[idx])
 
 
     ax.legend(loc='upper left', fontsize = 16)
