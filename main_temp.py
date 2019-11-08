@@ -39,9 +39,7 @@ def main(input_dict, mode=None):
     logging.info(true_coeff_list)
 
     ## Setting the training mode (hypo model) parameters
-    policies = ['all main effect and contex-action interaction' , 'main effects of action varaiables',
-                'main effects of contextual varaiables',
-                'main effects of contextual varaiables and action varaiables']
+    policies = input_dict['hypo_model_names']
     hypo_params_all_models = input_dict['hypo_model_params']
     print(len(hypo_params_all_models))
     ## Setting the simulation parameters
@@ -146,28 +144,125 @@ def main(input_dict, mode=None):
     Plots some basic figures. In "Extensive Mode", details will be saved so
     user can plots more figures if desired.
     '''
-    regrets = []
+    all_hypo_params_all_models = {}
+    regrets_all_users = []
+    regrets_std_all_users = []
+
+    regression_params_avg_quarters = []
+    regression_params_std_quarters = []
+
+    regrets_avg_quarters = []
+    regrets_std_avg_quarters = []
     optimal_action_ratio = []
     beta_thompson_coeffs = []
-    all_hypo_params_all_models = {}
     for idx in range(len(bandit_models)):
         all_hypo_params_all_models = set().union(all_hypo_params_all_models, bandit_models[idx].hypo_params)
-        regrets.append([bandit_models[idx].get_regret_average()])
-        optimal_action_ratio.append(
-            bandit_models[idx].get_optimal_action_ratio_average())
+        regrets_all_users.append(bandit_models[idx].get_regret_average())
+        regrets_std_all_users.append(bandit_models[idx].get_regret_std())
+        users_quarter = int(len(regrets_all_users[idx]) / 4)
+        regrets_avg_quarters.append([round(sum(regrets_all_users[idx][:users_quarter]) / users_quarter, 2) ,
+                                    round(sum(regrets_all_users[idx][users_quarter:2*users_quarter]) / users_quarter, 2),
+                                    round(sum(regrets_all_users[idx][2*users_quarter:3*users_quarter]) / users_quarter, 2),
+                                    round(sum(regrets_all_users[idx][3*users_quarter:4*users_quarter]) / users_quarter, 2)])
+        regrets_std_avg_quarters.append([round(sum(regrets_std_all_users[idx][:users_quarter]) / users_quarter, 2) ,
+                                    round(sum(regrets_std_all_users[idx][users_quarter:2*users_quarter]) / users_quarter, 2),
+                                    round(sum(regrets_std_all_users[idx][2*users_quarter:3*users_quarter]) / users_quarter, 2),
+                                    round(sum(regrets_std_all_users[idx][3*users_quarter:4*users_quarter]) / users_quarter, 2)])
+
+        optimal_action_ratio.append(bandit_models[idx].get_optimal_action_ratio_average())
+    
         #beta_thompson_coeffs: lists of dataframes!
         beta_thompson_coeffs.append(
             bandit_models[idx].get_beta_thompson_coeffs_average())
 
+    strTable = "<html>\
+            <link rel='stylesheet' type='text/css' href='mystyle.css'>\
+            <table>\
+            <tr>\
+            <th>policy</th><th>Regret(1st quarter)</th><th>Regret(2nd quarter)</th><th>Regret(3rd quarter)</th><th>Regret(4th quarter)</th>\
+            </tr>"
+    for idx in range(len(policies)):
+        strRW = "<tr>"
+        strRW = strRW + "<td>" + str(policies[idx]) + "</td>"
+        strRW = strRW + "<td>" + str(regrets_avg_quarters[idx][0]) +" (" + str(regrets_std_avg_quarters[idx][0]) + ")" + "</td>"
+        strRW = strRW + "<td>" + str(regrets_avg_quarters[idx][1]) +" (" + str(regrets_std_avg_quarters[idx][1]) + ")" +"</td>"
+        strRW = strRW + "<td>" + str(regrets_avg_quarters[idx][2]) +" (" + str(regrets_std_avg_quarters[idx][2]) + ")" +"</td>"
+        strRW = strRW + "<td>" + str(regrets_avg_quarters[idx][3]) +" (" + str(regrets_std_avg_quarters[idx][3]) + ")" +"</td>"
+        strRW = strRW + "</tr>"
+        strTable = strTable+strRW
+    
+    strTable = strTable+"The values in parentheses is standard deviation."
+    strTable = strTable+"</table>"
+    strTable = strTable+"Calculating std: the std for each user is calculated over all simulations. Then, the average of the calculated\
+                values for each quarter is taken and reported in table above."
+
+    strTable = strTable+"<br><br><br><table><tr><th>policy</th>"
+    for param_name in list(all_hypo_params_all_models):
+        strTable = strTable + "<th>"+str(param_name)+"</th>"
+    strTable = strTable + "</tr>"
+
+    for param_name in list(all_hypo_params_all_models):
+        strRW = "<tr>"
+        strRW = strRW + "<td>True Policy</td>"
+        if param_name in true_coeff.keys():
+            strRW = strRW + "<td>" + str(true_coeff[param_name]) +"</td>"
+        else:
+            strRW = strRW + "<td>-</td>"
+    strRW = strRW + "</tr>"
+    strTable = strTable+strRW
+
+    for idx in range(len(policies)):
+        strRW = "<tr>"
+        print(param_name) 
+        strRW = strRW + "<td>"+str(policies[idx])+"</td>"
+        for param_name in list(all_hypo_params_all_models):
+            if param_name in beta_thompson_coeffs[idx].columns:
+                #param.append(beta_thompson_coeffs[idx][param_name])
+                users_quarter = int(len(beta_thompson_coeffs[idx][param_name]) / 4)
+                '''regression_params_avg_quarters.append([
+                                                                                                round(beta_thompson_coeffs[idx][param_name][:users_quarter].mean(), 2),
+                                                                                                round(beta_thompson_coeffs[idx][param_name][users_quarter:2*users_quarter].mean(), 2),
+                                                                                                round(beta_thompson_coeffs[idx][param_name][2*users_quarter:3*users_quarter].mean(), 2),
+                                                                                                round(beta_thompson_coeffs[idx][param_name][3*users_quarter:].mean(), 2)])
+                                                                regression_params_std_quarters.append([
+                                                                                                round(beta_thompson_coeffs[idx][param_name][:users_quarter].std(), 2),
+                                                                                                round(beta_thompson_coeffs[idx][param_name][users_quarter:2*users_quarter].std(), 2),
+                                                                                                round(beta_thompson_coeffs[idx][param_name][2*users_quarter:3*users_quarter].std(), 2),
+                                                                                                round(beta_thompson_coeffs[idx][param_name][3*users_quarter:].std(), 2)])'''
+                strRW = strRW + "<td>" + str(round(beta_thompson_coeffs[idx][param_name][:users_quarter].mean(), 2)) +" (" + str(round(beta_thompson_coeffs[idx][param_name][:users_quarter].std(), 2)) + ")" +"</td>"
+            else:
+                '''regression_params_avg_quarters.append(["NA", "NA", "NA", "NA"])
+                                                                regression_params_std_quarters.append(["NA", "NA", "NA", "NA"])'''
+                strRW = strRW + "<td>-</td>"
+        strRW = strRW + "</tr>"
+        strTable = strTable+strRW
+
+            
+    '''for policy in policies:
+                    strRW = "<tr>"
+                    strRW = strRW + "<td>" + str(policies[idx]) + "</td>"
+                    for param_name in list(all_hypo_params_all_models):
+                        strRW = strRW + "<td>" + str(regrets_avg_quarters[idx][1]) +" (" + str(regrets_std_avg_quarters[idx][1]) + ")" +"</td>"
+            '''
+
+
+    strTable = strTable + "</tr>"  
+    strTable = strTable+"The values in parentheses is standard deviation."
+    strTable = strTable+"</table>"            
+    strTable = strTable+"</html>"
+         
+    hs = open("simulation.html", 'w')
+    hs.write(strTable)
+    
     fig, ax = plt.subplots(1,1,sharey=False)
-    bplots.plot_regret(ax,user_count, policies, regrets,
+    bplots.plot_regret(ax,user_count, policies, regrets_all_users,
                         simulation_count, batch_size)
     bplots.plot_optimal_action_ratio(user_count, policies,
             optimal_action_ratio, simulation_count, batch_size,
             mode='per_user')
-    #bplots.plot_coeff_ranking(user_count, policies, beta_thompson_coeffs[0], hypo_params_all_models[0], simulation_count, batch_size, save_fig=True)
 
-
+    #Plotting each coeff separetly for comparison
+    '''
     for param_name in list(all_hypo_params_all_models):
         param = []
         policy_names = []
@@ -178,8 +273,8 @@ def main(input_dict, mode=None):
 
         bplots.plot_hypo_regression_param(user_count, policy_names, param_name,
                     param, true_coeff[param_name], simulation_count, batch_size)
-
-    plt.show()
+    '''
+    #plt.show()
 
 if __name__ == "__main__":
 

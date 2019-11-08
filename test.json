@@ -13,7 +13,7 @@
                 "neighbourhood": 0.3,
                 "percentageGoal": -0.2,
                 "social_relation": 0.05,
-                "motivationMsg1": 0,
+                "motivationMsg1": 0.4,
                 "motivationMsg2": 0,
                 "motivationMsg3": 0,
                 "motivationMsg1*percentageGoal": 0,
@@ -32,6 +32,12 @@
           "context_vars": ["gender", "percentageGoal", "neighbourhood", "social_relation"],
           "experiment_vars": ["motivationMsg1", "motivationMsg2", "motivationMsg3"]
         },
+        "hypo_model_names":
+        ["policy1",
+          "policy2",
+          "policy3",
+          "policy4"
+        ],
         "hypo_model_params":
         [
           ["intercept", "gender", "neighbourhood", "percentageGoal", "social_relation", "motivationMsg1", "motivationMsg2", "motivationMsg3", 
@@ -45,7 +51,7 @@
         "possible_actions": [[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]],
         "user_count": 1000,
         "batch_size": 1,
-        "simulation_count": 4,
+        "simulation_count": 2,
         "extensive": true,
         "rand_sampling_applied": false,
         "show_fig": true,

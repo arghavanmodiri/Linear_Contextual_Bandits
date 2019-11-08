@@ -55,12 +55,18 @@ class training_bandit_model(object):
         return True
 
     def get_regret_average(self):
-        simulation_count = self.save_regret_thompson_df.shape[1]
-        return (self.save_regret_thompson_df.sum(axis=1)/simulation_count)
+        #simulation_count = self.save_regret_thompson_df.shape[1]
+        return (self.save_regret_thompson_df.mean(axis=1))#/simulation_count)
+
+    def get_regret_std(self):
+        return (self.save_regret_thompson_df.std(axis=1))
 
     def get_optimal_action_ratio_average(self):
-        simulation_count = self.save_optimal_action_ratio_thompson_df.shape[1]
-        return (self.save_optimal_action_ratio_thompson_df.sum(axis=1)/simulation_count)
+        #simulation_count = self.save_optimal_action_ratio_thompson_df.shape[1]
+        return (self.save_optimal_action_ratio_thompson_df.mean(axis=1))#/simulation_count)
+
+    def get_optimal_action_ratio_std(self):
+        return (self.save_optimal_action_ratio_thompson_df.std(axis=1))
 
     def save_regret(self, new_regret):
         self.save_regret_thompson_df = pd.concat([self.save_regret_thompson_df,
