@@ -175,11 +175,11 @@ def main(input_dict, mode=None):
         beta_thompson_coeffs.append(
             bandit_models[idx].get_beta_thompson_coeffs_average())
 
-    strTable = "<html>\
-            <link rel='stylesheet' type='text/css' href='mystyle.css'>\
-            <table>\
+    strTable = "<html><link rel='stylesheet' type='text/css' href='mystyle.css'>"
+    strTable = strTable+"<h1>Regret</h1>"
+    strTable = strTable+ "<table>\
             <tr>\
-            <th>policy</th><th>Regret(1st quarter)</th><th>Regret(2nd quarter)</th><th>Regret(3rd quarter)</th><th>Regret(4th quarter)</th>\
+            <th>policy</th><th>Regret (1st quarter)</th><th>Regret (2nd quarter)</th><th>Regret (3rd quarter)</th><th>Regret (4th quarter)</th>\
             </tr>"
     for idx in range(len(policies)):
         strRW = "<tr>"
