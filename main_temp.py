@@ -196,7 +196,11 @@ def main(input_dict, mode=None):
     strTable = strTable+"Calculating std: the std for each user is calculated over all simulations. Then, the average of the calculated\
                 values for each quarter is taken and reported in table above."
 
-    strTable = strTable+"<br><br><br><table><tr><th>policy</th>"
+    strTable = strTable+"<br><br><br>"
+    strTable = strTable+"The below tables shows the average coeff of each term for different policies."
+    strTable = strTable+"<h1>Regression Coeff for different policies</h1>"
+    strTable = strTable+"<h1>First Quarter (user 1 to "+ str(int(user_count/4)) +")</h1>"
+    strTable = strTable+"<table><tr><th>policy</th>"
     for param_name in list(all_hypo_params_all_models):
         strTable = strTable + "<th>"+str(param_name)+"</th>"
     strTable = strTable + "</tr>"
