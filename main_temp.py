@@ -13,6 +13,7 @@ import plots.plot_basics as bplots
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.formula.api as sm
+from shutil import copy2
 from datetime import date
 from datetime import datetime
 from training_models import training_bandit_model as tbm
@@ -51,28 +52,7 @@ def main(input_dict, mode=None):
     show_fig = input_dict['show_fig']
 
 
-    '''
-    regrets = np.zeros(user_count)
-    regrets_rand = np.zeros(user_count)
-    optimal_action_ratio = np.zeros(user_count)
-    optimal_action_ratio_rand = np.zeros(user_count)
-    mse = np.zeros((user_count, len(hypo_params)))
-    beta_thompson_coeffs = np.zeros((user_count, len(hypo_params)))
-    coeff_sign_error = np.zeros((user_count, len(hypo_params)))
-    bias_in_coeff = np.zeros((user_count, len(hypo_params)))
-    policies = []
-    regression_intercept_all_sim = []
-    regression_d1_all_sim = []
-    regression_d1x1_all_sim = []
-    regression_intercept_all_sim_random = []
-    regression_d1_all_sim_random = []
-    regression_d1x1_all_sim_random = []
-    policies.append(['Thompson Sampling'])
-    '''
 
-    save_output_folder = 'saved_output/raw_data_'+str(TODAY)+'_'+str(NOW.hour)+str(NOW.minute)+str(NOW.second)+"/"
-    if not os.path.exists(save_output_folder):
-        os.mkdir(save_output_folder)
     save_optimal_action_ratio_thompson_df = pd.DataFrame()
     save_mse_thompson_df = pd.DataFrame()
     save_coeff_sign_err_thompson_df = pd.DataFrame()
@@ -91,9 +71,12 @@ def main(input_dict, mode=None):
     bandit_models = []
     for idx in range(len(hypo_params_all_models)):
         bandit_models.append(
-                    tbm(hypo_params_all_models[idx], user_count,
+                    tbm(user_count,
                     batch_size, experiment_vars, bandit_arms, true_coeff,
-                    extensive))
+                    extensive, hypo_params_all_models[idx]))
+    random_model = tbm(user_count,
+                    batch_size, experiment_vars, bandit_arms, true_coeff,
+                    extensive)
 
     for sim in range(0, simulation_count):
         logging.info("sim: {}".format(sim))
@@ -109,6 +92,7 @@ def main(input_dict, mode=None):
         for idx in range(len(hypo_params_all_models)):
             bandit_models[idx].apply_thompson(users_context, a_pre, b_pre, noise_stats)
 
+        random_model.apply_random(users_context, noise_stats)
 
         #regret
         #optimal_action_ratio
@@ -119,31 +103,7 @@ def main(input_dict, mode=None):
 
         # Add Random Policy
 
-    #Step 4: Saving the results in csv files and plotting metrics of interest
-    #also save the hypo model and true model and other metrics in text file
-    save_regret_thompson_df.to_csv('{}thompson_regrets.csv'.format(
-                                save_output_folder), index_label='iteration')
-    save_optimal_action_ratio_thompson_df.to_csv(
-                                '{}thompson_optimal_action_ratio.csv'.format(
-                                save_output_folder), index_label='iteration')
-    save_mse_thompson_df.to_csv('{}thompson_mse.csv'.format(
-                                save_output_folder), index_label='iteration')
-    save_bias_in_coeff_thompson_df.to_csv(
-                                '{}thompson_bias_in_coeff.csv'.format(
-                                save_output_folder))
-    save_coeff_sign_err_thompson_df.to_csv(
-                                '{}thompson_coeff_sign_err.csv'.format(
-                                save_output_folder))
-    save_context_action_thompson_df.to_csv(
-                                '{}thompson_context_action.csv'.format(
-                                save_output_folder))
 
-
-    #Plots
-    '''
-    Plots some basic figures. In "Extensive Mode", details will be saved so
-    user can plots more figures if desired.
-    '''
     all_hypo_params_all_models = {}
     regrets_all_users = []
     regrets_std_all_users = []
@@ -175,9 +135,14 @@ def main(input_dict, mode=None):
         beta_thompson_coeffs.append(
             bandit_models[idx].get_beta_thompson_coeffs_average())
 
-    strTable = "<html><link rel='stylesheet' type='text/css' href='mystyle.css'>"
+
+
+    #############################################################
+    #       Creating tables to report regret and coeff          #
+    #############################################################
+    strTable ="<html><link rel='stylesheet' type='text/css' href='../../mystyle.css'>"
     strTable = strTable+"<h1>Regret</h1>"
-    strTable = strTable+ "<table>\
+    strTable = strTable+     "<table>\
             <tr>\
             <th>policy</th><th>Regret (1st quarter)</th><th>Regret (2nd quarter)</th><th>Regret (3rd quarter)</th><th>Regret (4th quarter)</th>\
             </tr>"
@@ -197,66 +162,85 @@ def main(input_dict, mode=None):
                 values for each quarter is taken and reported in table above."
 
     strTable = strTable+"<br><br><br>"
-    strTable = strTable+"The below tables shows the average coeff of each term for different policies."
     strTable = strTable+"<h1>Regression Coeff for different policies</h1>"
+    strTable = strTable+"The below tables shows the average coeff of each term for different policies."
+
     strTable = strTable+"<h1>First Quarter (user 1 to "+ str(int(user_count/4)) +")</h1>"
     strTable = strTable+"<table><tr><th>policy</th>"
     for param_name in list(all_hypo_params_all_models):
         strTable = strTable + "<th>"+str(param_name)+"</th>"
     strTable = strTable + "</tr>"
 
+    strRW = "<tr>"
+    strRW = strRW + "<td>True Policy</td>"
     for param_name in list(all_hypo_params_all_models):
-        strRW = "<tr>"
-        strRW = strRW + "<td>True Policy</td>"
         if param_name in true_coeff.keys():
             strRW = strRW + "<td>" + str(true_coeff[param_name]) +"</td>"
         else:
-            strRW = strRW + "<td>-</td>"
+            strRW = strRW + "<td>0</td>"
     strRW = strRW + "</tr>"
     strTable = strTable+strRW
 
     for idx in range(len(policies)):
         strRW = "<tr>"
-        print(param_name) 
         strRW = strRW + "<td>"+str(policies[idx])+"</td>"
         for param_name in list(all_hypo_params_all_models):
             if param_name in beta_thompson_coeffs[idx].columns:
-                #param.append(beta_thompson_coeffs[idx][param_name])
                 users_quarter = int(len(beta_thompson_coeffs[idx][param_name]) / 4)
-                '''regression_params_avg_quarters.append([
-                                                                                                round(beta_thompson_coeffs[idx][param_name][:users_quarter].mean(), 2),
-                                                                                                round(beta_thompson_coeffs[idx][param_name][users_quarter:2*users_quarter].mean(), 2),
-                                                                                                round(beta_thompson_coeffs[idx][param_name][2*users_quarter:3*users_quarter].mean(), 2),
-                                                                                                round(beta_thompson_coeffs[idx][param_name][3*users_quarter:].mean(), 2)])
-                                                                regression_params_std_quarters.append([
-                                                                                                round(beta_thompson_coeffs[idx][param_name][:users_quarter].std(), 2),
-                                                                                                round(beta_thompson_coeffs[idx][param_name][users_quarter:2*users_quarter].std(), 2),
-                                                                                                round(beta_thompson_coeffs[idx][param_name][2*users_quarter:3*users_quarter].std(), 2),
-                                                                                                round(beta_thompson_coeffs[idx][param_name][3*users_quarter:].std(), 2)])'''
                 strRW = strRW + "<td>" + str(round(beta_thompson_coeffs[idx][param_name][:users_quarter].mean(), 2)) +" (" + str(round(beta_thompson_coeffs[idx][param_name][:users_quarter].std(), 2)) + ")" +"</td>"
             else:
-                '''regression_params_avg_quarters.append(["NA", "NA", "NA", "NA"])
-                                                                regression_params_std_quarters.append(["NA", "NA", "NA", "NA"])'''
                 strRW = strRW + "<td>-</td>"
         strRW = strRW + "</tr>"
         strTable = strTable+strRW
 
-            
-    '''for policy in policies:
-                    strRW = "<tr>"
-                    strRW = strRW + "<td>" + str(policies[idx]) + "</td>"
-                    for param_name in list(all_hypo_params_all_models):
-                        strRW = strRW + "<td>" + str(regrets_avg_quarters[idx][1]) +" (" + str(regrets_std_avg_quarters[idx][1]) + ")" +"</td>"
-            '''
+
+    strTable = strTable + "</tr>"  
+    strTable = strTable+"The values in parentheses is standard deviation."
+    strTable = strTable+"</table>" 
+
+
+
+    strTable = strTable+"<h1>Last Quarter (user "+ str(int(3*user_count/4))+ " to " + str(int(user_count)) +")</h1>"
+    strTable = strTable+"<table><tr><th>policy</th>"
+    for param_name in list(all_hypo_params_all_models):
+        strTable = strTable + "<th>"+str(param_name)+"</th>"
+    strTable = strTable + "</tr>"
+
+    strRW = "<tr>"
+    strRW = strRW + "<td>True Policy</td>"
+    for param_name in list(all_hypo_params_all_models):
+        if param_name in true_coeff.keys():
+            strRW = strRW + "<td>" + str(true_coeff[param_name]) +"</td>"
+        else:
+            strRW = strRW + "<td>0</td>"
+    strRW = strRW + "</tr>"
+    strTable = strTable+strRW
+
+    for idx in range(len(policies)):
+        strRW = "<tr>"
+        strRW = strRW + "<td>"+str(policies[idx])+"</td>"
+        for param_name in list(all_hypo_params_all_models):
+            if param_name in beta_thompson_coeffs[idx].columns:
+                users_quarter = int(len(beta_thompson_coeffs[idx][param_name]) / 4)
+                strRW = strRW + "<td>" + str(round(beta_thompson_coeffs[idx][param_name][3*users_quarter:].mean(), 2)) +" (" + str(round(beta_thompson_coeffs[idx][param_name][3*users_quarter:].std(), 2)) + ")" +"</td>"
+            else:
+                strRW = strRW + "<td>-</td>"
+        strRW = strRW + "</tr>"
+        strTable = strTable+strRW
 
 
     strTable = strTable + "</tr>"  
     strTable = strTable+"The values in parentheses is standard deviation."
-    strTable = strTable+"</table>"            
+    strTable = strTable+"</table>" 
+
     strTable = strTable+"</html>"
-         
-    hs = open("simulation.html", 'w')
+
+    hs = open("{}simulation_summary.html".format(save_output_folder), 'w')
     hs.write(strTable)
+
+    #############################################################
+    #                           Plots                           #
+    #############################################################
     
     fig, ax = plt.subplots(1,1,sharey=False)
     bplots.plot_regret(ax,user_count, policies, regrets_all_users,
@@ -280,6 +264,17 @@ def main(input_dict, mode=None):
     '''
     #plt.show()
 
+
+    #############################################################
+    #                 Saving results in csv files               #
+    #############################################################
+    for idx in range(len(bandit_models)):
+        bandit_models[idx].get_regret().to_csv('{}regrets_thompson_{}.csv'.format(
+                                save_output_folder,policies[idx]), index_label='iteration')
+        bandit_models[idx].get_optimal_action_ratio().to_csv('{}optimal_action_ratio_thompson_{}.csv'.format(
+                                save_output_folder,policies[idx]), index_label='iteration')
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Process each .')
@@ -290,6 +285,11 @@ if __name__ == "__main__":
     if (len(args.input_file) != 1) or (not args.input_file[0].endswith(".json")):
         print( "Error: Function should have only one input, name of the JSON config file." )
         sys.exit(1)
+
+    save_output_folder = 'saved_output/raw_data_'+str(TODAY)+'_'+str(NOW.hour)+'-'+str(NOW.minute)+'-'+str(NOW.second)+"/"
+    if not os.path.exists(save_output_folder):
+        os.mkdir(save_output_folder)
+    copy2('{}'.format(args.input_file[0]), '{}/'.format(save_output_folder))
 
     input_data = args.input_file[0]
     input_data = json.load(open(input_data))

@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import policies.thompson_sampling_nig as thompson
+import policies.random_sampling as random
+import making_decision
 import logging
 
 logging.getLogger().setLevel(logging.INFO)
@@ -9,25 +11,26 @@ logging.basicConfig(format='%(message)s')
 class training_bandit_model(object):
     """docstring for ClassName"""
 
-    def __init__(self, hypo_params, user_count, batch_size,
-                experiment_vars, bandit_arms, true_coeff, extensive):
+    def __init__(self, user_count, batch_size,
+                experiment_vars, bandit_arms, true_coeff, extensive, hypo_params = None):
         super(training_bandit_model, self).__init__()
 
-        self.hypo_params = hypo_params
+        
         self.user_count = user_count
         self.batch_size = batch_size
-        #self.users_context = users_context
-        self.experiment_vars = experiment_vars
-        self.bandit_arms = bandit_arms
+        self.experiment_vars = experiment_vars    
         self.true_coeff = true_coeff
         self.extensive = extensive
+        self.bandit_arms = bandit_arms
+        self.hypo_params = hypo_params
         self.cumulative_regret = np.zeros(user_count)
-        self.thompson_output = np.zeros(6)
-
-        self.save_regret_thompson_df = pd.DataFrame()
-        self.save_optimal_action_ratio_thompson_df = pd.DataFrame()
-        self.beta_thompson_coeffs = np.zeros((user_count, len(hypo_params)))
-        self.beta_thompson_coeffs_df = pd.DataFrame()
+        self.save_regret_df = pd.DataFrame()
+        self.save_optimal_action_ratio_df = pd.DataFrame()
+        
+        if hypo_params != None:
+            self.thompson_output = np.zeros(6)
+            self.beta_thompson_coeffs = np.zeros((user_count, len(hypo_params)))
+            self.beta_thompson_coeffs_df = pd.DataFrame()
 
 
     def apply_thompson(self, users_context, a_pre, b_pre, noise_stats):
@@ -51,25 +54,47 @@ class training_bandit_model(object):
         self.save_optimal_action_ratio(thompson_output[1], thompson_output[0])
         self.save_beta_thompson_coeffs_sum(thompson_output[5])
 
+    def apply_random(self, users_context, noise_stats):
+
+        rand_output = random.apply_random_sampling(users_context,
+                                            self.experiment_vars,
+                                            self.bandit_arms,
+                                            self.hypo_params,
+                                            self.true_coeff,
+                                            self.batch_size,
+                                            self.extensive,
+                                            noise_stats)
+
+        self.save_regret(rand_output[2])
+        true_optimal_action_all = []
+        for user in range(self.user_count):
+            true_optimal_action = making_decision.pick_true_optimal_arm(
+                                                            self.true_coeff,
+                                                            users_context[user],
+                                                            self.experiment_vars,
+                                                            self.bandit_arms)
+            true_optimal_action_all.append(true_optimal_action[0])
+        self.save_optimal_action_ratio(rand_output[1], true_optimal_action_all)
+
     def regret_cumulative():
         return True
 
     def get_regret_average(self):
-        #simulation_count = self.save_regret_thompson_df.shape[1]
-        return (self.save_regret_thompson_df.mean(axis=1))#/simulation_count)
+        #simulation_count = self.save_regret_df.shape[1]
+        return (self.save_regret_df.mean(axis=1))#/simulation_count)
 
     def get_regret_std(self):
-        return (self.save_regret_thompson_df.std(axis=1))
+        return (self.save_regret_df.std(axis=1))
 
     def get_optimal_action_ratio_average(self):
-        #simulation_count = self.save_optimal_action_ratio_thompson_df.shape[1]
-        return (self.save_optimal_action_ratio_thompson_df.mean(axis=1))#/simulation_count)
+        #simulation_count = self.save_optimal_action_ratio_df.shape[1]
+        return (self.save_optimal_action_ratio_df.mean(axis=1))#/simulation_count)
 
     def get_optimal_action_ratio_std(self):
-        return (self.save_optimal_action_ratio_thompson_df.std(axis=1))
+        return (self.save_optimal_action_ratio_df.std(axis=1))
 
     def save_regret(self, new_regret):
-        self.save_regret_thompson_df = pd.concat([self.save_regret_thompson_df,
+        self.save_regret_df = pd.concat([self.save_regret_df,
                                             pd.DataFrame(new_regret)],
                                             ignore_index=True, axis=1)
 
@@ -77,8 +102,8 @@ class training_bandit_model(object):
     def save_optimal_action_ratio(self, hypo_optimal_action, true_optimal_action):
         optimal_action_ratio_per_sim = np.array(list((hypo_optimal_action[i] in
             true_optimal_action[i]) for i in range(0,self.user_count))).astype(int)
-        self.save_optimal_action_ratio_thompson_df = pd.concat([
-                                self.save_optimal_action_ratio_thompson_df,
+        self.save_optimal_action_ratio_df = pd.concat([
+                                self.save_optimal_action_ratio_df,
                                 pd.DataFrame(optimal_action_ratio_per_sim)],
                                 ignore_index=True, axis=1)
 
@@ -110,10 +135,10 @@ class training_bandit_model(object):
 
 
     def get_regret(self):
-        return self.save_regret_thompson_df
+        return self.save_regret_df
 
     def get_optimal_action_ratio(self):
-        return self.save_optimal_action_ratio_thompson_df
+        return self.save_optimal_action_ratio_df
 
     def get_beta_thompson_coeffs_average(self):
         return self.beta_thompson_coeffs_df.groupby(level=1, axis=1).mean()
