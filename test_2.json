@@ -32,6 +32,12 @@
           "context_vars": ["gender", "percentageGoal", "neighbourhood", "social_relation"],
           "experiment_vars": ["motivationMsg1", "motivationMsg2", "motivationMsg3", "feedbackMsg1", "feedbackMsg2", "feedbackMsg3", "feedbackMsg4"]
         },
+        "hypo_model_names":
+        ["policy1",
+          "policy2",
+          "policy3",
+          "policy4"
+        ],
         "hypo_model_params":
         [
           ["intercept", "gender", "neighbourhood", "percentageGoal", "social_relation", "motivationMsg1", "motivationMsg2", "motivationMsg3", 

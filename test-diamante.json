@@ -448,9 +448,9 @@
         ],
         "user_count": 1000,
         "batch_size": 10,
-        "simulation_count": 50,
+        "simulation_count": 100,
         "extensive": true,
-        "rand_sampling_applied": false,
+        "rand_sampling_applied": true,
         "show_fig": true,
         "NIG_priors":
         {

@@ -64,8 +64,7 @@ def main(input_dict, mode=None):
     save_bias_in_coeff_random_df = pd.DataFrame()
     save_regret_random_df = pd.DataFrame()
     save_suboptimal_action_ratio_group_random_df = pd.DataFrame()
-    save_context_action_thompson_df = pd.DataFrame()
-    save_context_action_random_df = pd.DataFrame()
+    save_context_action_df = pd.DataFrame()
 
     bandit_models = []
     for idx in range(len(hypo_params_all_models)):
@@ -87,6 +86,11 @@ def main(input_dict, mode=None):
         #cov_pre = np.identity(len(hypo_params))
 
         users_context = models.generate_true_dataset(context_vars, user_count, input_dict['dist_of_context'])
+        users_context_df = pd.DataFrame(list(users_context))
+        users_context_df.columns = pd.MultiIndex.from_product([
+                [sim], users_context_df.columns])
+        save_context_action_df = pd.concat([save_context_action_df,
+                                            users_context_df], axis=1)
 
         #Step 3: Calls the sampling policy to select action for each user
         for idx in range(len(hypo_params_all_models)):
@@ -94,6 +98,8 @@ def main(input_dict, mode=None):
 
         if rand_sampling_applied==True:
             random_model.apply_random(users_context, noise_stats)
+
+
 
         #regret
         #optimal_action_ratio
@@ -254,7 +260,10 @@ def main(input_dict, mode=None):
     #############################################################
     
     fig, ax = plt.subplots(1,1,sharey=False)
+    fig, ax1 = plt.subplots(1,1,sharey=False)
     bplots.plot_regret(ax,user_count, policies, regrets_all_users,
+                        simulation_count, batch_size)
+    bplots.plot_regret(ax1,user_count, policies[:len(bandit_models)], regrets_all_users,
                         simulation_count, batch_size)
     bplots.plot_optimal_action_ratio(user_count, policies[:len(bandit_models)],
             optimal_action_ratio, simulation_count, batch_size,
@@ -273,7 +282,7 @@ def main(input_dict, mode=None):
         bplots.plot_hypo_regression_param(user_count, policy_names, param_name,
                     param, true_coeff[param_name], simulation_count, batch_size)
     '''
-    #plt.show()
+    plt.show()
 
 
     #############################################################
@@ -284,6 +293,9 @@ def main(input_dict, mode=None):
                                 save_output_folder,policies[idx]), index_label='iteration')
         bandit_models[idx].get_optimal_action_ratio().to_csv('{}optimal_action_ratio_thompson_{}.csv'.format(
                                 save_output_folder,policies[idx]), index_label='iteration')
+        save_context_action_df.to_csv('{}context_action.csv'.format(
+                                save_output_folder), index_label='iteration')
+
     if rand_sampling_applied==True:
         random_model.get_regret().to_csv('{}regrets_random_sampling.csv'.format(
                                 save_output_folder), index_label='iteration')
