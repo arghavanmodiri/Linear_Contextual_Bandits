@@ -53,7 +53,7 @@
         "batch_size": 1,
         "simulation_count": 2,
         "extensive": true,
-        "rand_sampling_applied": false,
+        "rand_sampling_applied": true,
         "show_fig": true,
         "NIG_priors":
         {

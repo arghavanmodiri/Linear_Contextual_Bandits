@@ -42,7 +42,6 @@ def main(input_dict, mode=None):
     ## Setting the training mode (hypo model) parameters
     policies = input_dict['hypo_model_names']
     hypo_params_all_models = input_dict['hypo_model_params']
-    print(len(hypo_params_all_models))
     ## Setting the simulation parameters
     user_count = input_dict['user_count']
     batch_size = input_dict['batch_size'] # 10
@@ -74,7 +73,8 @@ def main(input_dict, mode=None):
                     tbm(user_count,
                     batch_size, experiment_vars, bandit_arms, true_coeff,
                     extensive, hypo_params_all_models[idx]))
-    random_model = tbm(user_count,
+    if rand_sampling_applied==True:
+        random_model = tbm(user_count,
                     batch_size, experiment_vars, bandit_arms, true_coeff,
                     extensive)
 
@@ -92,7 +92,8 @@ def main(input_dict, mode=None):
         for idx in range(len(hypo_params_all_models)):
             bandit_models[idx].apply_thompson(users_context, a_pre, b_pre, noise_stats)
 
-        random_model.apply_random(users_context, noise_stats)
+        if rand_sampling_applied==True:
+            random_model.apply_random(users_context, noise_stats)
 
         #regret
         #optimal_action_ratio
@@ -135,7 +136,17 @@ def main(input_dict, mode=None):
         beta_thompson_coeffs.append(
             bandit_models[idx].get_beta_thompson_coeffs_average())
 
-
+    if rand_sampling_applied==True:
+        regrets_all_users.append(random_model.get_regret_average())
+        policies.append('Random Sampling')
+        regrets_avg_quarters.append([round(sum(regrets_all_users[-1][:users_quarter]) / users_quarter, 2) ,
+                                    round(sum(regrets_all_users[-1][users_quarter:2*users_quarter]) / users_quarter, 2),
+                                    round(sum(regrets_all_users[-1][2*users_quarter:3*users_quarter]) / users_quarter, 2),
+                                    round(sum(regrets_all_users[-1][3*users_quarter:4*users_quarter]) / users_quarter, 2)])
+        regrets_std_avg_quarters.append([round(sum(regrets_std_all_users[-1][:users_quarter]) / users_quarter, 2) ,
+                                    round(sum(regrets_std_all_users[-1][users_quarter:2*users_quarter]) / users_quarter, 2),
+                                    round(sum(regrets_std_all_users[-1][2*users_quarter:3*users_quarter]) / users_quarter, 2),
+                                    round(sum(regrets_std_all_users[-1][3*users_quarter:4*users_quarter]) / users_quarter, 2)])
 
     #############################################################
     #       Creating tables to report regret and coeff          #
@@ -181,7 +192,7 @@ def main(input_dict, mode=None):
     strRW = strRW + "</tr>"
     strTable = strTable+strRW
 
-    for idx in range(len(policies)):
+    for idx in range(len(policies)-1):
         strRW = "<tr>"
         strRW = strRW + "<td>"+str(policies[idx])+"</td>"
         for param_name in list(all_hypo_params_all_models):
@@ -216,7 +227,7 @@ def main(input_dict, mode=None):
     strRW = strRW + "</tr>"
     strTable = strTable+strRW
 
-    for idx in range(len(policies)):
+    for idx in range(len(policies)-1):
         strRW = "<tr>"
         strRW = strRW + "<td>"+str(policies[idx])+"</td>"
         for param_name in list(all_hypo_params_all_models):
@@ -245,7 +256,7 @@ def main(input_dict, mode=None):
     fig, ax = plt.subplots(1,1,sharey=False)
     bplots.plot_regret(ax,user_count, policies, regrets_all_users,
                         simulation_count, batch_size)
-    bplots.plot_optimal_action_ratio(user_count, policies,
+    bplots.plot_optimal_action_ratio(user_count, policies[:len(bandit_models)],
             optimal_action_ratio, simulation_count, batch_size,
             mode='per_user')
 
@@ -273,7 +284,11 @@ def main(input_dict, mode=None):
                                 save_output_folder,policies[idx]), index_label='iteration')
         bandit_models[idx].get_optimal_action_ratio().to_csv('{}optimal_action_ratio_thompson_{}.csv'.format(
                                 save_output_folder,policies[idx]), index_label='iteration')
-
+    if rand_sampling_applied==True:
+        random_model.get_regret().to_csv('{}regrets_random_sampling.csv'.format(
+                                save_output_folder), index_label='iteration')
+        random_model.get_optimal_action_ratio().to_csv('{}optimal_action_ratio_random_sampling.csv'.format(
+                                save_output_folder), index_label='iteration')
 
 if __name__ == "__main__":
 

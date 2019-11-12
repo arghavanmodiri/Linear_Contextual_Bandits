@@ -15,7 +15,6 @@ import seaborn as sns
 import statsmodels.formula.api as sm
 from datetime import date
 from datetime import datetime
-from training_models import training_bandit_model as tbm
 
 TODAY = date.today()
 NOW = datetime.now()
@@ -25,30 +24,48 @@ NOW = datetime.now()
 def main(input_dict, mode=None):
     """start the model"""
 
+
+    #Step 1: Configuration (to be added in a seprate function)
+    '''
+    Parse the script command
+    Check the csv files to make sure they are not empty
+        True_Model_Coefficients.csv: will have true model coefficients
+        Hypo_Model_Design.csv: will have the list of parameters to be used
+    Create output folder if not existed and if in "Extensive Mode"
+        Extensive Mode: details of the simulation will be saved in output files
+        Test Mode: Just the rewards and basics will be printed on the screen
+    Set the output files prefix. E.g. dec_01_1000users_
+    and any other configuration to be set
+    '''
+
+
+    #Step 2: Setting the models
+    '''
+    Calls true_hypo_models.read_true_model to parse True_Model_Coefficients.csv
+    Calls true_hypo_models.read_hypo_model to parse Hypo_Model_Design.csv
+    Based on the variables, find the list of all bandit arms
+    '''
+
     logging.getLogger().setLevel(logging.INFO)
     logging.basicConfig(format='%(message)s')
 
-    ## Setting the true model parameters and the enviromental parameters
     true_model_params = input_dict['true_model_params']
+    hypo_params = input_dict['hypo_model_params']
     bandit_arms = input_dict['possible_actions']
     noise_stats = true_model_params['noise']
     true_coeff = true_model_params['true_coeff']
     true_coeff_list = list(true_coeff.values())
+    logging.info(true_coeff_list)
     context_vars = np.array(true_model_params['context_vars'])
     experiment_vars = np.array(true_model_params['experiment_vars'])
-    logging.info(true_coeff_list)
 
-    ## Setting the training mode (hypo model) parameters
-    hypo_params = input_dict['hypo_model_params']
-
-    ## Setting the simulation parameters
+    # Simulation parameters
     user_count = input_dict['user_count']
     batch_size = input_dict['batch_size'] # 10
     simulation_count = input_dict['simulation_count']  # 2500
     extensive = input_dict['extensive']
     rand_sampling_applied = input_dict['rand_sampling_applied']
     show_fig = input_dict['show_fig']
-
 
     regrets = np.zeros(user_count)
     regrets_rand = np.zeros(user_count)
@@ -85,9 +102,6 @@ def main(input_dict, mode=None):
     save_context_action_thompson_df = pd.DataFrame()
     save_context_action_random_df = pd.DataFrame()
 
-    bandit_model1 = tbm(hypo_params, user_count, batch_size,
-                        experiment_vars, bandit_arms, true_coeff, extensive)
-
     for sim in range(0, simulation_count):
         logging.info("sim: {}".format(sim))
         a_pre = input_dict['NIG_priors']['a']
@@ -113,9 +127,6 @@ def main(input_dict, mode=None):
         '''
         users_context = models.generate_true_dataset(context_vars, user_count, input_dict['dist_of_context'])
 
-        #bandit_model1.apply_policy(users_context, mean_pre, cov_pre, a_pre, b_pre, noise_stats)
-
-
         thompson_output = thompson.apply_thompson_sampling(users_context,
                                                     experiment_vars,
                                                     bandit_arms,
@@ -130,7 +141,6 @@ def main(input_dict, mode=None):
                                                     noise_stats)
         #policies.append(['Thompson Sampling'])
         regrets += thompson_output[2]
-        
         save_regret_thompson_df = pd.concat([save_regret_thompson_df,
                                     pd.DataFrame(thompson_output[2])],
                                     ignore_index=True, axis=1)
@@ -152,8 +162,6 @@ def main(input_dict, mode=None):
 
         mse_per_sim = np.power(np.array(np.array(thompson_output[5]) -
                                 np.array(true_params_in_hypo)),2)
-        print(len(mse_per_sim))
-        print("-------------------------------------")
         mse += mse_per_sim
         mse_per_sim_df = pd.DataFrame(mse_per_sim)
         mse_per_sim_df.columns = pd.MultiIndex.from_product([
@@ -182,8 +190,6 @@ def main(input_dict, mode=None):
             # Bias(A1) = E(A1) - (B1 + B2/2)
             # shouldn't this just be done once? same with true_params_in_hypo?
             #true_coeff_list_main = make_true_coeff_list(true_params_in_hypo, true_coeff, expected_vals)
-            #the next line should be fixed and generalized! NOTEEEE
-            bias_in_coeff_per_sim = np.array(np.array(thompson_output[5]) - np.array(true_params_in_hypo))
             true_coeff_list_main = [true_coeff_list[0], true_coeff_list[1] + true_coeff_list[2]/2]
 
 
