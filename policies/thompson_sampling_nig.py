@@ -81,7 +81,10 @@ def draw_posterior_sample(hypo_model_params, mean, cov, a, b):
     var_draw = invgamma.rvs(a, 0, b, size = 1)
 
     # Coeffecients from multivariate normal 
-    beta_draw = np.random.multivariate_normal(mean, var_draw*cov)
+    cholesky_decomposition = np.linalg.cholesky(cov)
+    standard_rand = np.random.standard_normal(len(cov))
+    beta_draw = mean + np.dot(cholesky_decomposition, standard_rand)
+    #beta_draw = np.random.multivariate_normal(mean, var_draw*cov)
     beta_draw = {hypo_model_params[i]:beta_draw[i] for i in range(0,len(hypo_model_params))}
 
     return beta_draw

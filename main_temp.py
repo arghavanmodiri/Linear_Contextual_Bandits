@@ -111,7 +111,7 @@ def main(input_dict, mode=None):
         # Add Random Policy
 
 
-    all_hypo_params_all_models = {}
+    all_hypo_params_all_models = true_coeff
     regrets_all_users = []
     regrets_std_all_users = []
 
@@ -144,6 +144,7 @@ def main(input_dict, mode=None):
 
     if rand_sampling_applied==True:
         regrets_all_users.append(random_model.get_regret_average())
+        regrets_std_all_users.append(random_model.get_regret_std())
         policies.append('Random Sampling')
         regrets_avg_quarters.append([round(sum(regrets_all_users[-1][:users_quarter]) / users_quarter, 2) ,
                                     round(sum(regrets_all_users[-1][users_quarter:2*users_quarter]) / users_quarter, 2),
@@ -157,7 +158,10 @@ def main(input_dict, mode=None):
     #############################################################
     #       Creating tables to report regret and coeff          #
     #############################################################
-    strTable ="<html><link rel='stylesheet' type='text/css' href='../../mystyle.css'>"
+    strTable ="<html><head><style>table {width: 50%;}th {height: 50px;\
+                }th {background-color: navy;color: white;}\
+                tr:nth-child(even) {background-color: #f2f2f2;}</style>"
+
     strTable = strTable+"<h1>Regret</h1>"
     strTable = strTable+     "<table>\
             <tr>\
