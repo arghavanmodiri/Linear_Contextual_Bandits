@@ -357,6 +357,16 @@
             "msg-diamante-adaptive-self-efficacy*msg-diamante-feedback-steps-encourage"
             ],
             ["intercept",
+            "time-09:00:00-11:30:00",
+            "time-11:30:00-14:00:00",
+            "time-14:00:00-16:30:00",
+            "msg-diamante-adaptive-benefit",
+            "msg-diamante-adaptive-opportunity",
+            "msg-diamante-adaptive-self-efficacy",
+            "msg-diamante-feedback-relative",
+            "msg-diamante-feedback-relative-steps",
+            "msg-diamante-feedback-steps",
+            "msg-diamante-feedback-steps-encourage"
             "age",
             "age*time-09:00:00-11:30:00",
             "age*time-11:30:00-14:00:00",
