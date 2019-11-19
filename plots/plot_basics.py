@@ -114,7 +114,7 @@ def plot_optimal_action_ratio(user_count, policy_names,
             plt.plot(batchItter, optimal_action_ratio_batch, label = policy)
         plt.xlabel('Batch Iterations', fontsize = 18)
 
-    plt.legend(loc='upper left', fontsize = 12)
+    plt.legend(loc='upper left', fontsize = 12, bbox_to_anchor=(0.5, -0.05))
     plt.ylabel('Proportion of Optimal Action Assignment', fontsize = 12)
     plt.title('Proportion of Optimal Action at Each Itteration\n '
                 '(Simulations = {sims}, Batch Size={batches})'.format(sims=

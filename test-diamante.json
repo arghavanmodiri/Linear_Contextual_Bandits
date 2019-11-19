@@ -1102,9 +1102,9 @@
                             [1, 0, 0, 1, 0, 0, 0, 1, 0, 0 ],
                             [1, 0, 0, 1, 0, 0, 1, 0, 0, 0 ]
         ],
-        "user_count": 1000,
+        "user_count": 3000,
         "batch_size": 10,
-        "simulation_count": 50,
+        "simulation_count": 300,
         "extensive": true,
         "rand_sampling_applied": true,
         "show_fig": true,
