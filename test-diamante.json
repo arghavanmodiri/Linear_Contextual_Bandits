@@ -1104,7 +1104,7 @@
         ],
         "user_count": 3000,
         "batch_size": 10,
-        "simulation_count": 300,
+        "simulation_count": 200,
         "extensive": true,
         "rand_sampling_applied": true,
         "show_fig": true,

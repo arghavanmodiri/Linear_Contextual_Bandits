@@ -7,8 +7,8 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 logging.basicConfig(format='%(message)s')
 
-def calculate_posteriors_lasso(dependant_var, regressors, tau, mean_pre, cov_pre,
-                                a_pre,b_pre):
+def calculate_posteriors_lasso(dependant_var, regressors, mean_pre, cov_pre,
+                                a_pre,b_pre, hypo_params):
     """
     Calculate the posterior probablibity after observing the true donation by
     appliying applied_arm to user with user_context value and assuming prior
@@ -35,35 +35,25 @@ def calculate_posteriors_lasso(dependant_var, regressors, tau, mean_pre, cov_pre
 
     #resid = np.subtract(dependant_var, np.dot(regressors,mean_pre))
     #resid_trans = np.matrix.transpose(resid)
+    
+    beta_pre = list(draw_posterior_sample_lasso(hypo_params, mean_pre, cov_pre, a_pre, b_pre))
+    beta_pre_trans = np.matrix.transpose(beta_pre)
 
-    D = np.diag(tau)
-    A = np.dot(regressors_trans, regressors) + np.linalg.inv(D)
-    mean_post = np.dot(np.linalg.inv(A), np.dot(regressors_trans, dependant_var))
-    cov_post = 
+    a = (len(regressors) + len(regressors[0]) - 1)/2
 
+    b = np.dot(np.dot(beta_pre_trans, cov), beta_pre)/2
+    resid = np.subtract(dependant_var, np.dot(regressors,beta_pre))
+    resid_trans = np.matrix.transpose(resid)
+    b = b + np.dot(resid_trans, resid)/2
 
-    # N x N middle term for gamma update: (I + XVX')^{-1}
-    mid_term = np.linalg.inv(np.add(np.identity(data_size), np.dot(np.dot(regressors, cov_pre),regressors_trans)))
-
-    ## Update coeffecients priors
-
-    # Update mean vector: [(V^{-1} + X'X)^{-1}][V^{-1}mu + X'y]
-    mean_post = np.dot(np.linalg.inv(np.add(np.linalg.inv(cov_pre), np.dot(
-        regressors_trans,regressors))), np.add(np.dot(np.linalg.inv(cov_pre),
-        mean_pre), np.dot(regressors_trans,dependant_var)))
-    #logging.info("mean_post: \n{}".format(mean_post))
-    # Update covariance matrix: (V^{-1} + X'X)^{-1}
-    cov_post = np.linalg.inv(np.add(np.linalg.inv(cov_pre), np.dot(
-            regressors_trans,regressors)))
-    #logging.info("cov_post: \n{}".format(cov_post))
-
-    ## Update precesion prior
-
-    # Update gamma parameters: a + n/2 (shape parameter)
-    a_post = a_pre + data_size/2
+    A = np.dot(regressors_trans, regressors) + np.linalg.inv(cov_pre)
+    B = np.dot(regressors_trans, dependant_var) + np.linalg.inv(cov_pre)*mean_pre
+    cov_post = np.linalg.inv(A)
+    mean_post = np.dot(cov_post, B)
 
     # b + (1/2)(y - Xmu)'(I + XVX')^{-1}(y - Xmu) (scale parameter)
     b_post = b_pre + (np.dot(np.dot(resid_trans, mid_term), resid))/2
+
 
 
     return [a_post, b_post, cov_post, mean_post]
@@ -87,7 +77,7 @@ def draw_posterior_sample_lasso(hypo_model_params, mean, cov, a, b):
     var_draw = invgamma.rvs(a, 0, b, size = 1)
 
     # Coeffecients from multivariate normal 
-    cholesky_decomposition = np.linalg.cholesky(cov)
+    cholesky_decomposition = np.linalg.cholesky(var_draw*cov)
     standard_rand = np.random.standard_normal(len(cov))
     beta_draw = mean + np.dot(cholesky_decomposition, standard_rand)
     #beta_draw = np.random.multivariate_normal(mean, var_draw*cov)
