@@ -191,17 +191,33 @@ def generate_true_dataset(context_vars, user_count, dist_of_context, write_to_fi
     """
     users_list = [{} for i in range(user_count)]
     for context in context_vars:
-        dist = dist_of_context[context]  # Gets the distribution associated with a given context variable
-        if dist[0] == 'bin':
-            context_array = np.random.choice(2, user_count, p=[dist[1], dist[2]] )  # Sample binary outcomes with specified probabilities
-        elif dist[0] == 'norm':
-            context_array = np.random.normal(loc=dist[1], scale=dist[2], size=user_count)
-        elif dist[0] == "beta":
-            context_array = np.random.beta(a=dist[1], b=dist[2], size=user_count)
-        else:   # Default to binary with 50/50 dist
-            context_array = np.random.choice(2, user_count)
-        for i in range(0, user_count):
-            users_list[i].update({context: context_array[i]})
+        if type(context) == list:
+            group_context = "&".join(context)
+            dist = dist_of_context[group_context]
+            context_array = np.zeros([user_count, len(context)], dtype=int)
+            if dist[0] == 'uniform':
+                pick_from_group = np.random.choice(len(context), user_count)
+            if dist[0] == 'uniform_or_no':
+                pick_from_group = np.random.choice(len(context)+1, user_count)
+            for i in range(user_count):
+                if pick_from_group[i] < len(context):
+                    context_array[i,pick_from_group[i]] = 1
+            for i in range(0, user_count):
+                for j in range(0, len(context)):
+                    users_list[i].update({context[j]: context_array[i][j]})
+        else:
+            dist = dist_of_context[context]  # Gets the distribution associated with a given context variable
+            if dist[0] == 'bin':
+                context_array = np.random.choice(2, user_count, p=[dist[1], dist[2]] )  # Sample binary outcomes with specified probabilities
+            elif dist[0] == 'norm':
+                context_array = np.random.normal(loc=dist[1], scale=dist[2], size=user_count)
+            elif dist[0] == "beta":
+                context_array = np.random.beta(a=dist[1], b=dist[2], size=user_count)
+            else:   # Default to binary with 50/50 dist
+                context_array = np.random.choice(2, user_count)
+
+            for i in range(0, user_count):
+                users_list[i].update({context: context_array[i]})
     return np.asarray(users_list)
 
 
