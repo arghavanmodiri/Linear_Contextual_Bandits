@@ -29,7 +29,8 @@
                 "motivationMsg3*neighbourhood": 0,
                 "motivationMsg3*social_relation": 0
                 },
-          "context_vars": ["gender", "percentageGoal", "neighbourhood", "social_relation"],
+          "context_vars": ["gender", "percentageGoal", "neighbourhood", "social_relation", ["day_sat", "day_sun", "day_mon", "day_tue", "day_thu","day_fri"],
+                "day_weekend"],
           "experiment_vars": ["motivationMsg1", "motivationMsg2", "motivationMsg3", "feedbackMsg1", "feedbackMsg2", "feedbackMsg3", "feedbackMsg4"]
         },
         "hypo_model_names":
@@ -71,12 +72,12 @@
                               [0, 0, 0, 0, 1, 0, 0],
                               [0, 0, 0, 0, 0, 1, 0],
                               [0, 0, 0, 0, 0, 0, 1]],
-        "user_count": 1000,
+        "user_count": 100,
         "batch_size": 10,
-        "simulation_count": 400,
+        "simulation_count": 4,
         "extensive": true,
         "rand_sampling_applied": false,
-        "show_fig": true,
+        "show_fig": false,
         "NIG_priors":
         {
           "a": 1,
@@ -87,7 +88,9 @@
           "gender": ["bin", 0.5, 0.5],
           "percentageGoal": ["bin", 0.5, 0.5],
           "neighbourhood":  ["bin", 0.5, 0.5],
-          "social_relation": ["bin", 0.5, 0.5]
+          "social_relation": ["bin", 0.5, 0.5],
+          "day_sat&day_sun&day_mon&day_tue&day_thu&day_fri": ["uniform_or_no"],
+          "day_weekend" : []
         },
         "output_path": "arbitrary_path",
         "num_cores": 8

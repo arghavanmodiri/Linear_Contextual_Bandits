@@ -191,10 +191,14 @@ def generate_true_dataset(context_vars, user_count, dist_of_context, write_to_fi
     """
     users_list = [{} for i in range(user_count)]
     for context in context_vars:
-        if type(context) == list:
+
+        if context == 'day_weekend': #hacky way for this variable!!!
+            continue
+        elif type(context) == list:
             group_context = "&".join(context)
             dist = dist_of_context[group_context]
             context_array = np.zeros([user_count, len(context)], dtype=int)
+            day_weekend = np.zeros(user_count, dtype=int) #hacky way for this variable!!!
             if dist[0] == 'uniform':
                 pick_from_group = np.random.choice(len(context), user_count)
             if dist[0] == 'uniform_or_no':
@@ -202,9 +206,14 @@ def generate_true_dataset(context_vars, user_count, dist_of_context, write_to_fi
             for i in range(user_count):
                 if pick_from_group[i] < len(context):
                     context_array[i,pick_from_group[i]] = 1
+                    #hacky way for this variable!!!
+                    if context[pick_from_group[i]] == 'day_sat' or context[pick_from_group[i]] == 'day_sun':
+                        day_weekend[i] = 1
+                        
             for i in range(0, user_count):
                 for j in range(0, len(context)):
                     users_list[i].update({context[j]: context_array[i][j]})
+                users_list[i].update({'day_weekend': day_weekend[i]}) #hacky way for this variable!!!
         else:
             dist = dist_of_context[context]  # Gets the distribution associated with a given context variable
             if dist[0] == 'bin':

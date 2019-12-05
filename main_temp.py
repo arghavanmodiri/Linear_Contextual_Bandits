@@ -22,7 +22,7 @@ TODAY = date.today()
 NOW = datetime.now()
 
 
-
+pd.set_option('display.max_columns', 30)
 def main(input_dict, mode=None):
     """start the model"""
 
@@ -64,7 +64,6 @@ def main(input_dict, mode=None):
     save_bias_in_coeff_random_df = pd.DataFrame()
     save_regret_random_df = pd.DataFrame()
     save_suboptimal_action_ratio_group_random_df = pd.DataFrame()
-    save_context_action_df = pd.DataFrame()
 
     bandit_models = []
     for idx in range(len(hypo_params_all_models)):
@@ -86,11 +85,6 @@ def main(input_dict, mode=None):
         #cov_pre = np.identity(len(hypo_params))
 
         users_context = models.generate_true_dataset(context_vars, user_count, input_dict['dist_of_context'])
-        users_context_df = pd.DataFrame(list(users_context))
-        users_context_df.columns = pd.MultiIndex.from_product([
-                [sim], users_context_df.columns])
-        save_context_action_df = pd.concat([save_context_action_df,
-                                            users_context_df], axis=1)
 
         #Step 3: Calls the sampling policy to select action for each user
         for idx in range(len(hypo_params_all_models)):
@@ -109,7 +103,6 @@ def main(input_dict, mode=None):
         #Bias Correction
 
         # Add Random Policy
-
 
     all_hypo_params_all_models = true_coeff
     regrets_all_users = []
@@ -286,19 +279,20 @@ def main(input_dict, mode=None):
         bplots.plot_hypo_regression_param(user_count, policy_names, param_name,
                     param, true_coeff[param_name], simulation_count, batch_size)
     '''
-    plt.show()
+    if show_fig:
+        plt.show()
 
 
     #############################################################
     #                 Saving results in csv files               #
     #############################################################
     for idx in range(len(bandit_models)):
+        bandit_models[idx].get_selected_action().to_csv('{}context_action_thompson_{}.csv'.format(
+                                save_output_folder,policies[idx]), index_label='iteration')
         bandit_models[idx].get_regret().to_csv('{}regrets_thompson_{}.csv'.format(
                                 save_output_folder,policies[idx]), index_label='iteration')
         bandit_models[idx].get_optimal_action_ratio().to_csv('{}optimal_action_ratio_thompson_{}.csv'.format(
                                 save_output_folder,policies[idx]), index_label='iteration')
-        save_context_action_df.to_csv('{}context_action.csv'.format(
-                                save_output_folder), index_label='iteration')
 
     if rand_sampling_applied==True:
         random_model.get_regret().to_csv('{}regrets_random_sampling.csv'.format(

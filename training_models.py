@@ -25,6 +25,7 @@ class training_bandit_model(object):
         self.hypo_params = hypo_params
         self.cumulative_regret = np.zeros(user_count)
         self.save_regret_df = pd.DataFrame()
+        self.save_context_selected_action_df = pd.DataFrame()
         self.save_optimal_action_ratio_df = pd.DataFrame()
         
         if hypo_params != None:
@@ -50,7 +51,9 @@ class training_bandit_model(object):
                                                     b_pre,
                                                     noise_stats)
 
+        #Note: thompson_output[1] is the selected action by TS from possible_actions list
         self.save_regret(thompson_output[2])
+        self.save_context_selected_action(users_context, thompson_output[1])
         self.save_optimal_action_ratio(thompson_output[1], thompson_output[0])
         self.save_beta_thompson_coeffs_sum(thompson_output[5])
 
@@ -98,6 +101,16 @@ class training_bandit_model(object):
                                             pd.DataFrame(new_regret)],
                                             ignore_index=True, axis=1)
 
+    def save_context_selected_action(self, user_context, selected_action_per_sim):
+        simulation_count = self.save_regret_df.shape[1]
+        users_context_df = pd.DataFrame(list(user_context))
+        users_context_df.insert(0, 'simulation_number', simulation_count)
+        selected_action_per_sim_df = pd.DataFrame(selected_action_per_sim)
+        selected_action_per_sim_df.columns = self.experiment_vars
+        temp_df = pd.concat([users_context_df, selected_action_per_sim_df], axis=1)
+        self.save_context_selected_action_df = pd.concat([self.save_context_selected_action_df,
+                                            temp_df])
+
 
     def save_optimal_action_ratio(self, hypo_optimal_action, true_optimal_action):
         optimal_action_ratio_per_sim = np.array(list((hypo_optimal_action[i] in
@@ -136,6 +149,9 @@ class training_bandit_model(object):
 
     def get_regret(self):
         return self.save_regret_df
+
+    def get_selected_action(self):
+        return self.save_context_selected_action_df
 
     def get_optimal_action_ratio(self):
         return self.save_optimal_action_ratio_df
