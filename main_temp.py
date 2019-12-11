@@ -23,7 +23,7 @@ NOW = datetime.now()
 
 
 pd.set_option('display.max_columns', 30)
-def main(input_dict, mode=None):
+def main(input_dict, sim_name='test.json', mode=None):
     """start the model"""
 
     logging.getLogger().setLevel(logging.INFO)
@@ -77,7 +77,8 @@ def main(input_dict, mode=None):
                     extensive)
 
     for sim in range(0, simulation_count):
-        logging.info("sim: {}".format(sim))
+        logging.info("{}, sim: {}   - Time: {}".format(sim_name, sim,
+                datetime.now()))
         a_pre = input_dict['NIG_priors']['a']
         b_pre = input_dict['NIG_priors']['b']
         #Hammad: Bias Correction
@@ -318,5 +319,5 @@ if __name__ == "__main__":
 
     input_data = args.input_file[0]
     input_data = json.load(open(input_data))
-    main(input_data)
+    main(input_data, sim_name=str(args.input_file[0]))
 
