@@ -31,19 +31,29 @@ def main(input_dict, sim_name='test.json', mode=None):
 
     ## Setting the true model parameters and the enviromental parameters
     true_model_params = input_dict['true_model_params']
-    bandit_arms = input_dict['possible_actions']
-    noise_stats = true_model_params['noise']
     true_coeff = true_model_params['true_coeff']
     true_coeff_list = list(true_coeff.values())
-    context_vars = np.array(true_model_params['context_vars'])
-    experiment_vars = np.array(true_model_params['experiment_vars'])
+    noise_stats = true_model_params['noise']
     logging.info(true_coeff_list)
+    try:
+        data = pd.read_csv(true_model_params['context_csv']) 
+        user_count = data.shape[0]
+        context_vars = data.columns
+        logging.info("context_vars : {}".format(context_vars))
+        input_context_type = "from_csv"
+    except KeyError:
+        logging.info("input_csv is not available. Trying to generate data.")
+        context_vars = np.array(true_model_params['context_vars'])
+        user_count = input_dict['user_count']
+        input_context_type = "simulated"
+
+    bandit_arms = input_dict['possible_actions']
+    experiment_vars = np.array(true_model_params['experiment_vars'])
 
     ## Setting the training mode (hypo model) parameters
     policies = input_dict['hypo_model_names']
     hypo_params_all_models = input_dict['hypo_model_params']
     ## Setting the simulation parameters
-    user_count = input_dict['user_count']
     batch_size = input_dict['batch_size'] # 10
     simulation_count = input_dict['simulation_count']  # 2500
     extensive = input_dict['extensive']
@@ -85,7 +95,13 @@ def main(input_dict, sim_name='test.json', mode=None):
         #mean_pre = np.zeros(len(hypo_params))
         #cov_pre = np.identity(len(hypo_params))
 
-        users_context = models.generate_true_dataset(context_vars, user_count, input_dict['dist_of_context'])
+        if input_context_type == 'simulated':
+            users_context = models.generate_true_dataset(context_vars,
+                user_count, input_dict['dist_of_context'])
+            print(users_context)
+        else:
+            users_context = data
+            print(users_context)
 
         #Step 3: Calls the sampling policy to select action for each user
         for idx in range(len(hypo_params_all_models)):

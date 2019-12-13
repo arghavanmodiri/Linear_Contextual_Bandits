@@ -18,7 +18,7 @@ class training_bandit_model(object):
         
         self.user_count = user_count
         self.batch_size = batch_size
-        self.experiment_vars = experiment_vars    
+        self.experiment_vars = experiment_vars
         self.true_coeff = true_coeff
         self.extensive = extensive
         self.bandit_arms = bandit_arms
@@ -44,7 +44,6 @@ class training_bandit_model(object):
                                                     self.hypo_params,
                                                     self.true_coeff,
                                                     self.batch_size,
-                                                    self.extensive,
                                                     mean_pre,
                                                     cov_pre,
                                                     a_pre,
@@ -72,10 +71,10 @@ class training_bandit_model(object):
         true_optimal_action_all = []
         for user in range(self.user_count):
             true_optimal_action = making_decision.pick_true_optimal_arm(
-                                                            self.true_coeff,
-                                                            users_context[user],
-                                                            self.experiment_vars,
-                                                            self.bandit_arms)
+                                                    self.true_coeff,
+                                                    users_context.iloc[user],
+                                                    self.experiment_vars,
+                                                    self.bandit_arms)
             true_optimal_action_all.append(true_optimal_action[0])
         self.save_optimal_action_ratio(rand_output[1], true_optimal_action_all)
 

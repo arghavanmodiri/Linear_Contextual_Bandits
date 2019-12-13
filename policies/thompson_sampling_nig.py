@@ -90,29 +90,38 @@ def draw_posterior_sample(hypo_model_params, mean, cov, a, b):
     return beta_draw
 
 
-def apply_thompson_sampling(user_context, experiment_vars, bandit_arms, hypo_model_params, true_coeff,
-                            batch_size, extensive, mean_pre, cov_pre,
-                            a_pre,b_pre, noise_stats):
+def apply_thompson_sampling(user_context,
+                            experiment_vars,
+                            bandit_arms,
+                            hypo_model_params,
+                            true_coeff,
+                            batch_size,
+                            mean_pre,
+                            cov_pre,
+                            a_pre,
+                            b_pre,
+                            noise_stats):
     """
     Apply thompson sampling on the input dataset at each batch and calculate
     regret/reward of the selected option.
 
     Args:
-        donations (ndarray): 1D array containing the true donations
-        user_context (ndarray): 2D array containing user contextual values
-        bandit_arms (ndarray): 2D array containing all arms
+        user_context (dataframe): containing user contextual values
+        experiment_vars(ndarray): 1D array containing the name of variables
+        bandit_arms (list): list containing values of arms
+        hypo_model_params(list): containing all parameters of hypo model
+        true_coeff(dict): containing all parameters and values of true model
         batch_size (int): size of each batch for thompson sampling iteration
-        extensive (bool): if True, all the details will be saved in a file
         mean_pre (ndarray): 1D array containing mean of NIG priors.
         cov_pre (ndarray): 2D array containing covariance of NIG priors.
-        a_pre (ndarray): shape of inverse-gamma distribution
-        b_pre (ndarray): scale of inverse-gamma distribution
+        a_pre (int): shape of inverse-gamma distribution
+        b_pre (int): scale of inverse-gamma distribution
+        noise_stats(dict): in the format of {'noise_mean': 0, 'noise_std': 1}
 
     Returns:
         list: calculated regret for each user
     """
     user_count = user_context.shape[0]
-    #print("in sampling,user_count: ", user_count)
     batch_count = int(user_count/batch_size)
     start_batch = 0
     end_batch = batch_size
@@ -144,31 +153,31 @@ def apply_thompson_sampling(user_context, experiment_vars, bandit_arms, hypo_mod
             beta_thompson_all.append(beta_thompson)
 
             hypo_optimal_action = making_decision.pick_hypo_optimal_arm(
-                                                        beta_thompson,
-                                                        user_context[user],
-                                                        experiment_vars,
-                                                        bandit_arms)
+                                                    beta_thompson,
+                                                    user_context.iloc[user],
+                                                    experiment_vars,
+                                                    bandit_arms)
             received_reward = models.true_model_output(true_coeff,
-                                                        experiment_vars,
-                                                        user_context[user],
-                                                        hypo_optimal_action[0],
-                                                        noise_stats)
+                                                    experiment_vars,
+                                                    user_context.iloc[user],
+                                                    hypo_optimal_action[0],
+                                                    noise_stats)
             received_reward_no_noise = models.true_model_output(true_coeff,
-                                                        experiment_vars,
-                                                        user_context[user],
-                                                        hypo_optimal_action[0],
-                                                        {"noise_mean": 0,
-                                                        "noise_std": 0.0})
+                                                    experiment_vars,
+                                                    user_context.iloc[user],
+                                                    hypo_optimal_action[0],
+                                                    {"noise_mean": 0,
+                                                    "noise_std": 0.0})
             true_optimal_action = making_decision.pick_true_optimal_arm(
-                                                        true_coeff,
-                                                        user_context[user],
-                                                        experiment_vars,
-                                                        bandit_arms)
+                                                    true_coeff,
+                                                    user_context.iloc[user],
+                                                    experiment_vars,
+                                                    bandit_arms)
             regret = making_decision.calculate_regret(true_optimal_action[1], 
                                                     received_reward_no_noise)
             X = models.calculate_hypo_regressors(hypo_model_params,
                                                 experiment_vars,
-                                                user_context[user],
+                                                user_context.iloc[user],
                                                 hypo_optimal_action[0])
 
             X_batch.append(X)

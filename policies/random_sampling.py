@@ -27,21 +27,21 @@ def apply_random_sampling(user_context, experiment_vars, bandit_arms,
 
         # Compute outcome (from true model) using action and context
         received_reward = models.true_model_output(true_coeff,
-                                                        experiment_vars,
-                                                        user_context[user],
-                                                        rand_action,
-                                                        noise_stats)
+                                                    experiment_vars,
+                                                    user_context.iloc[user],
+                                                    rand_action,
+                                                    noise_stats)
         received_reward_no_noise = models.true_model_output(true_coeff,
-                                                        experiment_vars,
-                                                        user_context[user],
-                                                        rand_action,
-                                                        {"noise_mean": 0,
-                                                        "noise_std": 0.0})
+                                                    experiment_vars,
+                                                    user_context.iloc[user],
+                                                    rand_action,
+                                                    {"noise_mean": 0,
+                                                    "noise_std": 0.0})
         true_optimal_action = making_decision.pick_true_optimal_arm(
-                                                        true_coeff,
-                                                        user_context[user],
-                                                        experiment_vars,
-                                                        bandit_arms)
+                                                    true_coeff,
+                                                    user_context.iloc[user],
+                                                    experiment_vars,
+                                                    bandit_arms)
         # Update outcomes list
         received_reward_all.append(received_reward)
 

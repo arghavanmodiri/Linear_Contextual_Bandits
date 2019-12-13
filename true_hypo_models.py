@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import numpy.random as nprnd
 
 def read_true_model(true_model_params_file='True_Model_Coefficients.csv'):
@@ -144,7 +145,7 @@ def hypo_model_output(estimated_coeff, experiment_vars, user_context,
     Calculates the estimated donation for the specified user and arm
 
     Args:
-        estimated_coeff (ndarray): 1D array containing the estimated coeff
+        estimated_coeff (dict): estimated coeff for each hypo param
         bandit_arm (ndarray): 1D array containing the applied arm
         noise_mean (float): mean of the white noise in true model
         noise_std (float): std of the white noise in true model
@@ -190,8 +191,8 @@ def generate_true_dataset(context_vars, user_count, dist_of_context, write_to_fi
         users_list (ndarray): 1D array of dictionaries
     """
     users_list = [{} for i in range(user_count)]
+    users_context_df = pd.DataFrame()
     for context in context_vars:
-
         if context == 'day_weekend': #hacky way for this variable!!!
             continue
         elif type(context) == list:
@@ -209,11 +210,16 @@ def generate_true_dataset(context_vars, user_count, dist_of_context, write_to_fi
                     #hacky way for this variable!!!
                     if context[pick_from_group[i]] == 'day_sat' or context[pick_from_group[i]] == 'day_sun':
                         day_weekend[i] = 1
-                        
+            '''
             for i in range(0, user_count):
                 for j in range(0, len(context)):
                     users_list[i].update({context[j]: context_array[i][j]})
-                users_list[i].update({'day_weekend': day_weekend[i]}) #hacky way for this variable!!!
+                users_list[i].update({'day_weekend': day_weekend[i]}) #hacky way for this variable!!
+            '''
+            context_df = pd.DataFrame(context_array)
+            context_df.columns = context
+            users_context_df =pd.concat([users_context_df, context_df], axis=1)
+            users_context_df['day_weekend'] = day_weekend
         else:
             dist = dist_of_context[context]  # Gets the distribution associated with a given context variable
             if dist[0] == 'bin':
@@ -224,10 +230,14 @@ def generate_true_dataset(context_vars, user_count, dist_of_context, write_to_fi
                 context_array = np.random.beta(a=dist[1], b=dist[2], size=user_count)
             else:   # Default to binary with 50/50 dist
                 context_array = np.random.choice(2, user_count)
-
+            '''
             for i in range(0, user_count):
                 users_list[i].update({context: context_array[i]})
-    return np.asarray(users_list)
+            '''
+            users_context_df[context] = context_array
+
+    #return np.asarray(users_list)
+    return users_context_df
 
 
 # def generate_true_dataset(context_vars, user_count, is_binary_context=[], user_dist=[],

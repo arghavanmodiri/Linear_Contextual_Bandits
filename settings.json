@@ -1,0 +1,37 @@
+{
+        "true_model_params":
+        {
+          "noise":
+              {
+                "noise_mean": 0,
+                "noise_std": 1
+              },
+          "true_coeff":
+              {
+                "intercept": 0,
+                "age":0.3,
+                "age*gender": -0.6,
+                "age*motivationMsg1":1
+              },
+          "context_csv" : "input_files/test1.csv",
+          "experiment_vars": ["motivationMsg1", "motivationMsg2", "motivationMsg3"]
+        },
+        "hypo_model_names":["policy1"],
+        "hypo_model_params":
+        [
+          ["intercept", "age", "gender", "age*gender", "x3*motivationMsg1"]
+        ],
+        "possible_actions": [[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]],
+        "batch_size": 1,
+        "simulation_count": 2,
+        "extensive": true,
+        "rand_sampling_applied": true,
+        "show_fig": true,
+        "NIG_priors":
+        {
+          "a": 1,
+          "b": 1
+        },
+        "output_path": "arbitrary_path",
+        "num_cores": 8
+    }
