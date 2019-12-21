@@ -1,5 +1,6 @@
 import numpy as np
-import true_hypo_models as models
+import pandas as pd
+import diamante.diamante_true_hypo_models as dmodels
 import making_decision
 from scipy.stats import invgamma
 import logging
@@ -26,19 +27,22 @@ def calculate_posteriors_nig(dependant_var, regressors, mean_pre, cov_pre,
     Returns:
         list: containing [mean,cov,a,b] of posteriors distribution
     """
-
+    print("dependant_var")
+    print(dependant_var)
+    print("regressors")
+    print(regressors)
     data_size = len(dependant_var)
 
     # X transpose
-
-    regressors_trans = np.matrix.transpose(regressors)
-    print("**********************************")
-    print(regressors)
-
-    resid = np.subtract(dependant_var, np.dot(regressors,mean_pre))
-    resid_trans = np.matrix.transpose(resid)
+    regressors_trans = regressors.T
+    resid = dependant_var - regressors.dot(mean_pre)
+    resid_trans = resid.T
 
     # N x N middle term for gamma update: (I + XVX')^{-1}
+    print("************")
+    print(np.add(np.identity(data_size), np.dot(np.dot(regressors, cov_pre),regressors_trans)))
+    print(type((np.add(np.identity(data_size), np.dot(np.dot(regressors, cov_pre),regressors_trans)))[0,0]))
+    print("************")
     mid_term = np.linalg.inv(np.add(np.identity(data_size), np.dot(np.dot(regressors, cov_pre),regressors_trans)))
 
     ## Update coeffecients priors
@@ -60,7 +64,6 @@ def calculate_posteriors_nig(dependant_var, regressors, mean_pre, cov_pre,
 
     # b + (1/2)(y - Xmu)'(I + XVX')^{-1}(y - Xmu) (scale parameter)
     b_post = b_pre + (np.dot(np.dot(resid_trans, mid_term), resid))/2
-
 
     return [a_post, b_post, cov_post, mean_post]
 
@@ -97,7 +100,8 @@ def apply_thompson_sampling(user_context,
                             bandit_arms,
                             hypo_model_params,
                             true_coeff,
-                            batch_size,
+                            batch_day,
+                            day_count,
                             mean_pre,
                             cov_pre,
                             a_pre,
@@ -123,12 +127,13 @@ def apply_thompson_sampling(user_context,
     Returns:
         list: calculated regret for each user
     """
-    user_count = user_context.shape[0]
-    batch_count = int(user_count/batch_size)
-    start_batch = 0
-    end_batch = batch_size
-    dependant_var = np.zeros(batch_size)
-    X_pre = np.zeros([batch_size,len(hypo_model_params)])
+
+    #user_count = user_context.shape[0]
+    #batch_count = int(user_count/batch_size)
+    #start_batch = 0
+    #end_batch = batch_size
+    #dependant_var = np.zeros(batch_size)
+    #X_pre = np.zeros([batch_size,len(hypo_model_params)])
 
     regret_all = []
     true_optimal_action_all = []
@@ -136,35 +141,30 @@ def apply_thompson_sampling(user_context,
     true_reward_all = []
     hypo_reward_all = []
     beta_thompson_all = []
+    y_batch = []
+    X_batch = pd.DataFrame()
 
-    for batch in range(0, batch_count):
-        X_batch = []
-        y_batch = []
+    for day in range(day_count):
 
-        thompson_dist = calculate_posteriors_nig(dependant_var,
-                            X_pre, mean_pre, cov_pre, a_pre,b_pre)
+        selected_arms = pd.DataFrame(columns=experiment_vars)
 
-        mean = thompson_dist[3]
-        cov = thompson_dist[2]
-        a = thompson_dist[0]
-        b = thompson_dist[1]
+        for user in range(user_context.shape[0]):
+            beta_thompson = draw_posterior_sample(hypo_model_params,mean_pre,
+                        cov_pre, a_pre, b_pre)
 
-        for user in range(start_batch, end_batch):
-            beta_thompson = draw_posterior_sample(hypo_model_params,mean, cov, a, b)
             #beta_thompson_all.append([beta_thompson[i] for i in beta_thompson.keys()])
             beta_thompson_all.append(beta_thompson)
-
             hypo_optimal_action = making_decision.pick_hypo_optimal_arm(
                                                     beta_thompson,
                                                     user_context.iloc[user],
                                                     experiment_vars,
                                                     bandit_arms)
-            received_reward = models.true_model_output(true_coeff,
+            received_reward = dmodels.true_model_output(true_coeff,
                                                     experiment_vars,
                                                     user_context.iloc[user],
                                                     hypo_optimal_action[0],
                                                     noise_stats)
-            received_reward_no_noise = models.true_model_output(true_coeff,
+            received_reward_no_noise = dmodels.true_model_output(true_coeff,
                                                     experiment_vars,
                                                     user_context.iloc[user],
                                                     hypo_optimal_action[0],
@@ -177,27 +177,38 @@ def apply_thompson_sampling(user_context,
                                                     bandit_arms)
             regret = making_decision.calculate_regret(true_optimal_action[1], 
                                                     received_reward_no_noise)
-            X = models.calculate_hypo_regressors(hypo_model_params,
-                                                experiment_vars,
-                                                user_context.iloc[user],
-                                                hypo_optimal_action[0])
+            selected_arm = pd.DataFrame([hypo_optimal_action[0]],
+                    columns=experiment_vars)
+            selected_arms = pd.concat([selected_arms, selected_arm],
+                    ignore_index = True)
 
-            X_batch.append(X)
-            y_batch.append(received_reward)
             regret_all.append(regret)
+            y_batch.append(received_reward)
             true_optimal_action_all.append(true_optimal_action[0])
             hypo_optimal_action_all.append(hypo_optimal_action[0])
             true_reward_all.append(received_reward)
             hypo_reward_all.append(hypo_optimal_action[1])
 
-        X_pre = np.array(X_batch)
-        dependant_var = np.array(y_batch)
-        mean_pre = mean
-        cov_pre = cov
-        a_pre = a
-        b_pre = b
-        start_batch = end_batch
-        end_batch = end_batch+batch_size
+        selected_arms.index = user_context.index
+        #update contextual variables
+        X = dmodels.calculate_hypo_regressors(hypo_model_params,
+                    pd.concat([user_context,selected_arms],axis=1))
+        X_batch = pd.concat([X_batch, X])
+
+        if day%batch_day == 0:
+
+            dependant_var = pd.Series(y_batch)
+            dependant_var.index = user_context.index
+
+            thompson_dist = calculate_posteriors_nig(dependant_var,
+                            X_batch, mean_pre, cov_pre, a_pre,b_pre)
+            mean_pre = thompson_dist[3]
+            cov_pre = thompson_dist[2]
+            a_pre = thompson_dist[0]
+            b_pre = thompson_dist[1]
+            y_batch = []
+            X_batch = pd.DataFrame()
+
 
     return [true_optimal_action_all, hypo_optimal_action_all, regret_all, true_reward_all, hypo_reward_all, beta_thompson_all]
 

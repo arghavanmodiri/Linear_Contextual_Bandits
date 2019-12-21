@@ -117,25 +117,24 @@ def true_model_output(true_coeff, experiment_vars, user_context, applied_arm,
     return dependant_var
 
 
-def calculate_hypo_regressors(hypo_model_params, experiment_vars, user_context,
-                                 applied_arm):
-    applied_arm_dict = {experiment_vars[i]:applied_arm[i] for i
-                        in range(0, len(applied_arm))}
-
-    user_params = {**user_context, **applied_arm_dict} 
-    X =[]
+def calculate_hypo_regressors(hypo_model_params, users_context_arm):
+    '''
+    user_context_arm (DataFrame): contains the context and applied arm for each
+    user
+    '''
+    X = pd.DataFrame(index=users_context_arm.index)
+    u_count = users_context_arm.shape[0]
     for param in hypo_model_params:
-        temp = 0
         if(param == 'intercept'):
-            temp = 1
+            temp = pd.DataFrame(1.0,columns=['intercept'],index=range(u_count))
+            temp.index = X.index
         elif('*' in param):
             interact_vars = param.split('*')
-            temp = 1
-            for var in interact_vars:
-                temp = temp * user_params[var]
+            #temp = users_context_arm.loc[:,interact_vars].prod(axis=1)
+            temp = pd.DataFrame(users_context_arm.loc[:,interact_vars].prod(axis=1),columns=[param])
         else:
-            temp = user_params[param]
-        X.append(temp)
+            temp = users_context_arm[param]
+        X = pd.concat([X, temp], axis=1)
 
     return X
 

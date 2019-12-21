@@ -33,6 +33,13 @@ Here is the list of the variables that specifies the design of the simulations.
   ```
   "possible_actions": [[0,0], [0,1], [1,0], [1,1]]
   ```
+#### Note about the simulator
+Using the code with the above settings will run the simulator such that it creates i.i.d. users based on the values of the contextual variables and their distribution.
+If you would like to run the code on your pre-created data, make sure they are stored in csv format. Pass them by defining context_csv variable. Example:
+```
+"context_csv" : "input_files/data.csv",
+```
+In this mode, the simulator will dismiss the values of context_vars and their distributions. It only uses the csv data and will not create any new simulated user.
 
 ### Adjusting Other Parameters
 The rest of the parameters such as number of users, batch_size, and etc. can be adjusted in test.json file.

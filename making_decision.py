@@ -19,7 +19,6 @@ def pick_hypo_optimal_arm(estimated_hypo_coeff, user_context, experiment_vars,
     """
     optimal_arm = []
     optimal_arm_est_output = -100000
-
     for arm in bandit_arms:
         temp_result = models.hypo_model_output(estimated_hypo_coeff, experiment_vars, user_context, arm)
         if( abs(temp_result-optimal_arm_est_output)<0.00000001):

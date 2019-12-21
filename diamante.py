@@ -13,10 +13,14 @@ import plots.plot_basics as bplots
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.formula.api as sm
+import diamante.diamante_true_hypo_models as dmodels
+import diamante.diamante_thompson_sampling_nig as dthompson
+from diamante.diamante_training_models import training_bandit_model as dtbm
 from shutil import copy2
 from datetime import date
 from datetime import datetime
 from training_models import training_bandit_model as tbm
+
 
 TODAY = date.today()
 NOW = datetime.now()
@@ -25,6 +29,9 @@ NOW = datetime.now()
 pd.set_option('display.max_columns', 30)
 def main(input_dict, sim_name='test.json', mode=None):
     """start the model"""
+    '''
+    This simulator is specifically designed for DIAMANTE study.
+    '''
 
     logging.getLogger().setLevel(logging.INFO)
     logging.basicConfig(format='%(message)s')
@@ -35,31 +42,43 @@ def main(input_dict, sim_name='test.json', mode=None):
     true_coeff_list = list(true_coeff.values())
     noise_stats = true_model_params['noise']
     logging.info(true_coeff_list)
-    try:
-        data = pd.read_csv(true_model_params['context_csv']) 
-        user_count = data.shape[0]
-        context_vars = data.columns
-        logging.info("context_vars : {}".format(context_vars))
-        input_context_type = "from_csv"
-    except KeyError:
-        logging.info("input_csv is not available. Trying to generate data.")
-        context_vars = np.array(true_model_params['context_vars'])
-        user_count = input_dict['user_count']
-        input_context_type = "simulated"
 
     bandit_arms = input_dict['possible_actions']
     experiment_vars = np.array(true_model_params['experiment_vars'])
+
+    data = pd.read_csv(true_model_params['base_input_csv'],
+                        index_col="Participant")
+
+    base_context = data.drop(experiment_vars, axis=1, inplace=False)
+    base_context = base_context[base_context['Reward'].isnull()]
+    base_context = base_context.groupby(level=0).last()
+    if (data.groupby(level=0).Date.count() - data.groupby(level=0).Date.nunique()).any() != 0:
+        raise Exception('Duplicate! Participant and Date should be unique.')
+    if base_context['Date'].nunique() != 1:
+        raise Exception('Last date for all participants must be the same.')
+    if base_context['day_sun'].nunique() != 1 or \
+        base_context['day_sat'].nunique() != 1 or \
+        base_context['day_mon'].nunique() != 1 or \
+        base_context['day_tue'].nunique() != 1 or \
+        base_context['day_wed'].nunique() != 1 or \
+        base_context['day_thu'].nunique() != 1 or \
+        base_context['day_fri'].nunique() != 1 :
+        raise Exception('Error in the name of the day.')
+    base_context.drop(['Reward'], axis=1, inplace=True)
+
+    user_count = data.index.nunique()
+    pre_train_data = data.dropna(inplace=False)
 
     ## Setting the training mode (hypo model) parameters
     policies = input_dict['hypo_model_names']
     hypo_params_all_models = input_dict['hypo_model_params']
     ## Setting the simulation parameters
-    batch_size = input_dict['batch_size'] # 10
+    batch_day = input_dict['ts_update_day_count']
+    days_count = input_dict['days_count']
     simulation_count = input_dict['simulation_count']  # 2500
     extensive = input_dict['extensive']
     rand_sampling_applied = input_dict['rand_sampling_applied']
     show_fig = input_dict['show_fig']
-
 
 
     save_optimal_action_ratio_thompson_df = pd.DataFrame()
@@ -78,34 +97,38 @@ def main(input_dict, sim_name='test.json', mode=None):
     bandit_models = []
     for idx in range(len(hypo_params_all_models)):
         bandit_models.append(
-                    tbm(user_count,
-                    batch_size, experiment_vars, bandit_arms, true_coeff,
+                    dtbm(user_count,
+                    batch_day, days_count, experiment_vars, bandit_arms, true_coeff,
                     extensive, hypo_params_all_models[idx]))
     if rand_sampling_applied==True:
         random_model = tbm(user_count,
-                    batch_size, experiment_vars, bandit_arms, true_coeff,
+                    batch_day*user_count, experiment_vars, bandit_arms, true_coeff,
                     extensive)
 
     for sim in range(0, simulation_count):
         logging.info("{}, sim: {}   - Time: {}".format(sim_name, sim,
                 datetime.now()))
+
         a_pre = input_dict['NIG_priors']['a']
         b_pre = input_dict['NIG_priors']['b']
-        #Hammad: Bias Correction
-        #mean_pre = np.zeros(len(hypo_params))
-        #cov_pre = np.identity(len(hypo_params))
 
-        if input_context_type == 'simulated':
-            users_context = models.generate_true_dataset(context_vars,
-                user_count, input_dict['dist_of_context'])
-            print(users_context)
-        else:
-            users_context = data
-            print(users_context)
-
+        users_context = base_context
         #Step 3: Calls the sampling policy to select action for each user
         for idx in range(len(hypo_params_all_models)):
-            bandit_models[idx].apply_thompson(users_context, a_pre, b_pre, noise_stats)
+            #pre train
+            mean_pre = np.zeros(len(hypo_params_all_models[idx]))
+            cov_pre = np.identity(len(hypo_params_all_models[idx]))
+
+            #select action for each user then observe reward
+            #then update the user context for next day
+            #update posterior at the end of the batch size
+            X = dmodels.calculate_hypo_regressors(hypo_params_all_models[idx],
+                                                pre_train_data)
+            [a_post, b_post, cov_post, mean_post] = dthompson.calculate_posteriors_nig(pre_train_data['Reward'],
+                                        X, mean_pre, cov_pre, a_pre,b_pre)
+
+            #action!
+            bandit_models[idx].apply_thompson(users_context, a_post, b_post, mean_post, cov_post, noise_stats)
 
         if rand_sampling_applied==True:
             random_model.apply_random(users_context, noise_stats)
