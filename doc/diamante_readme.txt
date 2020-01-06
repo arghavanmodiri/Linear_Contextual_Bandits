@@ -71,8 +71,22 @@ In JSON file, define:
 			[1, 0],
 			[1, 1]
 		]
-	- days_count:
-		
+	- days_count: number of days the data would be simulated
+		starting from the last date available in "base_input_csv" file, the data will be simulated up to "days_count" number of days
+	- simulation_count: the number of times the simulation will be run
+		each time, the simulation will start from scratch
+	- ts_update_day_count: basically the batch size, but day unit
+		so, if "ts_update_day_count": 1, it means the parameters of Thompson Sampling will get updated every day
+	
+	- rand_sampling_applied: if random sampling wants to be applied in parallel
+	- show_fig: figure will be plotted at the end if this parameter is set to True
+	- NIG_priors: hyper parameters of Thompson sampling
+		"NIG_priors":
+        {
+			"a": 1,
+			"b": 1
+        }
+	
 		
 	
 	
