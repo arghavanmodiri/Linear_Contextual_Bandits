@@ -86,6 +86,35 @@ In JSON file, define:
 			"a": 1,
 			"b": 1
         }
+
+In, input csv file:
+	- The columns of this file should match DIAMANTE or at least what you would like to deploy in DIAMANTE.
+	- Column called "Participant", is the unique ID of the users for simulation.
+		You can have multiple rows for a user which means there are different records for that user(record are stored per day basis)
+		The joint value of the columns "Participant" and "Date" should be unique in the csv file
+		The static features of a particular Participant should be the same in all rows available.
+			e.g. Participant's gender should not be different in two different records
+	- The features for each user should not be blank
+	- There are columns associated with action variables and Reward. these columns can be left blank.
+	- Those actions variables that are not blank will be used by the python code to train MAB model and to derive the values of a and b of
+		Thompson sampling.
+	- IMPORTANT: the latest date available in the csv file should be the same for all participants. For example:
+		if Participant A has record for 2019-01-02 to 2019-01-06, Participant B should also have date 2019-01-06 in its record.
+		Participant B can have records for any date prior to 2019-01-06, but cannot have records for after 2019-01-06.
+		In this case "2019-01-06", should be the last date for all participants.
+	- The MAB algorithm will find the the actions for each participant starting from the next day after the latest date 
+		For example:
+		in above example where last data was 2019-01-06, the algorithm start sending actions from date "2019-01-07" up to the number of days
+		provided in json file. The data prior to "2019-01-06", will be only used to calculate "week_steps", "yesterday_steps" and etc. of the
+		following date. For example, on "2019-01-07", the algorithm will look for record from "2019-01-01" to "2019-01-07" to calculate week_steps
+		(if this data is available).
+
+
+
+
+
+
+
 	
 		
 	
