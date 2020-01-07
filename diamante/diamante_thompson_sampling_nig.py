@@ -261,6 +261,10 @@ def next_day_user_context(user_context, today_steps_count, seven_days_ago_step_c
     if 'T1' in selected_arm.columns:
         next_day_user_context['days-since-T1'] = selected_arm['T1'] + user_context['days-since-T1'] * (1-selected_arm['T1'])
         next_day_user_context['yesterday-sent-T1'] = selected_arm['T1']
+    else:
+        T1_sent = 1 - (selected_arm['T2']+selected_arm['T3']+selected_arm['T4'])
+        next_day_user_context['days-since-T1'] = 1- + user_context['days-since-T1'] * (selected_arm['T2']+selected_arm['T3']+selected_arm['T4'])
+        next_day_user_context['yesterday-sent-T1'] = T1_sent
     if 'T2' in selected_arm.columns:
         next_day_user_context['yesterday-sent-T2'] = selected_arm['T2']
         next_day_user_context['days-since-T2'] = selected_arm['T2'] + user_context['days-since-T2'] * (1-selected_arm['T2'])
