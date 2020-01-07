@@ -8,6 +8,7 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 logging.basicConfig(format='%(message)s')
 
+
 def calculate_posteriors_nig(dependant_var, regressors, mean_pre, cov_pre,
                                 a_pre,b_pre):
     """
@@ -27,22 +28,20 @@ def calculate_posteriors_nig(dependant_var, regressors, mean_pre, cov_pre,
     Returns:
         list: containing [mean,cov,a,b] of posteriors distribution
     """
-    print("dependant_var")
-    print(dependant_var)
-    print("regressors")
-    print(regressors)
+    #print("dependant_var")
+    #print(dependant_var)
+    #print("regressors")
+    #print(regressors)
     data_size = len(dependant_var)
 
     # X transpose
+    dependant_var = np.array(dependant_var, dtype='float')
+    regressors = np.array(regressors, dtype='float')
     regressors_trans = regressors.T
-    resid = dependant_var - regressors.dot(mean_pre)
+    resid = (dependant_var - regressors.dot(mean_pre))
     resid_trans = resid.T
 
     # N x N middle term for gamma update: (I + XVX')^{-1}
-    print("************")
-    print(np.add(np.identity(data_size), np.dot(np.dot(regressors, cov_pre),regressors_trans)))
-    print(type((np.add(np.identity(data_size), np.dot(np.dot(regressors, cov_pre),regressors_trans)))[0,0]))
-    print("************")
     mid_term = np.linalg.inv(np.add(np.identity(data_size), np.dot(np.dot(regressors, cov_pre),regressors_trans)))
 
     ## Update coeffecients priors
@@ -135,18 +134,26 @@ def apply_thompson_sampling(user_context,
     #dependant_var = np.zeros(batch_size)
     #X_pre = np.zeros([batch_size,len(hypo_model_params)])
 
+    # For saving all information of 1 round of simulations
     regret_all = []
     true_optimal_action_all = []
     hypo_optimal_action_all = []
     true_reward_all = []
     hypo_reward_all = []
     beta_thompson_all = []
+    contexts_all = []
+    user_context_all = pd.DataFrame()
+
+
+
+    # For saving all information for all users in 1 batch (day_count multiplied by number of users)
     y_batch = []
     X_batch = pd.DataFrame()
 
     for day in range(day_count):
-
-        selected_arms = pd.DataFrame(columns=experiment_vars)
+        # For saving all information for all users in 1 day
+        selected_arms_per_day = pd.DataFrame(columns=experiment_vars)
+        steps_count = []
 
         for user in range(user_context.shape[0]):
             beta_thompson = draw_posterior_sample(hypo_model_params,mean_pre,
@@ -179,21 +186,26 @@ def apply_thompson_sampling(user_context,
                                                     received_reward_no_noise)
             selected_arm = pd.DataFrame([hypo_optimal_action[0]],
                     columns=experiment_vars)
-            selected_arms = pd.concat([selected_arms, selected_arm],
+            selected_arms_per_day = pd.concat([selected_arms_per_day, selected_arm],
                     ignore_index = True)
 
-            regret_all.append(regret)
+            steps_count.append(received_reward)
+
             y_batch.append(received_reward)
+
+            regret_all.append(regret)
             true_optimal_action_all.append(true_optimal_action[0])
             hypo_optimal_action_all.append(hypo_optimal_action[0])
             true_reward_all.append(received_reward)
             hypo_reward_all.append(hypo_optimal_action[1])
 
-        selected_arms.index = user_context.index
+        selected_arms_per_day.index = user_context.index
         #update contextual variables
         X = dmodels.calculate_hypo_regressors(hypo_model_params,
-                    pd.concat([user_context,selected_arms],axis=1))
+                    pd.concat([user_context,selected_arms_per_day],axis=1))
         X_batch = pd.concat([X_batch, X])
+        user_context_all = pd.concat([user_context_all, user_context])
+
 
         if day%batch_day == 0:
 
@@ -209,8 +221,81 @@ def apply_thompson_sampling(user_context,
             y_batch = []
             X_batch = pd.DataFrame()
 
+        #update user_context
+        last_seven_steps = user_context_all.loc[user_context_all['Date']==(pd.to_datetime(user_context['Date'])-pd.DateOffset(5))[0]]['yesterday_steps']
+        if len(last_seven_steps) == 0:
+            last_seven_steps = pd.Series(np.zeros(shape=(user_context.shape[0])), index=user_context.index)
+        pd.set_option('display.max_columns', 500)
+        print("user_context 1 \n", user_context)
+        print("*******************************")
+        user_context = next_day_user_context(user_context, steps_count, last_seven_steps, selected_arms_per_day)
+        print("user_context 2 \n", user_context)
 
-    return [true_optimal_action_all, hypo_optimal_action_all, regret_all, true_reward_all, hypo_reward_all, beta_thompson_all]
+
+    return [true_optimal_action_all,
+            hypo_optimal_action_all,
+            regret_all, 
+            true_reward_all,
+            hypo_reward_all,
+            beta_thompson_all,
+            user_context_all]
 
 
 
+def next_day_user_context(user_context, today_steps_count, seven_days_ago_step_count, selected_arm):
+    next_day_user_context = user_context.copy()
+    print(selected_arm)
+    next_day_user_context['Date'] = pd.to_datetime(user_context['Date'])+pd.DateOffset(1)
+    next_day_user_context['day_mon'] = user_context['day_sun']
+    next_day_user_context['day_tue'] = user_context['day_mon']
+    next_day_user_context['day_wed'] = user_context['day_tue']
+    next_day_user_context['day_thu'] = user_context['day_wed']
+    next_day_user_context['day_fri'] = user_context['day_thu']
+    next_day_user_context['day_sat'] = user_context['day_fri']
+    next_day_user_context['day_sun'] = user_context['day_sat']
+    next_day_user_context['day_weekend'] = next_day_user_context['day_sat'] + next_day_user_context['day_sun']
+    next_day_user_context['yesterday_steps'] = today_steps_count
+    next_day_user_context['week_steps'] = user_context['week_steps'] + today_steps_count - seven_days_ago_step_count
+    next_day_user_context['yesterday_progress'] = today_steps_count / next_day_user_context['daily_goal']
+    next_day_user_context['week_progress'] = next_day_user_context['week_steps'] / next_day_user_context['weekly_goal']
+    if 'T1' in selected_arm.columns:
+        next_day_user_context['days-since-T1'] = selected_arm['T1'] + user_context['days-since-T1'] * (1-selected_arm['T1'])
+        next_day_user_context['yesterday-sent-T1'] = selected_arm['T1']
+    if 'T2' in selected_arm.columns:
+        next_day_user_context['yesterday-sent-T2'] = selected_arm['T2']
+        next_day_user_context['days-since-T2'] = selected_arm['T2'] + user_context['days-since-T2'] * (1-selected_arm['T2'])
+    if 'T3' in selected_arm.columns:
+        next_day_user_context['yesterday-sent-T3'] = selected_arm['T3']
+        next_day_user_context['days-since-T3'] = selected_arm['T3'] + user_context['days-since-T3'] * (1-selected_arm['T3'])
+    if 'T4' in selected_arm.columns:
+        next_day_user_context['yesterday-sent-T4'] = selected_arm['T4']
+        next_day_user_context['days-since-T4'] = selected_arm['T4'] + user_context['days-since-T4'] * (1-selected_arm['T4'])
+    if 'M0' in selected_arm.columns:
+        next_day_user_context['yesterday-sent-M0'] = selected_arm['M0']
+        next_day_user_context['days-since-M0'] = selected_arm['M0'] + user_context['days-since-M0'] * (1-selected_arm['M0'])
+    if 'M1' in selected_arm.columns:
+        next_day_user_context['yesterday-sent-M1'] = selected_arm['M1']
+        next_day_user_context['days-since-M1'] = selected_arm['M1'] + user_context['days-since-M1'] * (1-selected_arm['M1'])
+    if 'M2' in selected_arm.columns:
+        next_day_user_context['yesterday-sent-M2'] = selected_arm['M2']
+        next_day_user_context['days-since-M2'] = selected_arm['M2'] + user_context['days-since-M2'] * (1-selected_arm['M2'])
+    if 'M3' in selected_arm.columns:
+        next_day_user_context['yesterday-sent-M3'] = selected_arm['M3']
+        next_day_user_context['days-since-M3'] = selected_arm['M3'] + user_context['days-since-M3'] * (1-selected_arm['M3'])
+    if 'F0' in selected_arm.columns:
+        next_day_user_context['yesterday-sent-F0'] = selected_arm['F0']
+        next_day_user_context['days-since-F0'] = selected_arm['F0'] + user_context['days-since-F0'] * (1-selected_arm['F0'])
+    if 'F1' in selected_arm.columns:
+        next_day_user_context['yesterday-sent-F1'] = selected_arm['F1']
+        next_day_user_context['days-since-F1'] = selected_arm['F1'] + user_context['days-since-F1'] * (1-selected_arm['F1'])
+    if 'F2' in selected_arm.columns:
+        next_day_user_context['yesterday-sent-F2'] = selected_arm['F2']
+        next_day_user_context['days-since-F2'] = selected_arm['F2'] + user_context['days-since-F2'] * (1-selected_arm['F2'])
+    if 'F3' in selected_arm.columns:
+        next_day_user_context['yesterday-sent-F3'] = selected_arm['F3']
+        next_day_user_context['days-since-F3'] = selected_arm['F3'] + user_context['days-since-F3'] * (1-selected_arm['F3'])
+    if 'F4' in selected_arm.columns:
+        next_day_user_context['yesterday-sent-F4'] = selected_arm['F4']
+        next_day_user_context['days-since-F4'] = selected_arm['F4'] + user_context['days-since-F4'] * (1-selected_arm['F4'])
+
+        return next_day_user_context

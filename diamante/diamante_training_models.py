@@ -55,7 +55,7 @@ class training_bandit_model(object):
 
         #Note: thompson_output[1] is the selected action by TS from possible_actions list
         self.save_regret(thompson_output[2])
-        self.save_context_selected_action(users_context, thompson_output[1])
+        self.save_context_selected_action(thompson_output[6], thompson_output[1]) # thompson_output[6] is users_context_all
         self.save_optimal_action_ratio(thompson_output[1], thompson_output[0])
         self.save_beta_thompson_coeffs_sum(thompson_output[5])
 
@@ -105,7 +105,10 @@ class training_bandit_model(object):
 
     def save_context_selected_action(self, user_context, selected_action_per_sim):
         simulation_count = self.save_regret_df.shape[1]
-        users_context_df = pd.DataFrame(list(user_context))
+        if type(user_context) == pd.core.frame.DataFrame:
+            users_context_df = user_context
+        else:
+            users_context_df = pd.DataFrame(list(user_context))
         users_context_df.insert(0, 'simulation_number', simulation_count)
         selected_action_per_sim_df = pd.DataFrame(selected_action_per_sim)
         selected_action_per_sim_df.columns = self.experiment_vars
