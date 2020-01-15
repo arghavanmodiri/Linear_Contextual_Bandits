@@ -158,14 +158,12 @@ class training_bandit_model(object):
 
 
     def get_regret(self):
-        logging.info("save_regret_df:\n{}".format(self.save_regret_df))
         return self.save_regret_df
 
     def get_selected_action(self):
         return self.save_context_selected_action_df
 
     def get_optimal_action_ratio(self):
-        logging.info("save_optimal_action_ratio_df:\n{}".format(self.save_optimal_action_ratio_df))
         return self.save_optimal_action_ratio_df
 
     def get_beta_thompson_coeffs_average(self):

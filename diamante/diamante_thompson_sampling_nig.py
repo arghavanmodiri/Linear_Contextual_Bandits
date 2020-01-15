@@ -227,8 +227,6 @@ def apply_thompson_sampling(user_context,
         #pd.set_option('display.max_columns', 500)
         user_context = next_day_user_context(user_context, steps_count, last_seven_steps, selected_arms_per_day)
 
-    logging.info("user_context_all:\n{}".format(user_context_all))
-    logging.info("hypo_optimal_action_all:\n{}".format(len(hypo_optimal_action_all)))
     return [true_optimal_action_all,
             hypo_optimal_action_all,
             regret_all, 
