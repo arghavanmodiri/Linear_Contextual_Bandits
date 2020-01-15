@@ -189,8 +189,8 @@
                             [1, 0, 0, 1, 0, 0, 0, 1, 0, 0 ],
                             [1, 0, 0, 1, 0, 0, 1, 0, 0, 0 ]
         ],
-        "days_count": 1,
-        "simulation_count": 2,
+        "days_count": 3,
+        "simulation_count": 3,
         "ts_update_day_count": 1,
         "extensive": true,
         "rand_sampling_applied": false,

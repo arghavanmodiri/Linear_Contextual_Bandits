@@ -206,7 +206,6 @@ def apply_thompson_sampling(user_context,
         X_batch = pd.concat([X_batch, X])
         user_context_all = pd.concat([user_context_all, user_context])
 
-
         if day%batch_day == 0:
 
             dependant_var = pd.Series(y_batch)
@@ -225,13 +224,11 @@ def apply_thompson_sampling(user_context,
         last_seven_steps = user_context_all.loc[user_context_all['Date']==(pd.to_datetime(user_context['Date'])-pd.DateOffset(5))[0]]['yesterday_steps']
         if len(last_seven_steps) == 0:
             last_seven_steps = pd.Series(np.zeros(shape=(user_context.shape[0])), index=user_context.index)
-        pd.set_option('display.max_columns', 500)
-        print("user_context 1 \n", user_context)
-        print("*******************************")
+        #pd.set_option('display.max_columns', 500)
         user_context = next_day_user_context(user_context, steps_count, last_seven_steps, selected_arms_per_day)
-        print("user_context 2 \n", user_context)
 
-
+    logging.info("user_context_all:\n{}".format(user_context_all))
+    logging.info("hypo_optimal_action_all:\n{}".format(len(hypo_optimal_action_all)))
     return [true_optimal_action_all,
             hypo_optimal_action_all,
             regret_all, 
@@ -244,7 +241,6 @@ def apply_thompson_sampling(user_context,
 
 def next_day_user_context(user_context, today_steps_count, seven_days_ago_step_count, selected_arm):
     next_day_user_context = user_context.copy()
-    print(selected_arm)
     next_day_user_context['Date'] = pd.to_datetime(user_context['Date'])+pd.DateOffset(1)
     next_day_user_context['day_mon'] = user_context['day_sun']
     next_day_user_context['day_tue'] = user_context['day_mon']
@@ -259,47 +255,72 @@ def next_day_user_context(user_context, today_steps_count, seven_days_ago_step_c
     next_day_user_context['yesterday_progress'] = today_steps_count / next_day_user_context['daily_goal']
     next_day_user_context['week_progress'] = next_day_user_context['week_steps'] / next_day_user_context['weekly_goal']
     if 'T1' in selected_arm.columns:
-        next_day_user_context['days-since-T1'] = selected_arm['T1'] + user_context['days-since-T1'] * (1-selected_arm['T1'])
+        next_day_user_context['days-since-T1'] = selected_arm['T1'] + user_context['days-since-T1'].apply(lambda x: x+1 if x>=0 else x)* (1-selected_arm['T1'])
         next_day_user_context['yesterday-sent-T1'] = selected_arm['T1']
     else:
         T1_sent = 1 - (selected_arm['T2']+selected_arm['T3']+selected_arm['T4'])
-        next_day_user_context['days-since-T1'] = 1- + user_context['days-since-T1'] * (selected_arm['T2']+selected_arm['T3']+selected_arm['T4'])
-        next_day_user_context['yesterday-sent-T1'] = T1_sent
+        next_day_user_context['days-since-T1'] = T1_sent + user_context['days-since-T1'].apply(lambda x: x+1 if x>=0 else x) * (1-T1_sent)
+        next_day_user_context['yesterday-sent-T1'] = T1_sent 
+
     if 'T2' in selected_arm.columns:
         next_day_user_context['yesterday-sent-T2'] = selected_arm['T2']
-        next_day_user_context['days-since-T2'] = selected_arm['T2'] + user_context['days-since-T2'] * (1-selected_arm['T2'])
+        next_day_user_context['days-since-T2'] = selected_arm['T2'] + user_context['days-since-T2'].apply(lambda x: x+1 if x>=0 else x)*(1-selected_arm['T2'])
+    else:
+        T2_sent = 1 - (selected_arm['T1']+selected_arm['T3']+selected_arm['T4'])
+        next_day_user_context['days-since-T2'] = T2_sent + user_context['days-since-T2'].apply(lambda x: x+1 if x>=0 else x) * (1-T2_sent)
+        next_day_user_context['yesterday-sent-T2'] = T2_sent 
+
     if 'T3' in selected_arm.columns:
         next_day_user_context['yesterday-sent-T3'] = selected_arm['T3']
-        next_day_user_context['days-since-T3'] = selected_arm['T3'] + user_context['days-since-T3'] * (1-selected_arm['T3'])
+        next_day_user_context['days-since-T3'] = selected_arm['T3'] + user_context['days-since-T3'].apply(lambda x: x+1 if x>=0 else x)*(1-selected_arm['T3'])
+    else:
+        T3_sent = 1 - (selected_arm['T1']+selected_arm['T2']+selected_arm['T4'])
+        next_day_user_context['days-since-T3'] = T3_sent + user_context['days-since-T3'].apply(lambda x: x+1 if x>=0 else x) * (1-T3_sent)
+        next_day_user_context['yesterday-sent-T3'] = T3_sent 
+
     if 'T4' in selected_arm.columns:
         next_day_user_context['yesterday-sent-T4'] = selected_arm['T4']
-        next_day_user_context['days-since-T4'] = selected_arm['T4'] + user_context['days-since-T4'] * (1-selected_arm['T4'])
+        next_day_user_context['days-since-T4'] = selected_arm['T4'] + user_context['days-since-T4'].apply(lambda x: x+1 if x>=0 else x)*(1-selected_arm['T4'])
+    else:
+        T4_sent = 1 - (selected_arm['T1']+selected_arm['T2']+selected_arm['T3'])
+        next_day_user_context['days-since-T4'] = T4_sent + user_context['days-since-T4'].apply(lambda x: x+1 if x>=0 else x) * (1-T4_sent)
+        next_day_user_context['yesterday-sent-T4'] = T4_sent 
+
     if 'M0' in selected_arm.columns:
         next_day_user_context['yesterday-sent-M0'] = selected_arm['M0']
-        next_day_user_context['days-since-M0'] = selected_arm['M0'] + user_context['days-since-M0'] * (1-selected_arm['M0'])
-    if 'M1' in selected_arm.columns:
-        next_day_user_context['yesterday-sent-M1'] = selected_arm['M1']
-        next_day_user_context['days-since-M1'] = selected_arm['M1'] + user_context['days-since-M1'] * (1-selected_arm['M1'])
-    if 'M2' in selected_arm.columns:
-        next_day_user_context['yesterday-sent-M2'] = selected_arm['M2']
-        next_day_user_context['days-since-M2'] = selected_arm['M2'] + user_context['days-since-M2'] * (1-selected_arm['M2'])
-    if 'M3' in selected_arm.columns:
-        next_day_user_context['yesterday-sent-M3'] = selected_arm['M3']
-        next_day_user_context['days-since-M3'] = selected_arm['M3'] + user_context['days-since-M3'] * (1-selected_arm['M3'])
+        next_day_user_context['days-since-M0'] = selected_arm['M0'] + user_context['days-since-M0'].apply(lambda x: x+1 if x>=0 else x)*(1-selected_arm['M0'])
+    else:
+        M0_sent = 1 - (selected_arm['M1']+selected_arm['M2']+selected_arm['M3'])
+        next_day_user_context['days-since-M0'] = M0_sent + user_context['days-since-M0'].apply(lambda x: x+1 if x>=0 else x) * (1-M0_sent)
+        next_day_user_context['yesterday-sent-M0'] = M0_sent 
+
+    next_day_user_context['yesterday-sent-M1'] = selected_arm['M1']
+    next_day_user_context['days-since-M1'] = selected_arm['M1'] + user_context['days-since-M1'].apply(lambda x: x+1 if x>=0 else x)*(1-selected_arm['M1'])
+
+    next_day_user_context['yesterday-sent-M2'] = selected_arm['M2']
+    next_day_user_context['days-since-M2'] = selected_arm['M2'] + user_context['days-since-M2'].apply(lambda x: x+1 if x>=0 else x)*(1-selected_arm['M2'])
+
+    next_day_user_context['yesterday-sent-M3'] = selected_arm['M3']
+    next_day_user_context['days-since-M3'] = selected_arm['M3'] + user_context['days-since-M3'].apply(lambda x: x+1 if x>=0 else x)*(1-selected_arm['M3'])
+
     if 'F0' in selected_arm.columns:
         next_day_user_context['yesterday-sent-F0'] = selected_arm['F0']
-        next_day_user_context['days-since-F0'] = selected_arm['F0'] + user_context['days-since-F0'] * (1-selected_arm['F0'])
-    if 'F1' in selected_arm.columns:
-        next_day_user_context['yesterday-sent-F1'] = selected_arm['F1']
-        next_day_user_context['days-since-F1'] = selected_arm['F1'] + user_context['days-since-F1'] * (1-selected_arm['F1'])
-    if 'F2' in selected_arm.columns:
-        next_day_user_context['yesterday-sent-F2'] = selected_arm['F2']
-        next_day_user_context['days-since-F2'] = selected_arm['F2'] + user_context['days-since-F2'] * (1-selected_arm['F2'])
-    if 'F3' in selected_arm.columns:
-        next_day_user_context['yesterday-sent-F3'] = selected_arm['F3']
-        next_day_user_context['days-since-F3'] = selected_arm['F3'] + user_context['days-since-F3'] * (1-selected_arm['F3'])
-    if 'F4' in selected_arm.columns:
-        next_day_user_context['yesterday-sent-F4'] = selected_arm['F4']
-        next_day_user_context['days-since-F4'] = selected_arm['F4'] + user_context['days-since-F4'] * (1-selected_arm['F4'])
+        next_day_user_context['days-since-F0'] = selected_arm['F0'] + user_context['days-since-F0'].apply(lambda x: x+1 if x>=0 else x)*(1-selected_arm['F0'])
+    else:
+        F0_sent = 1 - (selected_arm['F1']+selected_arm['F2']+selected_arm['F3']+selected_arm['F4'])
+        next_day_user_context['days-since-F0'] = F0_sent + user_context['days-since-F0'].apply(lambda x: x+1 if x>=0 else x) * (1-F0_sent)
+        next_day_user_context['yesterday-sent-F0'] = F0_sent 
 
-        return next_day_user_context
+    next_day_user_context['yesterday-sent-F1'] = selected_arm['F1']
+    next_day_user_context['days-since-F1'] = selected_arm['F1'] + user_context['days-since-F1'].apply(lambda x: x+1 if x>=0 else x)*(1-selected_arm['F1'])
+
+    next_day_user_context['yesterday-sent-F2'] = selected_arm['F2']
+    next_day_user_context['days-since-F2'] = selected_arm['F2'] + user_context['days-since-F2'].apply(lambda x: x+1 if x>=0 else x)*(1-selected_arm['F2'])
+
+    next_day_user_context['yesterday-sent-F3'] = selected_arm['F3']
+    next_day_user_context['days-since-F3'] = selected_arm['F3'] + user_context['days-since-F3'].apply(lambda x: x+1 if x>=0 else x)*(1-selected_arm['F3'])
+
+    next_day_user_context['yesterday-sent-F4'] = selected_arm['F4']
+    next_day_user_context['days-since-F4'] = selected_arm['F4'] + user_context['days-since-F4'].apply(lambda x: x+1 if x>=0 else x)*(1-selected_arm['F4'])
+
+    return next_day_user_context

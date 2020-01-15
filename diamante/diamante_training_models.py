@@ -54,9 +54,9 @@ class training_bandit_model(object):
                                                     noise_stats)
 
         #Note: thompson_output[1] is the selected action by TS from possible_actions list
-        self.save_regret(thompson_output[2])
+        self.save_regret(thompson_output[2], thompson_output[6])
         self.save_context_selected_action(thompson_output[6], thompson_output[1]) # thompson_output[6] is users_context_all
-        self.save_optimal_action_ratio(thompson_output[1], thompson_output[0])
+        self.save_optimal_action_ratio(thompson_output[1], thompson_output[0], thompson_output[6])
         self.save_beta_thompson_coeffs_sum(thompson_output[5])
 
     def apply_random(self, users_context, noise_stats):
@@ -98,9 +98,11 @@ class training_bandit_model(object):
     def get_optimal_action_ratio_std(self):
         return (self.save_optimal_action_ratio_df.std(axis=1))
 
-    def save_regret(self, new_regret):
+    def save_regret(self, new_regret, users_context):
+        new_regret_df = pd.DataFrame(new_regret)
+        new_regret_df.index = users_context.index
         self.save_regret_df = pd.concat([self.save_regret_df,
-                                            pd.DataFrame(new_regret)],
+                                            new_regret_df],
                                             ignore_index=True, axis=1)
 
     def save_context_selected_action(self, user_context, selected_action_per_sim):
@@ -111,18 +113,21 @@ class training_bandit_model(object):
             users_context_df = pd.DataFrame(list(user_context))
         users_context_df.insert(0, 'simulation_number', simulation_count)
         selected_action_per_sim_df = pd.DataFrame(selected_action_per_sim)
+        selected_action_per_sim_df.index = users_context_df.index
         selected_action_per_sim_df.columns = self.experiment_vars
         temp_df = pd.concat([users_context_df, selected_action_per_sim_df], axis=1)
         self.save_context_selected_action_df = pd.concat([self.save_context_selected_action_df,
                                             temp_df])
 
 
-    def save_optimal_action_ratio(self, hypo_optimal_action, true_optimal_action):
+    def save_optimal_action_ratio(self, hypo_optimal_action, true_optimal_action, users_context):
         optimal_action_ratio_per_sim = np.array(list((hypo_optimal_action[i] in
-            true_optimal_action[i]) for i in range(0,self.user_count))).astype(int)
+            true_optimal_action[i]) for i in range(0,len(users_context)))).astype(int)
+        optimal_action_ratio_per_sim_df = pd.DataFrame(optimal_action_ratio_per_sim)
+        optimal_action_ratio_per_sim_df.index = users_context.index
         self.save_optimal_action_ratio_df = pd.concat([
                                 self.save_optimal_action_ratio_df,
-                                pd.DataFrame(optimal_action_ratio_per_sim)],
+                                optimal_action_ratio_per_sim_df],
                                 ignore_index=True, axis=1)
 
     def save_beta_thompson_coeffs_sum(self, new_beta_coeff):
@@ -153,12 +158,14 @@ class training_bandit_model(object):
 
 
     def get_regret(self):
+        logging.info("save_regret_df:\n{}".format(self.save_regret_df))
         return self.save_regret_df
 
     def get_selected_action(self):
         return self.save_context_selected_action_df
 
     def get_optimal_action_ratio(self):
+        logging.info("save_optimal_action_ratio_df:\n{}".format(self.save_optimal_action_ratio_df))
         return self.save_optimal_action_ratio_df
 
     def get_beta_thompson_coeffs_average(self):
