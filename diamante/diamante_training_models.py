@@ -55,7 +55,7 @@ class training_bandit_model(object):
 
         #Note: thompson_output[1] is the selected action by TS from possible_actions list
         self.save_regret(thompson_output[2], thompson_output[6])
-        self.save_context_selected_action(thompson_output[6], thompson_output[1]) # thompson_output[6] is users_context_all
+        self.save_context_selected_action(thompson_output[6], thompson_output[1], thompson_output[3]) # thompson_output[6] is users_context_all
         self.save_optimal_action_ratio(thompson_output[1], thompson_output[0], thompson_output[6])
         self.save_beta_thompson_coeffs_sum(thompson_output[5])
 
@@ -105,7 +105,7 @@ class training_bandit_model(object):
                                             new_regret_df],
                                             ignore_index=True, axis=1)
 
-    def save_context_selected_action(self, user_context, selected_action_per_sim):
+    def save_context_selected_action(self, user_context, selected_action_per_sim, reward):
         simulation_count = self.save_regret_df.shape[1]
         if type(user_context) == pd.core.frame.DataFrame:
             users_context_df = user_context
@@ -115,7 +115,9 @@ class training_bandit_model(object):
         selected_action_per_sim_df = pd.DataFrame(selected_action_per_sim)
         selected_action_per_sim_df.index = users_context_df.index
         selected_action_per_sim_df.columns = self.experiment_vars
-        temp_df = pd.concat([users_context_df, selected_action_per_sim_df], axis=1)
+        reward_ser = pd.Series(reward, name='Reward')
+        reward_ser.index = users_context_df.index
+        temp_df = pd.concat([users_context_df, selected_action_per_sim_df, reward_ser], axis=1)
         self.save_context_selected_action_df = pd.concat([self.save_context_selected_action_df,
                                             temp_df])
 

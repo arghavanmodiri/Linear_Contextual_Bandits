@@ -4,11 +4,11 @@
           "noise":
               {
                 "noise_mean": 0,
-                "noise_std": 1
+                "noise_std": 1000
               },
           "true_coeff":
               {
-                "intercept": 0,
+                "intercept": 1500,
                 "age_year": 0,
                 "neighborhood_1": 0,
                 "phq_sum": 0,
@@ -25,23 +25,23 @@
                 "start_ipaq_1": 0,
                 "start_ipaq_2": 0,
                 "start_ipaq_3": 0,
-                "day_sat": 0.5,
-                "day_sun": -0.5,
+                "day_sat": 500,
+                "day_sun": -500,
                 "day_mon": 0,
                 "day_tue": 0,
                 "day_thu": 0,
                 "day_fri": 0,
-                "day_sat*F3": 1.4,
-                "day_sat*T3": 1.4,
-                "day_sun*F3": 2.4,
-                "day_sun*T3": 2.4,
-                "day_mon*M2": 1.4,
-                "day_mon*F1": 1.4,
-                "day_mon*T1": 1.4,
-                "day_tue*F2": 1.4,
-                "day_thu*F2": 1.4,
-                "day_fri*M1": 1.4,
-                "day_fri*T2": 1.4
+                "day_sat*F3": 1400,
+                "day_sat*T3": 1400,
+                "day_sun*F3": 2400,
+                "day_sun*T3": 2400,
+                "day_mon*M2": 1400,
+                "day_mon*F1": 1400,
+                "day_mon*T1": 1400,
+                "day_tue*F2": 1400,
+                "day_thu*F2": 1400,
+                "day_fri*M1": 1400,
+                "day_fri*T2": 1400
                 },
           "base_input_csv": "input_files/diamante.csv",
           "static_context_vars": [
