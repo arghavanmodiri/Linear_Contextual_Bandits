@@ -27,10 +27,6 @@ def calculate_posteriors_nig(dependant_var, regressors, mean_pre, cov_pre,
     Returns:
         list: containing [mean,cov,a,b] of posteriors distribution
     """
-    print("dependant_var")
-    print(dependant_var)
-    print("regressors")
-    print(regressors)
     data_size = len(dependant_var)
 
     # X transpose
@@ -39,10 +35,6 @@ def calculate_posteriors_nig(dependant_var, regressors, mean_pre, cov_pre,
     resid_trans = resid.T
 
     # N x N middle term for gamma update: (I + XVX')^{-1}
-    print("************")
-    print(np.add(np.identity(data_size), np.dot(np.dot(regressors, cov_pre),regressors_trans)))
-    print(type((np.add(np.identity(data_size), np.dot(np.dot(regressors, cov_pre),regressors_trans)))[0,0]))
-    print("************")
     mid_term = np.linalg.inv(np.add(np.identity(data_size), np.dot(np.dot(regressors, cov_pre),regressors_trans)))
 
     ## Update coeffecients priors
