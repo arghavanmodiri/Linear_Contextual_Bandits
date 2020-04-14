@@ -1,0 +1,66 @@
+{
+        "true_model_params":
+        {
+          "noise":
+              {
+                "noise_mean": 0,
+                "noise_std": 500
+              },
+          "true_model_terms":
+              [
+                "intercept",
+                "motivationMsg1",
+                "motivationMsg2",
+                "day_tue",
+                "day_wed",
+                "day_sat",
+                "day_sun",
+                "motivationMsg1*day_tue",
+                "motivationMsg1*day_wed",
+                "motivationMsg1*day_sat",
+                "motivationMsg1*day_sun",
+                "motivationMsg2*day_tue",
+                "motivationMsg2*day_wed",
+                "motivationMsg2*day_sat",
+                "motivationMsg2*day_sun"
+                ],
+          "context_vars": [["day_mon", "day_tue", "day_wed", "day_sat", "day_sun"]],
+          "experiment_vars": ["motivationMsg1", "motivationMsg2"]
+        },
+        "hypo_model_names":
+        ["policy1",
+          "policy2",
+          "policy3"
+        ],
+        "hypo_model_params":
+        [
+          ["intercept", "motivationMsg1", "motivationMsg2", "day_sat", "day_sun", "day_tue", "day_wed",
+           "motivationMsg1*day_sat", "motivationMsg1*day_sun", "motivationMsg1*day_tue", "motivationMsg1*day_wed",
+           "motivationMsg2*day_sat", "motivationMsg2*day_sun", "motivationMsg2*day_tue", "motivationMsg2*day_wed"],
+
+          ["intercept", "motivationMsg1", "motivationMsg2", "weekday", "motivationMsg1*weekday", "motivationMsg2*weekday"],
+
+          ["intercept", "motivationMsg1", "motivationMsg2", "day_sat", "day_sun", "day_tue", "day_wed", "weekday",
+           "motivationMsg1*day_sat", "motivationMsg1*day_sun", "motivationMsg1*day_tue", "motivationMsg1*day_wed",
+           "motivationMsg2*day_sat", "motivationMsg2*day_sun", "motivationMsg2*day_tue", "motivationMsg2*day_wed",
+           "motivationMsg1*weekday", "motivationMsg2*weekday"]
+
+        ],
+        "possible_actions": [[1, 0], [0, 1], [0, 0]],
+        "user_count": 500,
+        "batch_size": 20,
+        "simulation_count": 3,
+        "rand_sampling_applied": true,
+        "show_fig": true,
+        "extensive": true,
+        "NIG_priors":
+        {
+          "a": 1,
+          "b": 1
+        },
+       "dist_of_context":
+        {
+        },
+        "output_path": "arbitrary_path",
+        "num_cores": 8
+    }

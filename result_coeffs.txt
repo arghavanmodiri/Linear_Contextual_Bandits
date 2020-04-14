@@ -1,0 +1,3 @@
+['intercept', 'motivationMsg1', 'motivationMsg2', 'day_tue', 'day_wed', 'day_sat', 'day_sun', 'motivationMsg1*day_tue', 'motivationMsg1*day_wed', 'motivationMsg1*day_sat', 'motivationMsg1*day_sun', 'motivationMsg2*day_tue', 'motivationMsg2*day_wed', 'motivationMsg2*day_sat', 'motivationMsg2*day_sun']
+[2000, 0, 1000, 1000, 2000, 0, 6000, 2000, 0, 6000, 6000, 1000, 2000, 1000, 6000]
+[0, 2000, 6000, 1000, 6000, 2000, 1000, 2000, 2000, 6000, 2000, 0, 0, 2000, 2000]

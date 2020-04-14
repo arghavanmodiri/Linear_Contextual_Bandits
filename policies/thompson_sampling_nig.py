@@ -1,3 +1,4 @@
+import multiprocessing
 import numpy as np
 import true_hypo_models as models
 import making_decision
@@ -32,8 +33,6 @@ def calculate_posteriors_nig(dependant_var, regressors, mean_pre, cov_pre,
     # X transpose
 
     regressors_trans = np.matrix.transpose(regressors)
-    print("**********************************")
-    print(regressors)
 
     resid = np.subtract(dependant_var, np.dot(regressors,mean_pre))
     resid_trans = np.matrix.transpose(resid)
@@ -91,8 +90,7 @@ def draw_posterior_sample(hypo_model_params, mean, cov, a, b):
 
     return beta_draw
 
-
-def apply_thompson_sampling(user_context,
+def checking_vectorizedapply_thompson_sampling(user_context,
                             experiment_vars,
                             bandit_arms,
                             hypo_model_params,
@@ -199,7 +197,180 @@ def apply_thompson_sampling(user_context,
         start_batch = end_batch
         end_batch = end_batch+batch_size
 
+    '''
+    logging.info("***************************")
+    logging.info(true_optimal_action_all)
+    logging.info("----------------------------------")
+    logging.info(hypo_optimal_action_all)
+    logging.info("----------------------------------")
+    logging.info(regret_all)
+    logging.info("----------------------------------")
+    logging.info(true_reward_all)
+    logging.info("----------------------------------")
+    logging.info(hypo_reward_all)
+    logging.info("----------------------------------")
+    logging.info(beta_thompson_all)
+    logging.info("***************************")
+    '''
+    return [true_optimal_action_all, hypo_optimal_action_all, regret_all, true_reward_all, hypo_reward_all, beta_thompson_all]
+
+def apply_thompson_sampling(pool,
+                            user_context,
+                            experiment_vars,
+                            bandit_arms,
+                            hypo_model_params,
+                            true_coeff,
+                            batch_size,
+                            mean_pre,
+                            cov_pre,
+                            a_pre,
+                            b_pre,
+                            noise_stats):
+    """
+    Apply thompson sampling on the input dataset at each batch and calculate
+    regret/reward of the selected option.
+
+    Args:
+        user_context (dataframe): containing user contextual values
+        experiment_vars(ndarray): 1D array containing the name of variables
+        bandit_arms (list): list containing values of arms
+        hypo_model_params(list): containing all parameters of hypo model
+        true_coeff(dict): containing all parameters and values of true model
+        batch_size (int): size of each batch for thompson sampling iteration
+        mean_pre (ndarray): 1D array containing mean of NIG priors.
+        cov_pre (ndarray): 2D array containing covariance of NIG priors.
+        a_pre (int): shape of inverse-gamma distribution
+        b_pre (int): scale of inverse-gamma distribution
+        noise_stats(dict): in the format of {'noise_mean': 0, 'noise_std': 1}
+
+    Returns:
+        list: calculated regret for each user
+    """
+    user_count = user_context.shape[0]
+    batch_count = int(user_count/batch_size)
+    start_batch = 0
+    end_batch = batch_size
+    dependant_var = np.zeros(batch_size)
+    X_pre = np.zeros([batch_size,len(hypo_model_params)])
+
+    regret_all = []
+    true_optimal_action_all = []
+    hypo_optimal_action_all = []
+    true_reward_all = []
+    hypo_reward_all = []
+    beta_thompson_all = []
+
+    for batch in range(0, batch_count):
+        X_batch = []
+        y_batch = []
+
+        thompson_dist = calculate_posteriors_nig(dependant_var,
+                            X_pre, mean_pre, cov_pre, a_pre,b_pre)
+
+        mean = thompson_dist[3]
+        cov = thompson_dist[2]
+        a = thompson_dist[0]
+        b = thompson_dist[1]
+
+        #for user in range(start_batch, end_batch,2):
+        #beta_thompson_all.append([beta_thompson[i] for i in beta_thompson.keys()])
+
+        inputs = [*zip(range(start_batch, end_batch),
+                        [user_context]*batch_size,
+                        [experiment_vars]*batch_size,
+                        [bandit_arms]*batch_size,
+                        [hypo_model_params]*batch_size,
+                        [true_coeff]*batch_size,
+                        [mean]*batch_size,
+                        [cov]*batch_size,
+                        [a]*batch_size,
+                        [b]*batch_size,
+                        [noise_stats]*batch_size)]
+        
+        #[beta_thompson, hypo_optimal_action, received_reward, true_optimal_action, regret, X]
+        results = pool.starmap(one_loop, inputs)
+        beta_thompson = [el[0] for el in results]
+        hypo_optimal_action = [el[1] for el in results]
+        y_batch = [el[2] for el in results]
+        true_optimal_action = [el[3] for el in results]
+        regret = [el[4] for el in results]
+        X_batch = [el[5] for el in results]
+        '''
+        beta_thompson, hypo_optimal_action, received_reward, true_optimal_action, regret, X = one_loop([user], user_context,
+                    experiment_vars,
+                    bandit_arms,
+                    hypo_model_params,
+                    true_coeff,
+                    mean,
+                    cov,
+                    a,
+                    b,
+                    noise_stats)'''
+
+        beta_thompson_all.extend(beta_thompson)
+        #X_batch.append(X)
+        #y_batch.append(received_reward)
+        regret_all.extend(regret)
+        true_optimal_action_all.extend([el[0] for el in true_optimal_action])
+        hypo_optimal_action_all.extend([el[0] for el in hypo_optimal_action])
+        hypo_reward_all.extend([el[1] for el in hypo_optimal_action])
+        #true_optimal_action_all.append(true_optimal_action[0])
+        #hypo_optimal_action_all.append(hypo_optimal_action[0])
+        true_reward_all.extend(y_batch)
+        #hypo_reward_all.append(hypo_optimal_action[1])
+
+        X_pre = np.array(X_batch)
+        dependant_var = np.array(y_batch)
+        mean_pre = mean
+        cov_pre = cov
+        a_pre = a
+        b_pre = b
+        start_batch = end_batch
+        end_batch = end_batch+batch_size
+
     return [true_optimal_action_all, hypo_optimal_action_all, regret_all, true_reward_all, hypo_reward_all, beta_thompson_all]
 
 
 
+def one_loop(user, user_context_batch,
+                            experiment_vars,
+                            bandit_arms,
+                            hypo_model_params,
+                            true_coeff,
+                            mean,
+                            cov,
+                            a,
+                            b,
+                            noise_stats):
+        beta_thompson = draw_posterior_sample(hypo_model_params,mean, cov, a,b)
+        #beta_thompson_all.append([beta_thompson[i] for i in beta_thompson.keys()])
+
+        hypo_optimal_action = making_decision.pick_hypo_optimal_arm(
+                                                beta_thompson,
+                                                user_context_batch.iloc[user],
+                                                experiment_vars,
+                                                bandit_arms)
+        received_reward = models.true_model_output(true_coeff,
+                                                experiment_vars,
+                                                user_context_batch.iloc[user],
+                                                hypo_optimal_action[0],
+                                                noise_stats)
+        received_reward_no_noise = models.true_model_output(true_coeff,
+                                                experiment_vars,
+                                                user_context_batch.iloc[user],
+                                                hypo_optimal_action[0],
+                                                {"noise_mean": 0,
+                                                "noise_std": 0.0})
+        true_optimal_action = making_decision.pick_true_optimal_arm(
+                                                true_coeff,
+                                                user_context_batch.iloc[user],
+                                                experiment_vars,
+                                                bandit_arms)
+        regret = making_decision.calculate_regret(true_optimal_action[1], 
+                                                received_reward_no_noise)
+        X = models.calculate_hypo_regressors(hypo_model_params,
+                                            experiment_vars,
+                                            user_context_batch.iloc[user],
+                                            hypo_optimal_action[0])
+
+        return [beta_thompson, hypo_optimal_action, received_reward, true_optimal_action, regret, X]

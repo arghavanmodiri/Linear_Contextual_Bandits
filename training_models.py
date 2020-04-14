@@ -7,11 +7,11 @@ import logging
 
 logging.getLogger().setLevel(logging.INFO)
 logging.basicConfig(format='%(message)s')
-
+pd.set_option('display.max_columns', 30)
 class training_bandit_model(object):
     """docstring for ClassName"""
 
-    def __init__(self, user_count, batch_size,
+    def __init__(self, pool, user_count, batch_size,
                 experiment_vars, bandit_arms, true_coeff, extensive, hypo_params = None):
         super(training_bandit_model, self).__init__()
 
@@ -24,9 +24,10 @@ class training_bandit_model(object):
         self.bandit_arms = bandit_arms
         self.hypo_params = hypo_params
         self.cumulative_regret = np.zeros(user_count)
-        self.save_regret_df = pd.DataFrame()
+        self.save_regret_df = []
         self.save_context_selected_action_df = pd.DataFrame()
-        self.save_optimal_action_ratio_df = pd.DataFrame()
+        self.save_optimal_action_ratio_df = []#pd.DataFrame()
+        self.pool = pool
         
         if hypo_params != None:
             self.thompson_output = np.zeros(6)
@@ -38,6 +39,7 @@ class training_bandit_model(object):
         mean_pre = np.zeros(len(self.hypo_params))
         cov_pre = np.identity(len(self.hypo_params))
         thompson_output = thompson.apply_thompson_sampling(
+                                                    self.pool,
                                                     users_context,
                                                     self.experiment_vars,
                                                     self.bandit_arms,
@@ -83,26 +85,29 @@ class training_bandit_model(object):
 
     def get_regret_average(self):
         #simulation_count = self.save_regret_df.shape[1]
-        return (self.save_regret_df.mean(axis=1))#/simulation_count)
+        return (pd.DataFrame(self.save_regret_df).T.mean(axis=1))#/simulation_count)
 
     def get_regret_std(self):
-        return (self.save_regret_df.std(axis=1))
+        return (pd.DataFrame(self.save_regret_df).T.std(axis=1))
 
     def get_optimal_action_ratio_average(self):
         #simulation_count = self.save_optimal_action_ratio_df.shape[1]
-        return (self.save_optimal_action_ratio_df.mean(axis=1))#/simulation_count)
+        return (pd.DataFrame(self.save_optimal_action_ratio_df).T.mean(axis=1))#/simulation_count)
 
     def get_optimal_action_ratio_std(self):
-        return (self.save_optimal_action_ratio_df.std(axis=1))
+        return (pd.DataFrame(self.save_optimal_action_ratio_df).T.std(axis=1))
 
     def save_regret(self, new_regret):
-        self.save_regret_df = pd.concat([self.save_regret_df,
-                                            pd.DataFrame(new_regret)],
-                                            ignore_index=True, axis=1)
+        self.save_regret_df.append(new_regret)
+        #self.save_regret_df = pd.concat([self.save_regret_df,
+        #                                    pd.DataFrame(new_regret)],
+        #                                    ignore_index=True, axis=1)
+
 
     def save_context_selected_action(self, user_context, selected_action_per_sim):
-        simulation_count = self.save_regret_df.shape[1]
-        users_context_df = pd.DataFrame(list(user_context))
+        simulation_count = len(self.save_regret_df) #self.save_regret_df.shape[1]
+        #users_context_df = pd.DataFrame(list(user_context))
+        users_context_df = user_context.copy()
         users_context_df.insert(0, 'simulation_number', simulation_count)
         selected_action_per_sim_df = pd.DataFrame(selected_action_per_sim)
         selected_action_per_sim_df.columns = self.experiment_vars
@@ -110,14 +115,14 @@ class training_bandit_model(object):
         self.save_context_selected_action_df = pd.concat([self.save_context_selected_action_df,
                                             temp_df])
 
-
     def save_optimal_action_ratio(self, hypo_optimal_action, true_optimal_action):
         optimal_action_ratio_per_sim = np.array(list((hypo_optimal_action[i] in
             true_optimal_action[i]) for i in range(0,self.user_count))).astype(int)
-        self.save_optimal_action_ratio_df = pd.concat([
-                                self.save_optimal_action_ratio_df,
-                                pd.DataFrame(optimal_action_ratio_per_sim)],
-                                ignore_index=True, axis=1)
+        self.save_optimal_action_ratio_df.append(optimal_action_ratio_per_sim)
+        #self.save_optimal_action_ratio_df = pd.concat([
+        #                        self.save_optimal_action_ratio_df,
+        #                        pd.DataFrame(optimal_action_ratio_per_sim)],
+        #                        ignore_index=True, axis=1)
 
     def save_beta_thompson_coeffs_sum(self, new_beta_coeff):
         self.beta_thompson_coeffs += 0#np.array(new_beta_coeff)
@@ -147,13 +152,13 @@ class training_bandit_model(object):
 
 
     def get_regret(self):
-        return self.save_regret_df
+        return pd.DataFrame(self.save_regret_df).T
 
     def get_selected_action(self):
         return self.save_context_selected_action_df
 
     def get_optimal_action_ratio(self):
-        return self.save_optimal_action_ratio_df
+        return pd.DataFrame(self.save_optimal_action_ratio_df).T
 
     def get_beta_thompson_coeffs_average(self):
         return self.beta_thompson_coeffs_df.groupby(level=1, axis=1).mean()

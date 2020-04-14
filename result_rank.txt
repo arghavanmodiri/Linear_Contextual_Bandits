@@ -1,0 +1,3 @@
+sorted Policies and their corresponding regret values
+policy2 policy1 policy3       578.67 234.0 212.0 
+policy3 policy1 policy2       178.67 161.33 154.67 
