@@ -52,10 +52,11 @@ def main(input_dict, sim_name='test.json', mode=None):
     base_context = data.drop(experiment_vars, axis=1, inplace=False)
     base_context = base_context[base_context['Reward'].isnull()]
     base_context = base_context.groupby(level=0).last()
+
     if (data.groupby(level=0).Date.count() - data.groupby(level=0).Date.nunique()).any() != 0:
-        raise Exception('Duplicate! Participant and Date should be unique.')
+        raise Exception('\n\nDuplicate! Participant and Date should be unique.')
     if base_context['Date'].nunique() != 1:
-        raise Exception('Last date for all participants must be the same.')
+        raise Exception('\n\nLast date for all participants must be the same.')
     if base_context['day_sun'].nunique() != 1 or \
         base_context['day_sat'].nunique() != 1 or \
         base_context['day_mon'].nunique() != 1 or \
@@ -63,7 +64,8 @@ def main(input_dict, sim_name='test.json', mode=None):
         base_context['day_wed'].nunique() != 1 or \
         base_context['day_thu'].nunique() != 1 or \
         base_context['day_fri'].nunique() != 1 :
-        raise Exception('Error in the name of the day.')
+        raise Exception('\n\nError in the name of the day. Day {} should be either Saturday, Sunday, ..., or Friday. \
+         Please check your csv file.'.format(base_context['Date'][0]))
     base_context.drop(['Reward'], axis=1, inplace=True)
 
     user_count = data.index.nunique()
@@ -124,8 +126,10 @@ def main(input_dict, sim_name='test.json', mode=None):
             #update posterior at the end of the batch size
             X = dmodels.calculate_hypo_regressors(hypo_params_all_models[idx],
                                                 pre_train_data)
-            [a_post, b_post, cov_post, mean_post] = dthompson.calculate_posteriors_nig(pre_train_data['Reward'],
-                                        X, mean_pre, cov_pre, a_pre,b_pre)
+
+            [a_post, b_post, cov_post, mean_post] = dthompson.calculate_posteriors_nig(
+                    pre_train_data['Reward'], X, mean_pre, cov_pre, a_pre,b_pre)
+
 
             #action!
             bandit_models[idx].apply_thompson(users_context, a_post, b_post, mean_post, cov_post, noise_stats)
@@ -296,6 +300,7 @@ def main(input_dict, sim_name='test.json', mode=None):
     #                           Plots                           #
     #############################################################
     
+    '''
     fig, ax = plt.subplots(1,1,sharey=False)
     fig, ax1 = plt.subplots(1,1,sharey=False)
     bplots.plot_regret(ax,user_count, policies, regrets_all_users,
@@ -305,7 +310,7 @@ def main(input_dict, sim_name='test.json', mode=None):
     bplots.plot_optimal_action_ratio(user_count, policies[:len(bandit_models)],
             optimal_action_ratio, simulation_count, batch_size,
             mode='per_user')
-
+    '''
     #Plotting each coeff separetly for comparison
     '''
     for param_name in list(all_hypo_params_all_models):
@@ -319,8 +324,8 @@ def main(input_dict, sim_name='test.json', mode=None):
         bplots.plot_hypo_regression_param(user_count, policy_names, param_name,
                     param, true_coeff[param_name], simulation_count, batch_size)
     '''
-    if show_fig:
-        plt.show()
+    #if show_fig:
+    #    plt.show()
 
 
     #############################################################
